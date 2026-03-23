@@ -38,43 +38,55 @@ footer { display: none !important; }
     margin-bottom: 16px !important;
 }
 
-/* ── 파일 업로더 외곽 박스 크기 확대 ── */
+/* ── 파일 업로더 외곽 박스 ── */
 [data-testid="stFileUploader"] {
     background: #f5f7ff !important;
     border: 2px dashed #a0aad4 !important;
     border-radius: 12px !important;
     padding: 0 !important;
-    overflow: visible !important;
-    min-height: 120px !important;
+    overflow: hidden !important;
+    min-height: 80px !important;
 }
 
-/* 드롭존: 세로로 충분한 패딩, Browse files 버튼 포함 */
+/* 드롭존: 가로 방향 - 왼쪽 아이콘+텍스트 / 오른쪽 버튼 */
 [data-testid="stFileUploaderDropzone"] {
     background: transparent !important;
     border: none !important;
     display: flex !important;
-    flex-direction: column !important;
+    flex-direction: row !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 10px !important;
-    padding: 28px 20px !important;
-    min-height: 120px !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    padding: 20px 24px !important;
+    min-height: 80px !important;
     width: 100% !important;
 }
 
-/* 드롭존 안 텍스트 영역 */
+/* 드롭존 왼쪽: 아이콘 + 텍스트 영역 */
 [data-testid="stFileUploaderDropzoneInstructions"] {
     display: flex !important;
-    flex-direction: column !important;
+    flex-direction: row !important;
     align-items: center !important;
-    gap: 4px !important;
+    gap: 12px !important;
+    flex: 1 !important;
+    text-align: left !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
 }
 [data-testid="stFileUploaderDropzoneInstructions"] span {
     font-size: 13px !important;
     color: #6672a0 !important;
+    text-align: left !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] svg {
+    color: #a0aad4 !important;
+    flex-shrink: 0 !important;
 }
 
-/* Browse files 버튼 - 드롭존 내부 */
+/* Browse files 버튼 - 오른쪽 배치 */
 [data-testid="stFileUploaderDropzone"] button {
     background: #3b5bff !important;
     color: #ffffff !important;
@@ -82,20 +94,19 @@ footer { display: none !important; }
     border-radius: 22px !important;
     font-size: 13px !important;
     font-weight: 700 !important;
-    padding: 9px 30px !important;
+    padding: 9px 24px !important;
     min-height: 40px !important;
+    min-width: 120px !important;
     cursor: pointer !important;
     display: inline-block !important;
     position: relative !important;
-    bottom: auto !important;
-    left: auto !important;
-    right: auto !important;
-    transform: none !important;
-    margin: 4px 0 0 0 !important;
     flex-shrink: 0 !important;
+    transform: none !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
 }
 
-/* ── 탭 숫자 1~5 크고 굵게 ── */
+/* ── 탭 숫자 1~5 ── */
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] p,
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] {
     font-size: 22px !important;
@@ -118,15 +129,20 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
     box-shadow: 0 2px 10px rgba(60,80,180,0.08) !important;
 }
 
-/* ── 일반 버튼 공통 ── */
-.stButton > button {
+/* ── 키워드필터 상단 버튼 3개
+   "① 브랜드 키워드" 제목과 동일: font-size 14px, font-weight 800, color #3a3f5c ── */
+.btn-settings .stButton > button,
+.btn-run .stButton > button,
+.btn-download .stButton > button,
+.btn-download [data-testid="stDownloadButton"] > button {
     all: unset !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;         /* ← 볼드 */
+    font-size: 14px !important;          /* ← filter-section-title 과 동일 */
+    font-weight: 800 !important;         /* ← filter-section-title 과 동일 */
+    color: #3a3f5c !important;           /* ← filter-section-title 과 동일 */
     border-radius: 22px !important;
     padding: 8px 18px !important;
     min-height: 40px !important;
@@ -137,15 +153,15 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
     white-space: nowrap !important;
 }
 
-/* 키워드설정 버튼 */
+/* 키워드설정 - 흰 배경 + 인디고 테두리 */
 .btn-settings .stButton > button {
     background: #ffffff !important;
-    color: #3b5bff !important;
     border: 1.5px solid #3b5bff !important;
+    color: #3a3f5c !important;
 }
 .btn-settings .stButton > button:hover { background: #f0f3ff !important; }
 
-/* 분석실행 버튼 */
+/* 분석실행 - 인디고 배경 + 흰 글자 */
 .btn-run .stButton > button {
     background: #3b5bff !important;
     color: #ffffff !important;
@@ -153,37 +169,23 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
 }
 .btn-run .stButton > button:hover { background: #2a47e0 !important; }
 
-/* 엑셀다운로드 버튼 */
+/* 엑셀다운로드 - 흰 배경 + 인디고 테두리 */
 .btn-download .stButton > button,
 .btn-download [data-testid="stDownloadButton"] > button {
-    all: unset !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;         /* ← 볼드 */
-    border-radius: 22px !important;
-    padding: 8px 18px !important;
-    min-height: 40px !important;
-    width: 100% !important;
-    cursor: pointer !important;
-    box-sizing: border-box !important;
     background: #ffffff !important;
-    color: #3b5bff !important;
+    color: #3a3f5c !important;
     border: 1.5px solid #3b5bff !important;
-    white-space: nowrap !important;
 }
 .btn-download .stButton > button:hover,
 .btn-download [data-testid="stDownloadButton"] > button:hover {
     background: #f0f3ff !important;
 }
 
-/* ── 필터 섹션 제목: 더 크게 ── */
+/* ── 필터 섹션 제목 ── */
 .filter-section-title {
-    font-size: 14px !important;      /* ↑ 12px → 14px */
-    font-weight: 800 !important;     /* ↑ 700 → 800 */
-    color: #3a3f5c !important;       /* 더 진하게 */
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #3a3f5c !important;
     margin: 16px 0 8px 0 !important;
     padding-bottom: 5px !important;
     border-bottom: 1.5px solid #d4d9ee !important;
@@ -191,24 +193,20 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
     text-transform: none !important;
 }
 
-/* ── 필터 내용 입력 위젯 폰트: 더 작게 ── */
+/* ── 필터 내용 위젯 폰트 작게 ── */
 div[role="tabpanel"] [data-testid="stNumberInput"] input,
 div[role="tabpanel"] [data-testid="stSelectbox"] div,
 div[role="tabpanel"] [data-testid="stRadio"] label,
 div[role="tabpanel"] [data-testid="stCheckbox"] label,
 div[role="tabpanel"] .stRadio span,
 div[role="tabpanel"] label {
-    font-size: 11px !important;      /* ↓ 기본 → 11px */
+    font-size: 11px !important;
     color: #4a5080 !important;
 }
-
-/* 입력 박스 자체 크기 */
 div[role="tabpanel"] [data-testid="stNumberInput"] input {
     font-size: 11px !important;
     padding: 4px 8px !important;
 }
-
-/* 체크박스/라디오 레이블 */
 div[role="tabpanel"] .stCheckbox > label,
 div[role="tabpanel"] .stRadio > div > label {
     font-size: 11px !important;
@@ -338,7 +336,7 @@ def apply_preset(df, preset):
     return result
 
 
-# ───────────────────────── 설정 패널 렌더링 ─────────────────────────
+# ───────────────────────── 설정 패널 ─────────────────────────
 def render_settings_panel(idx):
     p = st.session_state.presets[idx]
     col_a, col_b = st.columns(2)
@@ -353,7 +351,6 @@ def render_settings_panel(idx):
         st.markdown('<div class="filter-section-title">② 작년 검색량</div>', unsafe_allow_html=True)
         s_min = st.number_input("최소", value=int(p["search_min"]), min_value=0, key=f"smin_{idx}")
         s_max = st.number_input("최대", value=int(p["search_max"]), min_value=0, key=f"smax_{idx}")
-
         st.markdown('<div class="filter-section-title">③ 계절성</div>', unsafe_allow_html=True)
         seasonality = st.radio(
             "계절성", ["전체", "있음", "없음"],
@@ -372,24 +369,15 @@ def render_settings_panel(idx):
             with month_cols[(m - 1) % 6]:
                 if st.checkbox(str(m), value=(m in p["max_months"]), key=f"month_{idx}_{m}"):
                     selected_months.append(m)
-
         st.markdown('<div class="filter-section-title">⑥ 쿠팡 평균가 (원)</div>', unsafe_allow_html=True)
         cp_min = st.number_input("최소", value=int(p["coupang_price_min"]), min_value=0, key=f"cpmin_{idx}")
         cp_max = st.number_input("최대", value=int(p["coupang_price_max"]), min_value=0, key=f"cpmax_{idx}")
-
         st.markdown('<div class="filter-section-title">⑦ 쿠팡 총 리뷰수</div>', unsafe_allow_html=True)
         cr_min = st.number_input("최소", value=int(p["coupang_review_min"]), min_value=0, key=f"crmin_{idx}")
         cr_max = st.number_input("최대", value=int(p["coupang_review_max"]), min_value=0, key=f"crmax_{idx}")
-
         st.markdown('<div class="filter-section-title">⑧ 쿠팡 해외배송비율 % (결과 내림차순 정렬)</div>', unsafe_allow_html=True)
-        co_min = st.number_input(
-            "최소 (%)", value=int(p["coupang_overseas_min"]),
-            min_value=0, max_value=100, step=1, key=f"comin_{idx}"
-        )
-        co_max = st.number_input(
-            "최대 (%)", value=int(p["coupang_overseas_max"]),
-            min_value=0, max_value=100, step=1, key=f"comax_{idx}"
-        )
+        co_min = st.number_input("최소 (%)", value=int(p["coupang_overseas_min"]), min_value=0, max_value=100, step=1, key=f"comin_{idx}")
+        co_max = st.number_input("최대 (%)", value=int(p["coupang_overseas_max"]), min_value=0, max_value=100, step=1, key=f"comax_{idx}")
 
     if st.button("💾 저장", key=f"save_{idx}"):
         st.session_state.presets[idx].update({
@@ -425,7 +413,7 @@ with st.container(border=True):
         unsafe_allow_html=True,
     )
     uploaded_file = st.file_uploader(
-        "네이버 쇼핑 키워드 엑셀 파일을 업로드하세요 (.xlsx)",
+        "파일을 끌어다 놓거나 버튼을 클릭하세요",
         type=["xlsx"],
         label_visibility="collapsed",
     )
