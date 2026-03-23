@@ -35,8 +35,8 @@ DEFAULT_PRESET = {
     "피크월검색량_max": 9999999,
     "쿠팡총리뷰수_min": 0,
     "쿠팡총리뷰수_max": 9999999,
-    "쿠팡해외배송비율_min": 0.0,
-    "쿠팡해외배송비율_max": 1.0,
+    "쿠팡해외배송비율_min": 0,    # 퍼센트 단위 0~100
+    "쿠팡해외배송비율_max": 100,  # 퍼센트 단위 0~100
 }
 
 if "presets" not in st.session_state:
@@ -81,8 +81,6 @@ def find_col(df, keywords):
     return None
 
 def get_col_map(df):
-    # 키워드 컬럼: "키워드" 포함하되
-    # 신규진입/브랜드/쇼핑성 제외한 순수 키워드 컬럼
     keyword_col = next(
         (col for col in df.columns
          if "키워드" in col
@@ -92,24 +90,24 @@ def get_col_map(df):
         None
     )
     return {
-        "키워드":               keyword_col,
-        "브랜드":               find_col(df, ["브랜드"]),
-        "쇼핑성":               find_col(df, ["쇼핑성"]),
-        "경쟁률":               find_col(df, ["경쟁률"]),
-        "최근1개월검색량":      find_col(df, ["최근", "1개월", "검색량"]),
-        "예상1개월검색량":      find_col(df, ["예상", "1개월", "검색량"]),
-        "작년검색량":           find_col(df, ["작년", "검색량"]),
-        "작년최대검색월":       find_col(df, ["작년최대", "검색월"]) or
-                                find_col(df, ["작년", "최대검색", "월"]) or
-                                find_col(df, ["작년", "최대", "월"]),
-        "피크월검색량":         find_col(df, ["작년최대", "검색량"]) or
-                                find_col(df, ["작년최대검색월", "검색량"]) or
-                                find_col(df, ["작년", "최대검색량"]),
-        "계절성":               find_col(df, ["계절성"]),
-        "계절성월":             find_col(df, ["계절성", "월"]),
-        "네이버경쟁강도":       find_col(df, ["경쟁강도"]),
-        "쿠팡총리뷰수":         find_col(df, ["쿠팡", "총리뷰수"]),
-        "쿠팡해외배송비율":     find_col(df, ["쿠팡", "해외배송비율"]),
+        "키워드":           keyword_col,
+        "브랜드":           find_col(df, ["브랜드"]),
+        "쇼핑성":           find_col(df, ["쇼핑성"]),
+        "경쟁률":           find_col(df, ["경쟁률"]),
+        "최근1개월검색량":  find_col(df, ["최근", "1개월", "검색량"]),
+        "예상1개월검색량":  find_col(df, ["예상", "1개월", "검색량"]),
+        "작년검색량":       find_col(df, ["작년", "검색량"]),
+        "작년최대검색월":   (find_col(df, ["작년최대", "검색월"]) or
+                            find_col(df, ["작년", "최대검색", "월"]) or
+                            find_col(df, ["작년", "최대", "월"])),
+        "피크월검색량":     (find_col(df, ["작년최대", "검색량"]) or
+                            find_col(df, ["작년최대검색월", "검색량"]) or
+                            find_col(df, ["작년", "최대검색량"])),
+        "계절성":           find_col(df, ["계절성"]),
+        "계절성월":         find_col(df, ["계절성", "월"]),
+        "네이버경쟁강도":   find_col(df, ["경쟁강도"]),
+        "쿠팡총리뷰수":     find_col(df, ["쿠팡", "총리뷰수"]),
+        "쿠팡해외배송비율": find_col(df, ["쿠팡", "해외배송비율"]),
     }
 
 def apply_preset(df, col_map, preset):
@@ -163,13 +161,16 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["쿠팡총리뷰수"]] <= preset["쿠팡총리뷰수_max"])
         ]
 
-    # 쿠팡 해외배송비율
+    # 쿠팡 해외배송비율 (UI는 % 단위, 데이터는 0~1 소수)
     if col_map.get("쿠팡해외배송비율"):
         fdf[col_map["쿠팡해외배송비율"]] = pd.to_numeric(
             fdf[col_map["쿠팡해외배송비율"]], errors="coerce")
+        # % → 소수 변환해서 비교
+        min_val = preset["쿠팡해외배송비율_min"] / 100
+        max_val = preset["쿠팡해외배송비율_max"] / 100
         fdf = fdf[
-            (fdf[col_map["쿠팡해외배송비율"]] >= preset["쿠팡해외배송비율_min"]) &
-            (fdf[col_map["쿠팡해외배송비율"]] <= preset["쿠팡해외배송비율_max"])
+            (fdf[col_map["쿠팡해외배송비율"]] >= min_val) &
+            (fdf[col_map["쿠팡해외배송비율"]] <= max_val)
         ]
         # 해외배송비율 높은 순 정렬
         fdf = fdf.sort_values(
@@ -178,7 +179,6 @@ def apply_preset(df, col_map, preset):
     return fdf.reset_index(drop=True)
 
 def build_display_df(fdf, col_map):
-    # 카테고리 제외, 키워드 정상 표시
     mapping = {
         "키워드":           "키워드",
         "브랜드":           "브랜드",
@@ -255,7 +255,6 @@ if st.session_state.show_preset_modal:
     st.markdown("---")
 
     tabs = st.tabs([st.session_state.presets[i]["name"] for i in range(5)])
-    MONTHS = [str(m) for m in range(1, 13)]
 
     for i, tab in enumerate(tabs):
         with tab:
@@ -265,6 +264,7 @@ if st.session_state.show_preset_modal:
 
             col1, col2 = st.columns(2)
             with col1:
+                # 브랜드
                 st.markdown('<div class="field-label">브랜드키워드</div>',
                             unsafe_allow_html=True)
                 new_브랜드 = st.selectbox(
@@ -272,6 +272,7 @@ if st.session_state.show_preset_modal:
                     index=["전체", "O", "X"].index(p["브랜드"]),
                     key=f"브랜드_{i}", label_visibility="collapsed")
 
+                # 작년 검색량
                 st.markdown('<div class="field-label">작년 검색량 범위</div>',
                             unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
@@ -284,6 +285,7 @@ if st.session_state.show_preset_modal:
                         "최대", value=int(p["작년검색량_max"]),
                         min_value=0, key=f"작년max_{i}")
 
+                # 피크월 검색량
                 st.markdown('<div class="field-label">피크월검색량 범위</div>',
                             unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
@@ -296,6 +298,7 @@ if st.session_state.show_preset_modal:
                         "최대", value=int(p["피크월검색량_max"]),
                         min_value=0, key=f"피크max_{i}")
 
+                # 쿠팡 총리뷰수
                 st.markdown('<div class="field-label">쿠팡 총리뷰수 범위</div>',
                             unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
@@ -309,6 +312,7 @@ if st.session_state.show_preset_modal:
                         min_value=0, key=f"리뷰max_{i}")
 
             with col2:
+                # 계절성
                 st.markdown('<div class="field-label">계절성</div>',
                             unsafe_allow_html=True)
                 new_시즌 = st.selectbox(
@@ -316,30 +320,49 @@ if st.session_state.show_preset_modal:
                     index=["전체", "있음", "없음"].index(p["시즌성"]),
                     key=f"시즌_{i}", label_visibility="collapsed")
 
+                # 작년 최대검색월 체크박스
                 st.markdown(
-                    '<div class="field-label">작년 최대검색월 (다중선택)</div>',
+                    '<div class="field-label">작년 최대검색월 (미선택시 전체)</div>',
                     unsafe_allow_html=True)
-                new_월 = st.multiselect(
-                    "", MONTHS,
-                    default=p.get("작년최대검색월", []),
-                    key=f"월_{i}",
-                    label_visibility="collapsed",
-                    placeholder="월 선택 (미선택시 전체)")
+                selected_months = p.get("작년최대검색월", [])
+                new_월 = []
+                month_rows = [[1,2,3],[4,5,6],[7,8,9],[10,11,12]]
+                for row in month_rows:
+                    cols_m = st.columns(3)
+                    for j, month in enumerate(row):
+                        with cols_m[j]:
+                            month_str = str(month)
+                            is_selected = month_str in selected_months
+                            if st.checkbox(
+                                f"{month}월",
+                                value=is_selected,
+                                key=f"month_{i}_{month}"
+                            ):
+                                new_월.append(month_str)
 
+                # 쿠팡 해외배송비율 (% 단위)
                 st.markdown(
-                    '<div class="field-label">쿠팡 해외배송비율 범위 (0~1)</div>',
+                    '<div class="field-label">쿠팡 해외배송비율 범위 (%)</div>',
                     unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
                 with c1:
                     new_해외_min = st.number_input(
-                        "최소", value=float(p["쿠팡해외배송비율_min"]),
-                        min_value=0.0, max_value=1.0,
-                        step=0.01, key=f"해외min_{i}")
+                        "최소 (%)",
+                        value=int(p["쿠팡해외배송비율_min"]),
+                        min_value=0,
+                        max_value=100,
+                        step=1,
+                        key=f"해외min_{i}",
+                        help="0% ~ 100% 사이로 입력")
                 with c2:
                     new_해외_max = st.number_input(
-                        "최대", value=float(p["쿠팡해외배송비율_max"]),
-                        min_value=0.0, max_value=1.0,
-                        step=0.01, key=f"해외max_{i}")
+                        "최대 (%)",
+                        value=int(p["쿠팡해외배송비율_max"]),
+                        min_value=0,
+                        max_value=100,
+                        step=1,
+                        key=f"해외max_{i}",
+                        help="0% ~ 100% 사이로 입력")
 
             st.info("💡 쇼핑성 키워드는 항상 **O** 로 자동 고정됩니다.")
             st.markdown("<br>", unsafe_allow_html=True)
@@ -358,8 +381,8 @@ if st.session_state.show_preset_modal:
                         "피크월검색량_max":     int(new_피크_max),
                         "쿠팡총리뷰수_min":     int(new_리뷰_min),
                         "쿠팡총리뷰수_max":     int(new_리뷰_max),
-                        "쿠팡해외배송비율_min": float(new_해외_min),
-                        "쿠팡해외배송비율_max": float(new_해외_max),
+                        "쿠팡해외배송비율_min": int(new_해외_min),
+                        "쿠팡해외배송비율_max": int(new_해외_max),
                     }
                     st.session_state.active_preset = i
                     st.session_state.show_preset_modal = False
@@ -434,10 +457,9 @@ if st.session_state.result_df is not None:
                                       "🔝 피크월 검색량", format="%d"),
             "쿠팡 총리뷰":        st.column_config.NumberColumn(
                                       "⭐ 쿠팡 총리뷰", format="%d"),
-            "쿠팡 해외배송비율":  st.column_config.ProgressColumn(
-                                      "🌏 해외배송비율",
-                                      min_value=0, max_value=1,
-                                      format="%.0%%"),
+            "쿠팡 해외배송비율":  st.column_config.NumberColumn(
+                                      "🌏 해외배송비율(%)",
+                                      format="%.1f%%"),
         })
     st.markdown('</div>', unsafe_allow_html=True)
 
