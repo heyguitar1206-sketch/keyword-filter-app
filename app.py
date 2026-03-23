@@ -7,7 +7,7 @@ st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap');
 
 * { font-family: 'Noto Sans KR', sans-serif !important; box-sizing: border-box; }
 
@@ -18,16 +18,13 @@ footer                       { display: none !important; }
 
 .stApp, body { background-color: #e8ecf4 !important; }
 
-/* ── 60% 폭 ── */
 .block-container {
     max-width: 60% !important;
     margin: 0 auto !important;
     padding: 32px 0 60px 0 !important;
 }
 
-/* ═══════════════════════════════
-   st.container(border=True) 공통 카드
-═══════════════════════════════ */
+/* ── 공통 카드 ── */
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff !important;
     border-radius: 16px !important;
@@ -41,9 +38,7 @@ footer                       { display: none !important; }
     box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
 }
 
-/* ═══════════════════════════════
-   헤더 카드
-═══════════════════════════════ */
+/* ── 헤더 ── */
 .header-card {
     background: #ffffff;
     border-radius: 16px;
@@ -59,18 +54,12 @@ footer                       { display: none !important; }
 .header-title span { color: #3b5bff; }
 .header-sub { font-size: 13px; color: #888; margin-top: 4px; }
 .version-badge {
-    background: #f0f3ff;
-    color: #3b5bff;
-    border: 1px solid #c7d0ff;
-    border-radius: 20px;
-    padding: 4px 14px;
-    font-size: 12px;
-    font-weight: 600;
+    background: #f0f3ff; color: #3b5bff;
+    border: 1px solid #c7d0ff; border-radius: 20px;
+    padding: 4px 14px; font-size: 12px; font-weight: 600;
 }
 
-/* ═══════════════════════════════
-   업로드
-═══════════════════════════════ */
+/* ── 업로드 ── */
 [data-testid="stFileUploader"] {
     background: #ffffff !important;
     border-radius: 16px !important;
@@ -81,9 +70,7 @@ footer                       { display: none !important; }
 }
 [data-testid="stFileUploader"] > label { display: none !important; }
 [data-testid="stFileUploaderDropzone"] {
-    background: #ffffff !important;
-    border: none !important;
-    padding: 10px 8px !important;
+    background: #ffffff !important; border: none !important; padding: 10px 8px !important;
 }
 [data-testid="stFileUploaderDropzoneInstructions"] > div > span {
     font-size: 14px !important; font-weight: 600 !important; color: #1a1a2e !important;
@@ -92,257 +79,197 @@ footer                       { display: none !important; }
     font-size: 12px !important; color: #888 !important;
 }
 [data-testid="stFileUploaderDropzone"] button {
-    background: #3b5bff !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 22px !important;
+    background: #3b5bff !important; color: white !important;
+    border: none !important; border-radius: 22px !important;
     padding: 10px 28px !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
     font-family: 'Noto Sans KR', sans-serif !important;
-    cursor: pointer !important;
+    font-size: 14px !important; font-weight: 600 !important;
 }
-[data-testid="stFileUploaderDropzone"] button:hover {
-    background: #2a47e0 !important;
-}
+[data-testid="stFileUploaderDropzone"] button:hover { background: #2a47e0 !important; }
 
-/* ═══════════════════════════════
-   버튼 완전 초기화 & 기본
-═══════════════════════════════ */
-.stButton {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
+/* ════════════════════════════════════
+   버튼 전체 초기화 + 재정의
+   "키워드 설정" 텍스트와 동일: 14px 600
+════════════════════════════════════ */
+.stButton { display: flex !important; align-items: center !important; justify-content: center !important; }
+
 .stButton > button {
     all: unset !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 5px !important;
     background: #ffffff !important;
-    color: #444 !important;
+    color: #333 !important;
     border: 1.5px solid #d0d5e8 !important;
     border-radius: 999px !important;
     font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    padding: 0 18px !important;
-    height: 38px !important;
-    min-width: 90px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    padding: 0 20px !important;
+    height: 40px !important;
+    min-width: 100px !important;
     width: 100% !important;
     white-space: nowrap !important;
     cursor: pointer !important;
     transition: all 0.15s ease !important;
     box-sizing: border-box !important;
     line-height: 1 !important;
-    letter-spacing: -0.01em !important;
+    letter-spacing: -0.02em !important;
 }
 .stButton > button:hover {
     background: #f0f3ff !important;
     border-color: #3b5bff !important;
     color: #3b5bff !important;
 }
-.stButton > button:active,
-.stButton > button:focus {
-    transform: none !important;
-    outline: none !important;
-    box-shadow: none !important;
+.stButton > button:active, .stButton > button:focus {
+    transform: none !important; outline: none !important; box-shadow: none !important;
 }
 
-/* 설정(키워드설정) 버튼 */
-.btn-settings .stButton > button,
-.btn-settings .stButton > button:active,
-.btn-settings .stButton > button:focus {
-    background: #ffffff !important;
-    color: #444 !important;
-    border: 1.5px solid #d0d5e8 !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    outline: none !important;
-    transform: none !important;
-    box-shadow: none !important;
-}
-.btn-settings .stButton > button:hover {
-    background: #f0f3ff !important;
-    border-color: #3b5bff !important;
-    color: #3b5bff !important;
-}
-
-/* 분석 실행 버튼 */
+/* 분석 실행 */
 .btn-run .stButton > button,
 .btn-run .stButton > button:active,
 .btn-run .stButton > button:focus {
     background: #3b5bff !important;
     color: #ffffff !important;
     border-color: #3b5bff !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    outline: none !important;
-    transform: none !important;
-    box-shadow: none !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    outline: none !important; transform: none !important; box-shadow: none !important;
 }
 .btn-run .stButton > button:hover {
-    background: #2a47e0 !important;
-    border-color: #2a47e0 !important;
+    background: #2a47e0 !important; border-color: #2a47e0 !important;
 }
 
-/* 닫기 버튼 */
+/* 닫기 */
 .btn-close .stButton > button,
 .btn-close .stButton > button:active,
 .btn-close .stButton > button:focus {
-    min-width: 32px !important;
-    width: 32px !important;
-    height: 32px !important;
-    padding: 0 !important;
-    font-size: 14px !important;
-    background: #f0f0f0 !important;
-    color: #888 !important;
-    border: none !important;
-    border-radius: 50% !important;
-    outline: none !important;
-    transform: none !important;
-    box-shadow: none !important;
+    min-width: 32px !important; width: 32px !important; height: 32px !important;
+    padding: 0 !important; font-size: 14px !important;
+    background: #f0f0f0 !important; color: #888 !important;
+    border: none !important; border-radius: 50% !important;
+    outline: none !important; transform: none !important; box-shadow: none !important;
 }
-.btn-close .stButton > button:hover {
-    background: #ffe0e0 !important;
-    color: #e00 !important;
-}
+.btn-close .stButton > button:hover { background: #ffe0e0 !important; color: #e00 !important; }
 
-/* 다운로드 버튼 */
+/* 다운로드 */
 .btn-download .stDownloadButton > button,
 .btn-download .stButton > button {
     all: unset !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 5px !important;
     background: #ffffff !important;
-    color: #444 !important;
+    color: #333 !important;
     border: 1.5px solid #d0d5e8 !important;
     border-radius: 999px !important;
     font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    padding: 0 18px !important;
-    height: 38px !important;
-    min-width: 90px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    padding: 0 20px !important;
+    height: 40px !important;
+    min-width: 100px !important;
     width: 100% !important;
     white-space: nowrap !important;
     cursor: pointer !important;
     box-sizing: border-box !important;
     transition: all 0.15s !important;
-    letter-spacing: -0.01em !important;
+    letter-spacing: -0.02em !important;
 }
 .btn-download .stDownloadButton > button:hover,
 .btn-download .stButton > button:hover {
-    background: #f0f3ff !important;
-    border-color: #3b5bff !important;
-    color: #3b5bff !important;
+    background: #f0f3ff !important; border-color: #3b5bff !important; color: #3b5bff !important;
 }
 .btn-download .stButton > button:disabled {
-    color: #bbb !important;
-    border-color: #e8e8e8 !important;
-    cursor: not-allowed !important;
-    background: #fafafa !important;
+    color: #bbb !important; border-color: #e8e8e8 !important;
+    cursor: not-allowed !important; background: #fafafa !important;
 }
 
-/* ═══════════════════════════════
-   설정 패널
-═══════════════════════════════ */
-.settings-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: #1a1a2e;
-    padding-bottom: 14px;
-    border-bottom: 1.5px solid #e8ecf4;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
-}
-.section-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin: 18px 0 8px 0;
-}
-
-/* ═══════════════════════════════
-   탭 숫자 크고 굵게 ← 핵심 수정
-═══════════════════════════════ */
-/* 탭 버튼 전체 초기화 후 재정의 */
-[data-testid="stTabs"] [role="tablist"] {
+/* ════════════════════════════════════
+   탭 숫자: 강력한 강제 적용
+   (all:unset 이 무시될 때를 대비해
+    구체적 셀렉터 + !important 전부)
+════════════════════════════════════ */
+div[data-testid="stTabs"] div[role="tablist"] {
     border-bottom: 2px solid #e8ecf4 !important;
-    padding-bottom: 0 !important;
     margin-bottom: 20px !important;
+    padding-bottom: 0 !important;
     gap: 0 !important;
 }
 
-/* 탭 각각의 버튼 — !important 전체 강제 */
-[data-testid="stTabs"] [role="tablist"] button {
-    all: unset !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+/* 비활성 탭 */
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] {
     font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 20px !important;
-    font-weight: 800 !important;
-    color: #bbbbbb !important;
-    padding: 8px 28px !important;
-    cursor: pointer !important;
-    border-bottom: 3px solid transparent !important;
-    transition: all 0.15s !important;
-    min-width: 64px !important;
+    font-size: 22px !important;
+    font-weight: 900 !important;
+    color: #c0c0c0 !important;
     background: transparent !important;
-    margin-bottom: -2px !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    border-radius: 0 !important;
+    padding: 10px 32px !important;
+    margin: 0 !important;
+    min-width: 72px !important;
+    cursor: pointer !important;
+    transition: color 0.15s !important;
+    /* p 태그 내부 font 덮어쓰기 */
+    line-height: 1.2 !important;
 }
-[data-testid="stTabs"] [role="tablist"] button:hover {
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] p {
+    font-family: 'Noto Sans KR', sans-serif !important;
+    font-size: 22px !important;
+    font-weight: 900 !important;
+    color: inherit !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+}
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"]:hover {
     color: #3b5bff !important;
     background: #f4f6ff !important;
-    border-radius: 8px 8px 0 0 !important;
 }
-[data-testid="stTabs"] [role="tablist"] button[aria-selected="true"] {
+
+/* 활성 탭 */
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"] {
     color: #3b5bff !important;
-    font-weight: 800 !important;
+    font-weight: 900 !important;
     border-bottom: 3px solid #3b5bff !important;
     background: transparent !important;
 }
-
-/* 프리셋 바 라벨 */
-.preset-label-inline {
-    display: flex;
-    align-items: center;
-    height: 38px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #888;
-    white-space: nowrap;
-    letter-spacing: -0.01em;
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"] p {
+    color: #3b5bff !important;
+    font-weight: 900 !important;
 }
 
-/* ═══════════════════════════════
-   결과 카드
-═══════════════════════════════ */
+/* ── 설정 패널 ── */
+.settings-title {
+    font-size: 15px; font-weight: 700; color: #1a1a2e;
+    padding-bottom: 14px; border-bottom: 1.5px solid #e8ecf4;
+    display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+}
+.section-label {
+    font-size: 11px; font-weight: 700; color: #bbb;
+    text-transform: uppercase; letter-spacing: 0.08em; margin: 18px 0 8px 0;
+}
+
+/* ── 프리셋 라벨 ── */
+.preset-label-inline {
+    display: flex; align-items: center; height: 40px;
+    font-size: 14px; font-weight: 600; color: #888; white-space: nowrap;
+}
+
+/* ── 결과 ── */
 .result-count { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
 .result-count span { color: #3b5bff; }
 
-/* ═══════════════════════════════
-   AgGrid
-═══════════════════════════════ */
-.ag-theme-streamlit .ag-header {
-    background: #f0f3ff !important;
-    font-weight: 700 !important;
-    font-size: 12px !important;
-}
+/* ── AgGrid ── */
+.ag-theme-streamlit .ag-header { background: #f0f3ff !important; font-weight: 700 !important; font-size: 12px !important; }
 .ag-theme-streamlit .ag-row-even { background: #fafbff !important; }
 .ag-theme-streamlit .ag-row-odd  { background: #ffffff !important; }
 .ag-theme-streamlit .ag-row:hover { background: #e8f0fe !important; }
-.ag-theme-streamlit .ag-cell {
-    font-size: 12px !important;
-    display: flex !important;
-    align-items: center !important;
-}
+.ag-theme-streamlit .ag-cell { font-size: 12px !important; display: flex !important; align-items: center !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -520,19 +447,17 @@ if uploaded:
         msg = f"✅ 파일 로드 완료 — 총 {len(st.session_state.df):,}개 키워드"
         st.success(msg + (f" | 피크월검색량: `{cm['피크월검색량']}`" if cm.get("피크월검색량") else " | 피크월검색량 컬럼 없음"))
 
-# 3. 프리셋 바 (버튼 3개만)
+# 3. 프리셋 바
 with st.container(border=True):
-    label_col, spacer_col, set_col, run_col, dl_col = st.columns([1.0, 4.5, 1.8, 1.8, 2.0])
+    label_col, spacer_col, set_col, run_col, dl_col = st.columns([1.0, 4.0, 2.0, 2.0, 2.2])
 
     with label_col:
         st.markdown('<div class="preset-label-inline">분석 프리셋</div>', unsafe_allow_html=True)
 
     with set_col:
-        st.markdown('<div class="btn-settings">', unsafe_allow_html=True)
         if st.button("⚙️ 키워드 설정", key="btn_settings"):
             st.session_state.show_settings = not st.session_state.show_settings
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
     with run_col:
         st.markdown('<div class="btn-run">', unsafe_allow_html=True)
@@ -566,7 +491,6 @@ if st.session_state.show_settings:
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # 탭: 숫자에 공백 padding 추가해 클릭 영역 확보
         tabs = st.tabs(["1", "2", "3", "4", "5"])
         for i, tab in enumerate(tabs):
             with tab:
