@@ -16,7 +16,8 @@ st.markdown("""
 [data-testid="stDecoration"] { display: none !important; }
 footer                       { display: none !important; }
 
-.stApp, body { background-color: #e8ecf4 !important; }
+/* ── 배경: 더 진한 회청색 ── */
+.stApp, body { background-color: #d4d9e8 !important; }
 
 .block-container {
     max-width: 60% !important;
@@ -24,28 +25,30 @@ footer                       { display: none !important; }
     padding: 32px 0 60px 0 !important;
 }
 
-/* ── 공통 카드 ── */
+/* ════════════════════════════════
+   카드: 흰색 + 진한 테두리 + 그림자
+════════════════════════════════ */
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff !important;
     border-radius: 16px !important;
-    border: 1.5px solid #e2e6f0 !important;
-    box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
+    border: 2px solid #c8cfe0 !important;
+    box-shadow: 0 3px 16px rgba(40,60,140,0.13) !important;
     padding: 20px 24px !important;
     margin-bottom: 18px !important;
 }
 [data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border: 1.5px solid #e2e6f0 !important;
-    box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
+    border: 2px solid #c8cfe0 !important;
+    box-shadow: 0 3px 16px rgba(40,60,140,0.13) !important;
 }
 
-/* ── 헤더 ── */
+/* ── 헤더 카드 ── */
 .header-card {
     background: #ffffff;
     border-radius: 16px;
     padding: 22px 32px;
     margin-bottom: 18px;
-    border: 1.5px solid #e2e6f0;
-    box-shadow: 0 1px 4px rgba(60,80,180,0.08);
+    border: 2px solid #c8cfe0;
+    box-shadow: 0 3px 16px rgba(40,60,140,0.13);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -59,38 +62,87 @@ footer                       { display: none !important; }
     padding: 4px 14px; font-size: 12px; font-weight: 600;
 }
 
-/* ── 업로드 ── */
+/* ════════════════════════════════
+   업로드 카드: 흰색 박스 + 한글 오버레이
+════════════════════════════════ */
+.upload-wrapper {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 2px solid #c8cfe0;
+    box-shadow: 0 3px 16px rgba(40,60,140,0.13);
+    margin-bottom: 18px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 영문 텍스트 숨기기 */
+[data-testid="stFileUploaderDropzoneInstructions"] { display: none !important; }
+
+/* 파일업로더 내부 스타일 */
 [data-testid="stFileUploader"] {
-    background: #ffffff !important;
-    border-radius: 16px !important;
-    padding: 6px 20px !important;
-    border: 1.5px solid #e2e6f0 !important;
-    box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
-    margin-bottom: 18px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 [data-testid="stFileUploader"] > label { display: none !important; }
 [data-testid="stFileUploaderDropzone"] {
-    background: #ffffff !important; border: none !important; padding: 10px 8px !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 72px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
 }
-[data-testid="stFileUploaderDropzoneInstructions"] > div > span {
-    font-size: 14px !important; font-weight: 600 !important; color: #1a1a2e !important;
-}
-[data-testid="stFileUploaderDropzoneInstructions"] > div > small {
-    font-size: 12px !important; color: #888 !important;
-}
+
+/* Browse files 버튼 → 오른쪽 정렬 */
 [data-testid="stFileUploaderDropzone"] button {
-    background: #3b5bff !important; color: white !important;
-    border: none !important; border-radius: 22px !important;
+    background: #3b5bff !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 22px !important;
     padding: 10px 28px !important;
     font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 14px !important; font-weight: 600 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    position: absolute !important;
+    right: 24px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    white-space: nowrap !important;
 }
-[data-testid="stFileUploaderDropzone"] button:hover { background: #2a47e0 !important; }
+[data-testid="stFileUploaderDropzone"] button:hover {
+    background: #2a47e0 !important;
+}
 
-/* ════════════════════════════════════
-   버튼 전체 초기화 + 재정의
-   "키워드 설정" 텍스트와 동일: 14px 600
-════════════════════════════════════ */
+/* 한글 안내 텍스트 (가상 요소로 삽입) */
+.upload-text-overlay {
+    position: absolute;
+    left: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 1;
+}
+.upload-text-overlay .main { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+.upload-text-overlay .sub  { font-size: 12px; color: #999; margin-top: 3px; }
+.upload-icon-kor {
+    position: absolute;
+    left: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 22px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ════════════════════════════════
+   버튼 초기화 + 재정의 (14px 600)
+════════════════════════════════ */
 .stButton { display: flex !important; align-items: center !important; justify-content: center !important; }
 
 .stButton > button {
@@ -101,7 +153,7 @@ footer                       { display: none !important; }
     gap: 5px !important;
     background: #ffffff !important;
     color: #333 !important;
-    border: 1.5px solid #d0d5e8 !important;
+    border: 1.5px solid #c8cfe0 !important;
     border-radius: 999px !important;
     font-family: 'Noto Sans KR', sans-serif !important;
     font-size: 14px !important;
@@ -133,13 +185,9 @@ footer                       { display: none !important; }
     background: #3b5bff !important;
     color: #ffffff !important;
     border-color: #3b5bff !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
     outline: none !important; transform: none !important; box-shadow: none !important;
 }
-.btn-run .stButton > button:hover {
-    background: #2a47e0 !important; border-color: #2a47e0 !important;
-}
+.btn-run .stButton > button:hover { background: #2a47e0 !important; border-color: #2a47e0 !important; }
 
 /* 닫기 */
 .btn-close .stButton > button,
@@ -163,7 +211,7 @@ footer                       { display: none !important; }
     gap: 5px !important;
     background: #ffffff !important;
     color: #333 !important;
-    border: 1.5px solid #d0d5e8 !important;
+    border: 1.5px solid #c8cfe0 !important;
     border-radius: 999px !important;
     font-family: 'Noto Sans KR', sans-serif !important;
     font-size: 14px !important;
@@ -183,23 +231,19 @@ footer                       { display: none !important; }
     background: #f0f3ff !important; border-color: #3b5bff !important; color: #3b5bff !important;
 }
 .btn-download .stButton > button:disabled {
-    color: #bbb !important; border-color: #e8e8e8 !important;
-    cursor: not-allowed !important; background: #fafafa !important;
+    color: #bbb !important; border-color: #e0e0e0 !important;
+    cursor: not-allowed !important; background: #f9f9f9 !important;
 }
 
-/* ════════════════════════════════════
-   탭 숫자: 강력한 강제 적용
-   (all:unset 이 무시될 때를 대비해
-    구체적 셀렉터 + !important 전부)
-════════════════════════════════════ */
+/* ════════════════════════════════
+   탭 숫자: p 태그까지 모두 강제
+════════════════════════════════ */
 div[data-testid="stTabs"] div[role="tablist"] {
-    border-bottom: 2px solid #e8ecf4 !important;
+    border-bottom: 2px solid #e4e8f0 !important;
     margin-bottom: 20px !important;
     padding-bottom: 0 !important;
     gap: 0 !important;
 }
-
-/* 비활성 탭 */
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] {
     font-family: 'Noto Sans KR', sans-serif !important;
     font-size: 22px !important;
@@ -214,7 +258,6 @@ div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] {
     min-width: 72px !important;
     cursor: pointer !important;
     transition: color 0.15s !important;
-    /* p 태그 내부 font 덮어쓰기 */
     line-height: 1.2 !important;
 }
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] p {
@@ -222,16 +265,11 @@ div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] p {
     font-size: 22px !important;
     font-weight: 900 !important;
     color: inherit !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    line-height: 1.2 !important;
+    margin: 0 !important; padding: 0 !important; line-height: 1.2 !important;
 }
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"]:hover {
-    color: #3b5bff !important;
-    background: #f4f6ff !important;
+    color: #3b5bff !important; background: #f4f6ff !important;
 }
-
-/* 활성 탭 */
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"] {
     color: #3b5bff !important;
     font-weight: 900 !important;
@@ -239,8 +277,7 @@ div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="
     background: transparent !important;
 }
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"] p {
-    color: #3b5bff !important;
-    font-weight: 900 !important;
+    color: #3b5bff !important; font-weight: 900 !important;
 }
 
 /* ── 설정 패널 ── */
@@ -254,17 +291,17 @@ div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="
     text-transform: uppercase; letter-spacing: 0.08em; margin: 18px 0 8px 0;
 }
 
-/* ── 프리셋 라벨 ── */
+/* 프리셋 라벨 */
 .preset-label-inline {
     display: flex; align-items: center; height: 40px;
-    font-size: 14px; font-weight: 600; color: #888; white-space: nowrap;
+    font-size: 14px; font-weight: 600; color: #666; white-space: nowrap;
 }
 
-/* ── 결과 ── */
+/* 결과 */
 .result-count { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
 .result-count span { color: #3b5bff; }
 
-/* ── AgGrid ── */
+/* AgGrid */
 .ag-theme-streamlit .ag-header { background: #f0f3ff !important; font-weight: 700 !important; font-size: 12px !important; }
 .ag-theme-streamlit .ag-row-even { background: #fafbff !important; }
 .ag-theme-streamlit .ag-row-odd  { background: #ffffff !important; }
@@ -435,8 +472,18 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 2. 업로드
+# 2. 업로드 — 한글 오버레이 + 흰 카드
+st.markdown("""
+<div class="upload-wrapper" style="min-height:80px;">
+  <div class="upload-icon-kor">📁</div>
+  <div class="upload-text-overlay">
+    <div class="main">분석 파일을 이곳에 올려주세요</div>
+    <div class="sub">엑셀(.xlsx) 파일을 드래그하거나 클릭하여 선택</div>
+  </div>
+""", unsafe_allow_html=True)
 uploaded = st.file_uploader("파일 업로드", type=["xlsx"], label_visibility="collapsed")
+st.markdown('</div>', unsafe_allow_html=True)
+
 if uploaded:
     file_bytes = uploaded.read()
     if st.session_state.file_name != uploaded.name:
@@ -447,12 +494,12 @@ if uploaded:
         msg = f"✅ 파일 로드 완료 — 총 {len(st.session_state.df):,}개 키워드"
         st.success(msg + (f" | 피크월검색량: `{cm['피크월검색량']}`" if cm.get("피크월검색량") else " | 피크월검색량 컬럼 없음"))
 
-# 3. 프리셋 바
+# 3. 키워드 필터 바 (버튼 3개)
 with st.container(border=True):
-    label_col, spacer_col, set_col, run_col, dl_col = st.columns([1.0, 4.0, 2.0, 2.0, 2.2])
+    label_col, spacer_col, set_col, run_col, dl_col = st.columns([1.2, 3.8, 2.1, 2.1, 2.3])
 
     with label_col:
-        st.markdown('<div class="preset-label-inline">분석 프리셋</div>', unsafe_allow_html=True)
+        st.markdown('<div class="preset-label-inline">키워드 필터</div>', unsafe_allow_html=True)
 
     with set_col:
         if st.button("⚙️ 키워드 설정", key="btn_settings"):
