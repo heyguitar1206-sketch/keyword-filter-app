@@ -14,7 +14,6 @@ st.markdown("""
     font-family: 'Noto Sans KR', sans-serif !important;
     box-sizing: border-box;
 }
-
 [data-testid="stHeader"],
 [data-testid="stToolbar"],
 [data-testid="stDecoration"],
@@ -28,7 +27,6 @@ footer { display: none !important; }
     padding: 32px 0 60px !important;
 }
 
-/* ── 카드 공통 ── */
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff !important;
     border: 2px solid #b8c0d8 !important;
@@ -70,13 +68,11 @@ footer { display: none !important; }
     font-size: 13px !important;
     color: #6672a0 !important;
 }
-
-/* Browse files 버튼 - 레퍼런스처럼 사각형에 가까운 곡률 */
 [data-testid="stFileUploaderDropzone"] button {
     background: #3b5bff !important;
     color: #ffffff !important;
     border: none !important;
-    border-radius: 8px !important;        /* ← 22px → 8px 사각형에 가깝게 */
+    border-radius: 8px !important;
     font-size: 13px !important;
     font-weight: 700 !important;
     padding: 9px 24px !important;
@@ -92,7 +88,7 @@ footer { display: none !important; }
     background: #2a47e0 !important;
 }
 
-/* ── 탭 숫자 1~5 ── */
+/* ── 탭 숫자 ── */
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] p,
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] {
     font-size: 22px !important;
@@ -105,7 +101,7 @@ div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="
     border-bottom: 3px solid #3b5bff !important;
 }
 
-/* ── 탭 패널 흰 배경 ── */
+/* ── 탭 패널 ── */
 div[data-testid="stTabs"] div[role="tabpanel"] {
     background: #ffffff !important;
     border-radius: 12px !important;
@@ -115,7 +111,7 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
     box-shadow: 0 2px 10px rgba(60,80,180,0.08) !important;
 }
 
-/* ── 키워드필터 상단 버튼 3개: 버튼 없애고 글자만 ── */
+/* ── 키워드필터 텍스트 버튼 3개 ── */
 .btn-settings .stButton > button,
 .btn-run .stButton > button,
 .btn-download .stButton > button,
@@ -128,9 +124,8 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
     font-size: 14px !important;
     font-weight: 800 !important;
     color: #3a3f5c !important;
-    background: transparent !important;   /* ← 배경 없음 */
-    border: none !important;              /* ← 테두리 없음 */
-    border-radius: 0 !important;
+    background: transparent !important;
+    border: none !important;
     padding: 4px 8px !important;
     min-height: 36px !important;
     width: 100% !important;
@@ -139,36 +134,14 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
     white-space: nowrap !important;
     transition: color 0.15s ease !important;
 }
-.btn-settings .stButton > button:hover,
-.btn-run .stButton > button:hover {
-    color: #3b5bff !important;
-}
-
-/* 분석실행 - 글자색만 인디고로 강조 */
-.btn-run .stButton > button {
-    color: #3b5bff !important;
-}
-.btn-run .stButton > button:hover {
-    color: #1a3bcc !important;
-}
-
-/* 엑셀다운로드 */
-.btn-download .stButton > button,
-.btn-download [data-testid="stDownloadButton"] > button {
-    color: #3a3f5c !important;
-}
+.btn-settings .stButton > button:hover { color: #3b5bff !important; }
+.btn-run .stButton > button { color: #3b5bff !important; }
+.btn-run .stButton > button:hover { color: #1a3bcc !important; }
 .btn-download .stButton > button:hover,
-.btn-download [data-testid="stDownloadButton"] > button:hover {
-    color: #3b5bff !important;
-}
+.btn-download [data-testid="stDownloadButton"] > button:hover { color: #3b5bff !important; }
+.btn-download .stButton > button:disabled { color: #b0b8d0 !important; cursor: default !important; }
 
-/* disabled 상태 */
-.btn-download .stButton > button:disabled {
-    color: #b0b8d0 !important;
-    cursor: default !important;
-}
-
-/* ── 숫자 입력 박스: 흰 배경 + 인디고 +/- 버튼 ── */
+/* ── 숫자 입력 박스 ── */
 div[role="tabpanel"] [data-testid="stNumberInput"] > div {
     background: #ffffff !important;
     border: 1.5px solid #c0c8de !important;
@@ -176,7 +149,6 @@ div[role="tabpanel"] [data-testid="stNumberInput"] > div {
     overflow: hidden !important;
     display: flex !important;
     align-items: center !important;
-    transition: border-color 0.15s !important;
 }
 div[role="tabpanel"] [data-testid="stNumberInput"] > div:focus-within {
     border-color: #3b5bff !important;
@@ -201,14 +173,11 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button {
     font-weight: 700 !important;
     width: 32px !important;
     min-width: 32px !important;
-    height: 100% !important;
     min-height: 36px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer !important;
-    border-left: 1px solid rgba(255,255,255,0.2) !important;
-    transition: background 0.15s !important;
     flex-shrink: 0 !important;
 }
 div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
@@ -225,7 +194,7 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
     border-bottom: 1.5px solid #d4d9ee !important;
 }
 
-/* ── 필터 라디오/체크박스 레이블 ── */
+/* ── 라디오/체크박스 ── */
 div[role="tabpanel"] [data-testid="stRadio"] label,
 div[role="tabpanel"] [data-testid="stCheckbox"] label,
 div[role="tabpanel"] label {
@@ -251,14 +220,12 @@ div[role="tabpanel"] .stButton > button {
     cursor: pointer !important;
     box-sizing: border-box !important;
 }
-div[role="tabpanel"] .stButton > button:hover {
-    background: #f0f3ff !important;
-}
+div[role="tabpanel"] .stButton > button:hover { background: #f0f3ff !important; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ───────────────────────── 기본 프리셋 ─────────────────────────
+# ───────────────────────── 세션 초기화 ─────────────────────────
 DEFAULT_PRESET = {
     "이름": "프리셋",
     "brand_keyword": "전체",
@@ -290,6 +257,10 @@ if "df_result" not in st.session_state:
     st.session_state.df_result = None
 if "show_settings" not in st.session_state:
     st.session_state.show_settings = False
+if "run_clicked" not in st.session_state:       # ← 핵심 수정
+    st.session_state.run_clicked = False
+if "uploaded_file_data" not in st.session_state:
+    st.session_state.uploaded_file_data = None
 
 
 # ───────────────────────── 유틸 함수 ─────────────────────────
@@ -370,20 +341,16 @@ def render_settings_panel(idx):
 
     with col_a:
         st.markdown('<div class="filter-section-title">① 브랜드 키워드</div>', unsafe_allow_html=True)
-        brand = st.radio(
-            "브랜드 키워드", ["전체", "O", "X"],
+        brand = st.radio("브랜드 키워드", ["전체", "O", "X"],
             index=["전체", "O", "X"].index(p["brand_keyword"]),
-            horizontal=True, key=f"brand_{idx}", label_visibility="collapsed",
-        )
+            horizontal=True, key=f"brand_{idx}", label_visibility="collapsed")
         st.markdown('<div class="filter-section-title">② 작년 검색량</div>', unsafe_allow_html=True)
         s_min = st.number_input("최소", value=int(p["search_min"]), min_value=0, key=f"smin_{idx}")
         s_max = st.number_input("최대", value=int(p["search_max"]), min_value=0, key=f"smax_{idx}")
         st.markdown('<div class="filter-section-title">③ 계절성</div>', unsafe_allow_html=True)
-        seasonality = st.radio(
-            "계절성", ["전체", "있음", "없음"],
+        seasonality = st.radio("계절성", ["전체", "있음", "없음"],
             index=["전체", "있음", "없음"].index(p["seasonality"]),
-            horizontal=True, key=f"seas_{idx}", label_visibility="collapsed",
-        )
+            horizontal=True, key=f"seas_{idx}", label_visibility="collapsed")
         st.markdown('<div class="filter-section-title">⑤ 피크월 검색량</div>', unsafe_allow_html=True)
         peak_min = st.number_input("최소", value=int(p["peak_vol_min"]), min_value=0, key=f"pvmin_{idx}")
         peak_max = st.number_input("최대", value=int(p["peak_vol_max"]), min_value=0, key=f"pvmax_{idx}")
@@ -444,7 +411,9 @@ with st.container(border=True):
         type=["xlsx"],
         label_visibility="collapsed",
     )
-    if uploaded_file:
+    # 업로드된 파일을 session_state에 바이트로 저장 (run 버튼 클릭 후에도 유지)
+    if uploaded_file is not None:
+        st.session_state.uploaded_file_data = uploaded_file.read()
         st.success(f"✅ 파일 로드됨: {uploaded_file.name}")
 
 # 3) 키워드 필터
@@ -462,10 +431,14 @@ with st.container(border=True):
         if st.button("⚙️ 키워드설정", key="btn_settings"):
             st.session_state.show_settings = not st.session_state.show_settings
         st.markdown("</div>", unsafe_allow_html=True)
+
     with col_r:
         st.markdown('<div class="btn-run">', unsafe_allow_html=True)
-        run_clicked = st.button("🔍 분석실행", key="btn_run")
+        # ← 핵심: 버튼 클릭 시 session_state에 플래그 저장
+        if st.button("🔍 분석실행", key="btn_run"):
+            st.session_state.run_clicked = True
         st.markdown("</div>", unsafe_allow_html=True)
+
     with col_d:
         st.markdown('<div class="btn-download">', unsafe_allow_html=True)
         if st.session_state.df_result is not None:
@@ -491,12 +464,14 @@ with st.container(border=True):
                 render_settings_panel(idx)
 
 
-# ───────────────────────── 분석 실행 ─────────────────────────
-if run_clicked:
-    if uploaded_file is None:
+# ───────────────────────── 분석 실행 (컨테이너 밖에서 처리) ─────────────────────────
+if st.session_state.run_clicked:
+    st.session_state.run_clicked = False   # 플래그 초기화
+
+    if st.session_state.uploaded_file_data is None:
         st.warning("⚠️ 먼저 엑셀 파일을 업로드하세요.")
     else:
-        df_raw = load_excel(uploaded_file)
+        df_raw = load_excel(io.BytesIO(st.session_state.uploaded_file_data))
         if df_raw is not None:
             df_raw = normalize_columns(df_raw)
             preset = st.session_state.presets[st.session_state.active_preset]
