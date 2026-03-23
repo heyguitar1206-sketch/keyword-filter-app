@@ -13,22 +13,24 @@ html, body, [class*="css"] {
     font-family: 'Noto Sans KR', sans-serif !important;
 }
 
-/* ── 전체 배경 ── */
-.stApp { background: #dde2ef !important; }
+/* 전체 배경 */
+.stApp {
+    background: #dde2ef !important;
+}
 
-/* ── 헤더/푸터 제거 ── */
+/* 헤더/푸터 제거 */
 header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
 #MainMenu { display: none !important; }
 
-/* ── 메인 패딩 ── */
+/* 메인 패딩 */
 .block-container {
     padding-top: 1.5rem !important;
     padding-bottom: 1rem !important;
     max-width: 1400px !important;
 }
 
-/* ── 카드 스타일 ── */
+/* 카드 스타일 */
 [data-testid="stVerticalBlockBorderWrapper"] > div {
     background: #ffffff !important;
     border-radius: 14px !important;
@@ -37,7 +39,7 @@ footer { display: none !important; }
     padding: 1.2rem 1.5rem !important;
 }
 
-/* ── 타이틀 ── */
+/* 타이틀 */
 .app-title {
     font-size: 26px !important;
     font-weight: 900 !important;
@@ -46,7 +48,7 @@ footer { display: none !important; }
     margin-bottom: 0 !important;
 }
 
-/* ── 파일 업로더 ── */
+/* 파일 업로더 */
 [data-testid="stFileUploader"] {
     background: #f4f6fb !important;
     border-radius: 10px !important;
@@ -64,7 +66,7 @@ footer { display: none !important; }
     padding: 6px 20px !important;
 }
 
-/* ── 키워드필터 카드 제목 ── */
+/* 키워드필터 카드 제목 */
 .card-title {
     font-size: 17px !important;
     font-weight: 800 !important;
@@ -72,9 +74,10 @@ footer { display: none !important; }
     margin-bottom: 0.3rem !important;
 }
 
-/* ═══════════════════════════════════════════════
-   키워드설정 · 분석실행 버튼 – 배경 없애고 굵게
-   ═══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   키워드설정 · 분석실행 버튼
+   배경 제거 + 폰트 굵게 (이것만 변경)
+   ══════════════════════════════════════════ */
 .btn-settings .stButton > button,
 .btn-run     .stButton > button {
     all: unset !important;
@@ -92,7 +95,6 @@ footer { display: none !important; }
     min-height: 36px !important;
     width: 100% !important;
     cursor: pointer !important;
-    text-decoration: none !important;
 }
 .btn-settings .stButton > button:hover,
 .btn-run     .stButton > button:hover {
@@ -111,7 +113,7 @@ footer { display: none !important; }
     outline: none !important;
 }
 
-/* ── 탭 스타일 ── */
+/* 탭 스타일 */
 [data-testid="stTabs"] [role="tablist"] {
     gap: 6px !important;
     border-bottom: 2px solid #dde2ef !important;
@@ -133,7 +135,7 @@ footer { display: none !important; }
     border-bottom: 2px solid #3b5bff !important;
 }
 
-/* ── 필터 섹션 제목 ── */
+/* 필터 섹션 제목 */
 .filter-section-title {
     font-size: 13px !important;
     font-weight: 700 !important;
@@ -141,7 +143,7 @@ footer { display: none !important; }
     margin: 0.7rem 0 0.2rem 0 !important;
 }
 
-/* ── 숫자 입력 width ── */
+/* 숫자 입력 width */
 div[role="tabpanel"] [data-testid="stNumberInput"] {
     max-width: 200px !important;
 }
@@ -149,7 +151,7 @@ div[role="tabpanel"] [data-testid="stNumberInput"] > div {
     max-width: 200px !important;
 }
 
-/* ── ± 버튼 크기 ── */
+/* ± 버튼 */
 div[role="tabpanel"] [data-testid="stNumberInput"] button {
     background: #e8ecf8 !important;
     color: #3b5bff !important;
@@ -166,8 +168,7 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
     background: #d0d8f0 !important;
 }
 
-/* ── 저장 버튼 ── */
-.stButton > button[kind="secondary"],
+/* 저장 버튼 */
 div[role="tabpanel"] .stButton > button {
     background: #3b5bff !important;
     color: #fff !important;
@@ -182,7 +183,7 @@ div[role="tabpanel"] .stButton > button:hover {
     background: #2244dd !important;
 }
 
-/* ── 데이터프레임 ── */
+/* 데이터프레임 */
 [data-testid="stDataFrame"] {
     border-radius: 10px !important;
     overflow: hidden !important;
@@ -240,7 +241,6 @@ def load_excel(file_bytes):
         return None
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    # 1) 불필요 컬럼 삭제
     DROP_KEYWORDS = [
         "카테고리","최근1개월","최근 1개월","예상1개월","예상 1개월",
         "최근3개월","최근 3개월","예상3개월","예상 3개월","상승률","신규진입",
@@ -248,7 +248,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     drop_cols = [c for c in df.columns if any(kw in str(c) for kw in DROP_KEYWORDS)]
     df = df.drop(columns=drop_cols, errors="ignore")
 
-    # 2) 중복 컬럼명 처리
     seen, new_cols = {}, []
     for c in df.columns:
         s = str(c).strip()
@@ -260,13 +259,11 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
             new_cols.append(s)
     df.columns = new_cols
 
-    # 3) 컬럼 매핑
     rename, used = {}, set()
     for col in df.columns:
         c = str(col).strip()
         target = None
 
-        # 키워드 컬럼 감지 (O/X·숫자 컬럼 제외)
         if "키워드" not in used:
             sample = df[col].dropna().astype(str).head(20)
             uniq = sample.str.strip().str.upper().unique()
@@ -313,16 +310,13 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns=rename)
     df = df.loc[:, ~df.columns.duplicated()]
 
-    # 4) 해외배송비율 → % 변환
     if "쿠팡해외배송비율" in df.columns:
         raw = pd.to_numeric(df["쿠팡해외배송비율"], errors="coerce")
-        # 0~1 범위면 ×100, 이미 0~100이면 그대로
         if raw.dropna().max() <= 1.0:
             raw = raw * 100
         df["쿠팡해외배송비율(%)"] = raw.round(1)
         df = df.drop(columns=["쿠팡해외배송비율"])
 
-    # 5) DISPLAY_COLUMNS 순서로 정리
     final_cols = [c for c in DISPLAY_COLUMNS if c in df.columns]
     return df[final_cols]
 
@@ -332,52 +326,42 @@ def safe_numeric(s: pd.Series) -> pd.Series:
 def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
     r = df.copy()
 
-    # 브랜드키워드 필터
     if "브랜드키워드" in r.columns and preset["brand_keyword"] != "전체":
         want = preset["brand_keyword"] == "O"
         allowed = (["True","1","O","o","예","Y","y"] if want
                    else ["False","0","X","x","아니오","N","n"])
         r = r[r["브랜드키워드"].astype(str).str.strip().isin(allowed)]
 
-    # 작년검색량
     if "작년검색량" in r.columns:
         v = safe_numeric(r["작년검색량"])
         r = r[(v >= preset["search_min"]) & (v <= preset["search_max"])]
 
-    # 계절성
     if "계절성" in r.columns and preset["seasonality"] != "전체":
         r = r[r["계절성"].astype(str).str.strip() == preset["seasonality"]]
 
-    # 작년최대검색월
     if "작년최대검색월" in r.columns and preset["max_months"]:
         r = r[r["작년최대검색월"].astype(str).str.strip().isin(
             [str(m) for m in preset["max_months"]])]
 
-    # 피크월검색량
     if "피크월검색량" in r.columns:
         v = safe_numeric(r["피크월검색량"])
         r = r[(v >= preset["peak_vol_min"]) & (v <= preset["peak_vol_max"])]
 
-    # 쿠팡평균가
     if "쿠팡평균가" in r.columns:
         v = safe_numeric(r["쿠팡평균가"])
         r = r[(v >= preset["coupang_price_min"]) & (v <= preset["coupang_price_max"])]
 
-    # 쿠팡총리뷰수
     if "쿠팡총리뷰수" in r.columns:
         v = safe_numeric(r["쿠팡총리뷰수"])
         r = r[(v >= preset["coupang_review_min"]) & (v <= preset["coupang_review_max"])]
 
-    # 쿠팡해외배송비율(%) – 0~100 기준
     if "쿠팡해외배송비율(%)" in r.columns:
         v = safe_numeric(r["쿠팡해외배송비율(%)"])
         r = r[(v >= preset["coupang_overseas_min"]) & (v <= preset["coupang_overseas_max"])]
 
-    # 중복 키워드 제거
     if "키워드" in r.columns:
         r = r.drop_duplicates(subset=["키워드"], keep="first")
 
-    # 쿠팡해외배송비율 내림차순
     if "쿠팡해외배송비율(%)" in r.columns:
         r = r.sort_values("쿠팡해외배송비율(%)", ascending=False)
 
@@ -408,7 +392,6 @@ def render_settings_panel(idx: int):
             index=["전체","O","X"].index(p["brand_keyword"]),
             horizontal=True, key=f"brand_{idx}", label_visibility="collapsed"
         )
-
         st.markdown('<p class="filter-section-title">(2) 작년검색량</p>', unsafe_allow_html=True)
         s_min = st.number_input("최소", value=int(p["search_min"]), min_value=0, step=1000, key=f"smin_{idx}")
         s_max = st.number_input("최대", value=int(p["search_max"]), min_value=0, step=1000, key=f"smax_{idx}")
@@ -419,14 +402,12 @@ def render_settings_panel(idx: int):
             index=["전체","Y","N"].index(p["seasonality"]),
             horizontal=True, key=f"season_{idx}", label_visibility="collapsed"
         )
-
         st.markdown('<p class="filter-section-title">(4) 작년최대검색월</p>', unsafe_allow_html=True)
         all_months = [str(i) for i in range(1, 13)]
         sel_months = st.multiselect(
             "월 선택", all_months,
             default=p["max_months"], key=f"months_{idx}", label_visibility="collapsed"
         )
-
         st.markdown('<p class="filter-section-title">(5) 피크월검색량</p>', unsafe_allow_html=True)
         peak_min = st.number_input("최소", value=int(p["peak_vol_min"]), min_value=0, step=1000, key=f"pkmin_{idx}")
         peak_max = st.number_input("최대", value=int(p["peak_vol_max"]), min_value=0, step=1000, key=f"pkmax_{idx}")
@@ -464,7 +445,7 @@ with st.container(border=True):
     st.markdown('<p class="app-title">🚀 수동끝판왕 키워드서칭머신 ver. 1.0</p>', unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
-        "네이버 쇼핑 키워드 엑셀 파일을 업로드하세요 (.xlsx)",
+        "엑셀 파일 업로드",
         type=["xlsx"], key="file_uploader", label_visibility="collapsed"
     )
     if uploaded_file:
@@ -474,7 +455,7 @@ with st.container(border=True):
     if st.session_state.uploaded_file_name:
         st.caption(f"📂 {st.session_state.uploaded_file_name}")
 
-    # ── 버튼 행 (키워드설정 | 분석실행) ──
+    # 버튼 행: 키워드설정 | 분석실행
     _, col_set, col_run, _ = st.columns([3, 2, 2, 3])
 
     with col_set:
@@ -492,12 +473,10 @@ with st.container(border=True):
 if st.session_state.show_settings:
     with st.container(border=True):
         st.markdown('<p class="card-title">⚙️ 키워드 필터 설정</p>', unsafe_allow_html=True)
-        tab_labels = [str(i+1) for i in range(5)]
-        tabs = st.tabs(tab_labels)
+        tabs = st.tabs(["1","2","3","4","5"])
         for i, tab in enumerate(tabs):
             with tab:
                 render_settings_panel(i)
-        st.session_state.active_preset = 0   # 기본 프리셋 0번 사용
 
 # ── 분석 실행 ──
 if run_btn:
@@ -517,8 +496,7 @@ if run_btn:
 if st.session_state.df_result is not None:
     df      = st.session_state.df_result
     row_cnt = len(df)
-    ROW_H, HEADER_H = 35, 38
-    height  = min(1100, max(400, HEADER_H + row_cnt * ROW_H))
+    height  = min(1100, max(400, 38 + row_cnt * 35))
     with st.container(border=True):
         st.markdown(f'<p class="card-title">📊 분석 결과 ({row_cnt:,}개)</p>', unsafe_allow_html=True)
         st.dataframe(format_dataframe(df), use_container_width=True, height=height)
