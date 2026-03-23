@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
 
@@ -38,23 +38,34 @@ footer { display: none !important; }
     margin-bottom: 16px !important;
 }
 
-/* ── 파일 업로더 ── */
+/* ── 파일 업로더 외곽 박스 ── */
 [data-testid="stFileUploader"] {
     background: #f5f7ff !important;
     border: 2px dashed #a0aad4 !important;
     border-radius: 12px !important;
-    padding: 16px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
 }
+
+/* 드롭존 내부: 세로 정렬, Browse files 버튼이 안으로 들어오도록 */
 [data-testid="stFileUploaderDropzone"] {
     background: transparent !important;
     border: none !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    gap: 8px !important;
-    padding: 8px 0 !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 20px 16px !important;
+    width: 100% !important;
 }
-[data-testid="stFileUploaderDropzone"] > div > button,
+
+/* 드롭존 안의 모든 자식을 block으로 */
+[data-testid="stFileUploaderDropzone"] > * {
+    width: auto !important;
+}
+
+/* Browse files 버튼 - 드롭존 안에만 적용 */
 [data-testid="stFileUploaderDropzone"] button {
     background: #3b5bff !important;
     color: #ffffff !important;
@@ -62,15 +73,19 @@ footer { display: none !important; }
     border-radius: 22px !important;
     font-size: 13px !important;
     font-weight: 700 !important;
-    padding: 8px 24px !important;
+    padding: 8px 28px !important;
     min-height: 38px !important;
     cursor: pointer !important;
-    width: auto !important;
     display: inline-block !important;
-    margin-top: 4px !important;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    margin: 0 !important;
 }
 
-/* ── 탭 숫자 1 2 3 4 5 ── */
+/* ── 탭 숫자 1~5 크고 굵게 ── */
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] p,
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] {
     font-size: 22px !important;
@@ -93,16 +108,12 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
     box-shadow: 0 2px 10px rgba(60,80,180,0.08) !important;
 }
 
-/* ── 체크박스 월 선택 스타일 ── */
-.month-checkbox-row {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-    margin-top: 6px !important;
-}
-
-/* ── 일반 버튼 공통 ── */
+/* ── 일반 버튼 공통 초기화 ── */
 .stButton > button {
+    all: unset !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     font-family: 'Noto Sans KR', sans-serif !important;
     font-size: 13px !important;
     font-weight: 700 !important;
@@ -111,49 +122,58 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
     min-height: 40px !important;
     width: 100% !important;
     cursor: pointer !important;
+    box-sizing: border-box !important;
     transition: background 0.15s ease !important;
-    transform: none !important;
-    position: static !important;
-}
-.stButton > button:active,
-.stButton > button:focus {
-    transform: none !important;
-    box-shadow: none !important;
-    outline: none !important;
+    white-space: nowrap !important;
 }
 
+/* 키워드설정 버튼 */
 .btn-settings .stButton > button {
     background: #ffffff !important;
     color: #3b5bff !important;
     border: 1.5px solid #3b5bff !important;
 }
-.btn-settings .stButton > button:hover { background: #f0f3ff !important; }
+.btn-settings .stButton > button:hover {
+    background: #f0f3ff !important;
+}
 
+/* 분석실행 버튼 */
 .btn-run .stButton > button {
     background: #3b5bff !important;
     color: #ffffff !important;
     border: none !important;
 }
-.btn-run .stButton > button:hover { background: #2a47e0 !important; }
+.btn-run .stButton > button:hover {
+    background: #2a47e0 !important;
+}
 
+/* 엑셀다운로드 버튼 - 키워드설정과 완전히 동일 */
 .btn-download .stButton > button,
 .btn-download [data-testid="stDownloadButton"] > button {
-    background: #ffffff !important;
-    color: #3b5bff !important;
-    border: 1.5px solid #3b5bff !important;
+    all: unset !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
     font-size: 13px !important;
     font-weight: 700 !important;
     border-radius: 22px !important;
+    padding: 8px 18px !important;
     min-height: 40px !important;
     width: 100% !important;
-    padding: 8px 18px !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    color: #3b5bff !important;
+    border: 1.5px solid #3b5bff !important;
+    white-space: nowrap !important;
 }
 .btn-download .stButton > button:hover,
 .btn-download [data-testid="stDownloadButton"] > button:hover {
     background: #f0f3ff !important;
 }
 
-/* ── 필터 섹션 구분선 ── */
+/* ── 필터 섹션 구분선 제목 ── */
 .filter-section-title {
     font-size: 12px;
     font-weight: 700;
@@ -171,27 +191,19 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
 # ───────────────────────── 기본 프리셋 정의 ─────────────────────────
 DEFAULT_PRESET = {
     "이름": "프리셋",
-    # 1. 브랜드키워드
-    "brand_keyword": "전체",          # "전체" | "O" | "X"
-    # 2. 작년검색량
+    "brand_keyword": "전체",
     "search_min": 0,
     "search_max": 999999,
-    # 3. 계절성
-    "seasonality": "전체",            # "전체" | "있음" | "없음"
-    # 4. 작년최대검색월 (체크박스)
-    "max_months": [],                 # 빈 리스트 = 전체
-    # 5. 피크월검색량
+    "seasonality": "전체",
+    "max_months": [],
     "peak_vol_min": 0,
     "peak_vol_max": 999999,
-    # 6. 쿠팡평균가
     "coupang_price_min": 0,
     "coupang_price_max": 9999999,
-    # 7. 쿠팡총리뷰수
     "coupang_review_min": 0,
     "coupang_review_max": 9999999,
-    # 8. 쿠팡해외배송비율
-    "coupang_overseas_min": 0.0,
-    "coupang_overseas_max": 1.0,
+    "coupang_overseas_min": 0,    # ← 퍼센트 단위 0~100
+    "coupang_overseas_max": 100,  # ← 퍼센트 단위 0~100
 }
 
 def make_preset(name, **kwargs):
@@ -219,7 +231,6 @@ def load_excel(file):
         return None
 
 def normalize_columns(df):
-    """컬럼명을 내부 표준명으로 매핑"""
     rename = {}
     for col in df.columns:
         c = col.strip()
@@ -231,7 +242,7 @@ def normalize_columns(df):
             rename[col] = "작년검색량"
         elif "계절성" in c or "시즈널" in c:
             rename[col] = "계절성"
-        elif ("최대" in c and "월" in c) and "검색량" not in c:
+        elif "최대" in c and "월" in c and "검색량" not in c:
             rename[col] = "작년최대검색월"
         elif ("최대" in c and "검색량" in c) or ("피크" in c and "검색량" in c):
             rename[col] = "피크월검색량"
@@ -260,10 +271,7 @@ def apply_preset(df, preset):
 
     # 3. 계절성
     if "계절성" in result.columns and preset["seasonality"] != "전체":
-        if preset["seasonality"] == "있음":
-            result = result[result["계절성"] == True]
-        else:
-            result = result[result["계절성"] == False]
+        result = result[result["계절성"] == (preset["seasonality"] == "있음")]
 
     # 4. 작년최대검색월
     if "작년최대검색월" in result.columns and preset["max_months"]:
@@ -290,120 +298,77 @@ def apply_preset(df, preset):
             (result["쿠팡총리뷰수"] <= preset["coupang_review_max"])
         ]
 
-    # 8. 쿠팡해외배송비율 → 내림차순 정렬
+    # 8. 쿠팡해외배송비율 (퍼센트 → 비율로 변환 후 필터, 결과 내림차순)
     if "쿠팡해외배송비율" in result.columns:
+        o_min = preset["coupang_overseas_min"] / 100.0
+        o_max = preset["coupang_overseas_max"] / 100.0
         result = result[
-            (result["쿠팡해외배송비율"] >= preset["coupang_overseas_min"]) &
-            (result["쿠팡해외배송비율"] <= preset["coupang_overseas_max"])
+            (result["쿠팡해외배송비율"] >= o_min) &
+            (result["쿠팡해외배송비율"] <= o_max)
         ]
         result = result.sort_values("쿠팡해외배송비율", ascending=False)
 
     return result
 
 
-# ───────────────────────── 설정 패널 렌더링 함수 ─────────────────────────
+# ───────────────────────── 설정 패널 렌더링 ─────────────────────────
 def render_settings_panel(idx):
     p = st.session_state.presets[idx]
-
     col_a, col_b = st.columns(2)
 
     with col_a:
-        # 1. 브랜드키워드
         st.markdown('<div class="filter-section-title">① 브랜드 키워드</div>', unsafe_allow_html=True)
         brand = st.radio(
-            "브랜드 키워드",
-            ["전체", "O", "X"],
+            "브랜드 키워드", ["전체", "O", "X"],
             index=["전체", "O", "X"].index(p["brand_keyword"]),
-            horizontal=True,
-            key=f"brand_{idx}",
-            label_visibility="collapsed",
+            horizontal=True, key=f"brand_{idx}", label_visibility="collapsed",
         )
 
-        # 2. 작년검색량
         st.markdown('<div class="filter-section-title">② 작년 검색량</div>', unsafe_allow_html=True)
-        s_min = st.number_input(
-            "최소", value=int(p["search_min"]), min_value=0,
-            key=f"smin_{idx}", label_visibility="visible"
-        )
-        s_max = st.number_input(
-            "최대", value=int(p["search_max"]), min_value=0,
-            key=f"smax_{idx}", label_visibility="visible"
-        )
+        s_min = st.number_input("최소", value=int(p["search_min"]), min_value=0, key=f"smin_{idx}")
+        s_max = st.number_input("최대", value=int(p["search_max"]), min_value=0, key=f"smax_{idx}")
 
-        # 3. 계절성
         st.markdown('<div class="filter-section-title">③ 계절성</div>', unsafe_allow_html=True)
         seasonality = st.radio(
-            "계절성",
-            ["전체", "있음", "없음"],
+            "계절성", ["전체", "있음", "없음"],
             index=["전체", "있음", "없음"].index(p["seasonality"]),
-            horizontal=True,
-            key=f"seas_{idx}",
-            label_visibility="collapsed",
+            horizontal=True, key=f"seas_{idx}", label_visibility="collapsed",
         )
 
-        # 5. 피크월검색량
         st.markdown('<div class="filter-section-title">⑤ 피크월 검색량</div>', unsafe_allow_html=True)
-        peak_min = st.number_input(
-            "최소", value=int(p["peak_vol_min"]), min_value=0,
-            key=f"pvmin_{idx}", label_visibility="visible"
-        )
-        peak_max = st.number_input(
-            "최대", value=int(p["peak_vol_max"]), min_value=0,
-            key=f"pvmax_{idx}", label_visibility="visible"
-        )
+        peak_min = st.number_input("최소", value=int(p["peak_vol_min"]), min_value=0, key=f"pvmin_{idx}")
+        peak_max = st.number_input("최대", value=int(p["peak_vol_max"]), min_value=0, key=f"pvmax_{idx}")
 
     with col_b:
-        # 4. 작년최대검색월 - 체크박스 12개
         st.markdown('<div class="filter-section-title">④ 작년 최대 검색월 (중복선택)</div>', unsafe_allow_html=True)
         month_cols = st.columns(6)
         selected_months = []
         for m in range(1, 13):
-            col_idx = (m - 1) % 6
-            with month_cols[col_idx]:
-                checked = st.checkbox(
-                    str(m),
-                    value=(m in p["max_months"]),
-                    key=f"month_{idx}_{m}",
-                )
-                if checked:
+            with month_cols[(m - 1) % 6]:
+                if st.checkbox(str(m), value=(m in p["max_months"]), key=f"month_{idx}_{m}"):
                     selected_months.append(m)
 
-        # 6. 쿠팡평균가
         st.markdown('<div class="filter-section-title">⑥ 쿠팡 평균가 (원)</div>', unsafe_allow_html=True)
-        cp_min = st.number_input(
-            "최소", value=int(p["coupang_price_min"]), min_value=0,
-            key=f"cpmin_{idx}", label_visibility="visible"
-        )
-        cp_max = st.number_input(
-            "최대", value=int(p["coupang_price_max"]), min_value=0,
-            key=f"cpmax_{idx}", label_visibility="visible"
-        )
+        cp_min = st.number_input("최소", value=int(p["coupang_price_min"]), min_value=0, key=f"cpmin_{idx}")
+        cp_max = st.number_input("최대", value=int(p["coupang_price_max"]), min_value=0, key=f"cpmax_{idx}")
 
-        # 7. 쿠팡총리뷰수
         st.markdown('<div class="filter-section-title">⑦ 쿠팡 총 리뷰수</div>', unsafe_allow_html=True)
-        cr_min = st.number_input(
-            "최소", value=int(p["coupang_review_min"]), min_value=0,
-            key=f"crmin_{idx}", label_visibility="visible"
-        )
-        cr_max = st.number_input(
-            "최대", value=int(p["coupang_review_max"]), min_value=0,
-            key=f"crmax_{idx}", label_visibility="visible"
-        )
+        cr_min = st.number_input("최소", value=int(p["coupang_review_min"]), min_value=0, key=f"crmin_{idx}")
+        cr_max = st.number_input("최대", value=int(p["coupang_review_max"]), min_value=0, key=f"crmax_{idx}")
 
-        # 8. 쿠팡해외배송비율
-        st.markdown('<div class="filter-section-title">⑧ 쿠팡 해외배송비율 (결과 내림차순 정렬)</div>', unsafe_allow_html=True)
+        # ── 8. 쿠팡해외배송비율 - 퍼센트(%) 단위 ──
+        st.markdown('<div class="filter-section-title">⑧ 쿠팡 해외배송비율 % (결과 내림차순 정렬)</div>', unsafe_allow_html=True)
         co_min = st.number_input(
-            "최소 (0.0~1.0)", value=float(p["coupang_overseas_min"]),
-            min_value=0.0, max_value=1.0, step=0.01, format="%.2f",
-            key=f"comin_{idx}", label_visibility="visible"
+            "최소 (%)", value=int(p["coupang_overseas_min"]),
+            min_value=0, max_value=100, step=1,
+            key=f"comin_{idx}"
         )
         co_max = st.number_input(
-            "최대 (0.0~1.0)", value=float(p["coupang_overseas_max"]),
-            min_value=0.0, max_value=1.0, step=0.01, format="%.2f",
-            key=f"comax_{idx}", label_visibility="visible"
+            "최대 (%)", value=int(p["coupang_overseas_max"]),
+            min_value=0, max_value=100, step=1,
+            key=f"comax_{idx}"
         )
 
-    # 저장 버튼
     if st.button("💾 저장", key=f"save_{idx}"):
         st.session_state.presets[idx].update({
             "brand_keyword": brand,
@@ -425,7 +390,7 @@ def render_settings_panel(idx):
 
 # ───────────────────────── UI 레이아웃 ─────────────────────────
 
-# 1) 헤더 카드
+# 1) 헤더
 with st.container(border=True):
     st.markdown(
         "<h2 style='margin:0;color:#1a2050;font-size:22px;font-weight:800;'>"
@@ -435,7 +400,7 @@ with st.container(border=True):
         unsafe_allow_html=True,
     )
 
-# 2) 파일 업로더 카드
+# 2) 파일 업로더
 with st.container(border=True):
     st.markdown(
         "<p style='font-size:14px;font-weight:700;color:#1a2050;margin-bottom:8px;'>"
@@ -450,10 +415,8 @@ with st.container(border=True):
     if uploaded_file:
         st.success(f"✅ 파일 로드됨: {uploaded_file.name}")
 
-# 3) 키워드 필터 카드
+# 3) 키워드 필터
 with st.container(border=True):
-
-    # 상단 행: 라벨 + 버튼 3개
     col_label, col_sp, col_s, col_r, col_d = st.columns([3, 1, 2, 2, 2])
 
     with col_label:
@@ -462,7 +425,6 @@ with st.container(border=True):
             "margin:0;padding-top:8px;'>🔖 키워드 필터</p>",
             unsafe_allow_html=True,
         )
-
     with col_s:
         st.markdown('<div class="btn-settings">', unsafe_allow_html=True)
         if st.button("⚙️ 키워드설정", key="btn_settings"):
@@ -491,7 +453,6 @@ with st.container(border=True):
             st.button("📥 엑셀다운로드", key="dl_disabled", disabled=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # 키워드설정 패널
     if st.session_state.show_settings:
         st.markdown("<hr style='margin:16px 0;border-color:#e0e4f0;'>", unsafe_allow_html=True)
         preset_tabs = st.tabs(["1", "2", "3", "4", "5"])
