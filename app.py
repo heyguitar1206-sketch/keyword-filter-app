@@ -94,6 +94,19 @@ def get_col_map(df):
         "쿠팡해외배송비율": find_col(df, ["쿠팡", "해외배송비율"]),
     }
 
+def normalize_month(val):
+    """월 값을 '6월' 형식으로 정규화"""
+    s = str(val).strip()
+    # 이미 'X월' 형식이면 그대로
+    if s.endswith("월"):
+        return s
+    # 숫자만 있으면 'X월' 형식으로 변환
+    try:
+        n = int(float(s))
+        return f"{n}월"
+    except:
+        return s
+
 def apply_preset(df, col_map, preset, debug=False):
     fdf = df.copy()
     steps = []
@@ -107,12 +120,11 @@ def apply_preset(df, col_map, preset, debug=False):
         before = len(fdf)
         vals = fdf[col].astype(str).str.strip()
         if debug:
-            unique_vals = vals.unique().tolist()
-            steps.append(f"🛒 쇼핑성 컬럼({col}) 고유값: {unique_vals}")
+            steps.append(f"🛒 쇼핑성 고유값: {vals.unique().tolist()}")
         fdf = fdf[vals == "O"]
         steps.append(f"✅ 쇼핑성=O 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
     else:
-        steps.append("⚠️ 쇼핑성 컬럼을 찾지 못함 - 필터 건너뜀")
+        steps.append("⚠️ 쇼핑성 컬럼 없음 - 건너뜀")
 
     # 2. 키워드 중복 제거
     if col_map.get("키워드"):
@@ -127,7 +139,7 @@ def apply_preset(df, col_map, preset, debug=False):
         before = len(fdf)
         vals = fdf[col].astype(str).str.strip()
         if debug:
-            steps.append(f"🏷️ 브랜드 컬럼({col}) 고유값: {vals.unique().tolist()}")
+            steps.append(f"🏷️ 브랜드 고유값: {vals.unique().tolist()}")
         fdf = fdf[vals == brand_filter]
         steps.append(f"🏷️ 브랜드={brand_filter} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
@@ -137,12 +149,12 @@ def apply_preset(df, col_map, preset, debug=False):
         col = col_map["계절성"]
         before = len(fdf)
         vals = fdf[col].astype(str).str.strip()
-        if debug:
-            steps.append(f"🌸 계절성 컬럼({col}) 고유값: {vals.unique().tolist()}")
+        unique_vals = vals.unique().tolist()
+        steps.append(f"🌸 계절성 실제 고유값: {unique_vals}")
         if season_filter == "있음":
-            fdf = fdf[vals == "O"]
+            fdf = fdf[vals.isin(["O", "o", "있음", "Y", "y", "1", "True", "true"])]
         elif season_filter == "없음":
-            fdf = fdf[vals == "X"]
+            fdf = fdf[vals.isin(["X", "x", "없음", "N", "n", "0", "False", "false"])]
         steps.append(f"🌸 시즌성={season_filter} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
     # 5. 작년검색량 범위
@@ -152,20 +164,23 @@ def apply_preset(df, col_map, preset, debug=False):
         before = len(fdf)
         mn, mx = preset.get("작년검색량_min", 0), preset.get("작년검색량_max", 9999999)
         if debug:
-            steps.append(f"📈 작년검색량 컬럼({col}) 샘플값: {fdf[col].dropna().head(5).tolist()}")
+            steps.append(f"📈 작년검색량 샘플: {fdf[col].dropna().head(5).tolist()}")
         fdf = fdf[(fdf[col] >= mn) & (fdf[col] <= mx)]
         steps.append(f"📈 작년검색량 {mn}~{mx} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
-    # 6. 작년최대검색월 (다중선택)
+    # 6. 작년최대검색월 (다중선택) ← 핵심 수정: 숫자→'X월' 정규화
     selected_months = preset.get("작년최대검색월", [])
     if col_map.get("작년최대검색월") and selected_months:
         col = col_map["작년최대검색월"]
         before = len(fdf)
-        vals = fdf[col].astype(str).str.strip()
-        if debug:
-            steps.append(f"📅 작년최대검색월 컬럼({col}) 고유값: {vals.unique().tolist()}")
-            steps.append(f"📅 선택된 월: {selected_months}")
-        fdf = fdf[vals.isin(selected_months)]
+        # 실제 데이터 값을 'X월' 형식으로 정규화
+        normalized_vals = fdf[col].apply(normalize_month)
+        raw_sample = fdf[col].dropna().head(10).tolist()
+        normalized_sample = normalized_vals.dropna().head(10).tolist()
+        steps.append(f"📅 최대검색월 원본 샘플: {raw_sample}")
+        steps.append(f"📅 최대검색월 정규화 샘플: {normalized_sample}")
+        steps.append(f"📅 선택된 월: {selected_months}")
+        fdf = fdf[normalized_vals.isin(selected_months)]
         steps.append(f"📅 최대검색월 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
     # 7. 피크월검색량 범위
@@ -174,6 +189,8 @@ def apply_preset(df, col_map, preset, debug=False):
         fdf[col] = pd.to_numeric(fdf[col], errors="coerce")
         before = len(fdf)
         mn, mx = preset.get("피크월검색량_min", 0), preset.get("피크월검색량_max", 9999999)
+        if debug:
+            steps.append(f"📊 피크월검색량 샘플: {fdf[col].dropna().head(5).tolist()}")
         fdf = fdf[(fdf[col] >= mn) & (fdf[col] <= mx)]
         steps.append(f"📊 피크월검색량 {mn}~{mx} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
@@ -183,24 +200,50 @@ def apply_preset(df, col_map, preset, debug=False):
         fdf[col] = pd.to_numeric(fdf[col], errors="coerce")
         before = len(fdf)
         mn, mx = preset.get("쿠팡총리뷰수_min", 0), preset.get("쿠팡총리뷰수_max", 9999999)
+        if debug:
+            steps.append(f"⭐ 쿠팡총리뷰수 샘플: {fdf[col].dropna().head(5).tolist()}")
         fdf = fdf[(fdf[col] >= mn) & (fdf[col] <= mx)]
         steps.append(f"⭐ 쿠팡총리뷰 {mn}~{mx} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
-    # 9. 쿠팡 해외배송비율 범위
+    # 9. 쿠팡 해외배송비율 범위 ← 핵심 수정: 빈값 처리 강화
     if col_map.get("쿠팡해외배송비율"):
         col = col_map["쿠팡해외배송비율"]
         fdf[col] = pd.to_numeric(fdf[col], errors="coerce")
-        before = len(fdf)
-        mn = preset.get("쿠팡해외배송비율_min", 0) / 100
-        mx = preset.get("쿠팡해외배송비율_max", 100) / 100
-        if debug:
-            steps.append(f"🚢 해외배송비율 컬럼({col}) 샘플값: {fdf[col].dropna().head(5).tolist()}")
-        fdf = fdf[(fdf[col] >= mn) & (fdf[col] <= mx)]
-        steps.append(f"🚢 쿠팡해외배송비율 {mn*100:.0f}%~{mx*100:.0f}% 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
+        non_null_count = fdf[col].notna().sum()
+        sample_vals = fdf[col].dropna().head(10).tolist()
+        steps.append(f"🚢 해외배송비율 유효값 수: {non_null_count}, 샘플: {sample_vals}")
+
+        mn_pct = preset.get("쿠팡해외배송비율_min", 0)
+        mx_pct = preset.get("쿠팡해외배송비율_max", 100)
+
+        # 값 범위 자동 감지: 0~1 사이인지 0~100 사이인지 판단
+        if non_null_count > 0:
+            data_max = fdf[col].dropna().max()
+            if data_max <= 1.0:
+                # 데이터가 0~1 범위 → 입력값을 /100 변환
+                mn_cmp = mn_pct / 100
+                mx_cmp = mx_pct / 100
+                steps.append(f"🚢 데이터 범위: 0~1 감지 → 비교값: {mn_cmp}~{mx_cmp}")
+            else:
+                # 데이터가 0~100 범위
+                mn_cmp = mn_pct
+                mx_cmp = mx_pct
+                steps.append(f"🚢 데이터 범위: 0~100 감지 → 비교값: {mn_cmp}~{mx_cmp}")
+
+            before = len(fdf)
+            fdf = fdf[
+                (fdf[col].isna()) |
+                ((fdf[col] >= mn_cmp) & (fdf[col] <= mx_cmp))
+            ]
+            steps.append(f"🚢 쿠팡해외배송비율 {mn_pct}%~{mx_pct}% 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
+        else:
+            steps.append("🚢 해외배송비율 유효값 없음 - 필터 건너뜀")
 
     # 정렬
     if col_map.get("쿠팡해외배송비율"):
-        fdf = fdf.sort_values(by=col_map["쿠팡해외배송비율"], ascending=False)
+        col = col_map["쿠팡해외배송비율"]
+        if col in fdf.columns:
+            fdf = fdf.sort_values(by=col, ascending=False, na_position="last")
 
     return fdf.reset_index(drop=True), steps
 
@@ -221,88 +264,64 @@ def build_display_df(fdf, col_map):
         return pd.DataFrame()
     result = fdf[[c for c, _ in cols_to_use]].copy()
     result.columns = [label for _, label in cols_to_use]
+
     if "쿠팡해외배송비율(%)" in result.columns:
-        result["쿠팡해외배송비율(%)"] = (
-            pd.to_numeric(result["쿠팡해외배송비율(%)"], errors="coerce") * 100
-        ).round(1)
+        numeric_vals = pd.to_numeric(result["쿠팡해외배송비율(%)"], errors="coerce")
+        # 자동 감지: 최대값이 1 이하면 ×100
+        if numeric_vals.dropna().max() <= 1.0:
+            result["쿠팡해외배송비율(%)"] = (numeric_vals * 100).round(1)
+        else:
+            result["쿠팡해외배송비율(%)"] = numeric_vals.round(1)
+
+    # 작년최대검색월 정규화 표시
+    if "작년최대검색월" in result.columns:
+        result["작년최대검색월"] = result["작년최대검색월"].apply(normalize_month)
+
     return result
 
 LOCALE_TEXT = {
-    "page": "페이지",
-    "more": "더보기",
-    "to": "~",
-    "of": "/",
-    "next": "다음",
-    "last": "마지막",
-    "first": "처음",
-    "previous": "이전",
-    "loadingOoo": "로딩 중...",
-    "noRowsToShow": "데이터가 없습니다",
-    "filterOoo": "필터...",
-    "applyFilter": "필터 적용",
-    "equals": "같음",
-    "notEqual": "같지 않음",
-    "lessThan": "미만",
-    "greaterThan": "초과",
-    "lessThanOrEqual": "이하",
-    "greaterThanOrEqual": "이상",
-    "inRange": "범위",
-    "contains": "포함",
-    "notContains": "미포함",
-    "startsWith": "시작",
-    "endsWith": "끝",
-    "andCondition": "AND",
-    "orCondition": "OR",
-    "columns": "컬럼",
-    "filters": "필터",
-    "sortAscending": "오름차순 정렬",
-    "sortDescending": "내림차순 정렬",
-    "pinColumn": "컬럼 고정",
-    "pinLeft": "왼쪽 고정",
-    "pinRight": "오른쪽 고정",
-    "noPin": "고정 해제",
+    "page": "페이지", "more": "더보기", "to": "~", "of": "/",
+    "next": "다음", "last": "마지막", "first": "처음", "previous": "이전",
+    "loadingOoo": "로딩 중...", "noRowsToShow": "데이터가 없습니다",
+    "filterOoo": "필터...", "applyFilter": "필터 적용",
+    "equals": "같음", "notEqual": "같지 않음",
+    "lessThan": "미만", "greaterThan": "초과",
+    "lessThanOrEqual": "이하", "greaterThanOrEqual": "이상",
+    "inRange": "범위", "contains": "포함", "notContains": "미포함",
+    "startsWith": "시작", "endsWith": "끝",
+    "andCondition": "AND", "orCondition": "OR",
+    "columns": "컬럼", "filters": "필터",
+    "sortAscending": "오름차순 정렬", "sortDescending": "내림차순 정렬",
+    "pinColumn": "컬럼 고정", "pinLeft": "왼쪽 고정",
+    "pinRight": "오른쪽 고정", "noPin": "고정 해제",
     "autosizeThiscolumn": "이 컬럼 자동 크기",
     "autosizeAllColumns": "모든 컬럼 자동 크기",
-    "resetColumns": "컬럼 초기화",
-    "copy": "복사",
-    "copyWithHeaders": "헤더 포함 복사",
-    "export": "내보내기",
-    "csvExport": "CSV 내보내기",
-    "excelExport": "엑셀 내보내기",
-    "sum": "합계",
-    "min": "최솟값",
-    "max": "최댓값",
-    "none": "없음",
-    "count": "개수",
-    "average": "평균",
-    "filteredRows": "필터된 행",
-    "selectedRows": "선택된 행",
-    "totalRows": "전체 행",
-    "totalAndFilteredRows": "전체/필터 행",
-    "blanks": "빈 값",
-    "searchOoo": "검색...",
-    "selectAll": "전체 선택",
+    "resetColumns": "컬럼 초기화", "copy": "복사",
+    "copyWithHeaders": "헤더 포함 복사", "export": "내보내기",
+    "csvExport": "CSV 내보내기", "excelExport": "엑셀 내보내기",
+    "sum": "합계", "min": "최솟값", "max": "최댓값",
+    "none": "없음", "count": "개수", "average": "평균",
+    "filteredRows": "필터된 행", "selectedRows": "선택된 행",
+    "totalRows": "전체 행", "totalAndFilteredRows": "전체/필터 행",
+    "blanks": "빈 값", "searchOoo": "검색...", "selectAll": "전체 선택",
 }
 
 def show_aggrid(display_df):
     gb = GridOptionsBuilder.from_dataframe(display_df)
     gb.configure_default_column(
-        resizable=True,
-        sortable=True,
-        filter=True,
-        wrapHeaderText=True,
-        autoHeaderHeight=True,
+        resizable=True, sortable=True, filter=True,
+        wrapHeaderText=True, autoHeaderHeight=True,
     )
     col_widths = {
         "키워드": (140, 200),
         "브랜드": (55, 70),
         "경쟁률": (65, 80),
         "작년검색량": (90, 110),
-        "작년최대검색월": (95, 115),
+        "작년최대검색월": (100, 120),
         "피크월검색량": (90, 110),
         "계절성": (60, 75),
         "쿠팡총리뷰": (80, 100),
-        "쿠팡해외배송비율(%)": (110, 130),
+        "쿠팡해외배송비율(%)": (110, 135),
     }
     for col, (mn, mx) in col_widths.items():
         if col in display_df.columns:
@@ -324,7 +343,6 @@ def show_aggrid(display_df):
 st.markdown('<div class="main-title">🔍 <span>키워드</span> 분석 도구</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">엑셀 파일을 업로드하고 프리셋 조건으로 키워드를 필터링하세요</div>', unsafe_allow_html=True)
 
-# 파일 업로드
 uploaded = st.file_uploader("엑셀 파일 업로드 (.xlsx)", type=["xlsx"], label_visibility="collapsed")
 if uploaded:
     file_bytes = uploaded.read()
@@ -332,12 +350,10 @@ if uploaded:
     st.session_state.df = df
     st.success(f"✅ 파일 로드 완료 — 총 {len(df):,}개 키워드")
 
-# 디버그 모드 토글
 st.session_state.debug_mode = st.checkbox("🔧 디버그 모드 (필터 단계별 확인)", value=st.session_state.debug_mode)
 
 st.markdown("---")
 
-# 프리셋 선택 버튼
 st.markdown("**프리셋 선택**")
 preset_cols = st.columns(6)
 for i, preset in enumerate(st.session_state.presets):
@@ -350,7 +366,6 @@ with preset_cols[5]:
     if st.button("⚙️ 설정", use_container_width=True):
         st.session_state.show_modal = not st.session_state.show_modal
 
-# 프리셋 설정 모달
 if st.session_state.show_modal:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("**프리셋 설정**")
@@ -361,9 +376,13 @@ if st.session_state.show_modal:
             p["name"] = st.text_input("프리셋 이름", value=p["name"], key=f"name_{i}")
             c1, c2 = st.columns(2)
             with c1:
-                p["브랜드"] = st.radio("브랜드키워드", ["전체", "O", "X"], index=["전체","O","X"].index(p.get("브랜드","전체")), key=f"brand_{i}", horizontal=True)
+                p["브랜드"] = st.radio("브랜드키워드", ["전체", "O", "X"],
+                    index=["전체","O","X"].index(p.get("브랜드","전체")),
+                    key=f"brand_{i}", horizontal=True)
             with c2:
-                p["시즌성"] = st.radio("시즌성", ["전체", "있음", "없음"], index=["전체","있음","없음"].index(p.get("시즌성","전체")), key=f"season_{i}", horizontal=True)
+                p["시즌성"] = st.radio("시즌성", ["전체", "있음", "없음"],
+                    index=["전체","있음","없음"].index(p.get("시즌성","전체")),
+                    key=f"season_{i}", horizontal=True)
 
             st.markdown("**작년검색량 범위**")
             c3, c4 = st.columns(2)
@@ -401,15 +420,16 @@ if st.session_state.show_modal:
             st.markdown("**쿠팡 해외배송비율 범위 (%)**")
             c9, c10 = st.columns(2)
             with c9:
-                p["쿠팡해외배송비율_min"] = st.number_input("최소(%)", value=p.get("쿠팡해외배송비율_min", 0), min_value=0, max_value=100, key=f"ob_min_{i}")
+                p["쿠팡해외배송비율_min"] = st.number_input("최소(%)", value=p.get("쿠팡해외배송비율_min", 0),
+                    min_value=0, max_value=100, key=f"ob_min_{i}")
             with c10:
-                p["쿠팡해외배송비율_max"] = st.number_input("최대(%)", value=p.get("쿠팡해외배송비율_max", 100), min_value=0, max_value=100, key=f"ob_max_{i}")
+                p["쿠팡해외배송비율_max"] = st.number_input("최대(%)", value=p.get("쿠팡해외배송비율_max", 100),
+                    min_value=0, max_value=100, key=f"ob_max_{i}")
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
-# 분석 실행
-if st.button("🔍 분석 실행", type="primary", use_container_width=False):
+if st.button("🔍 분석 실행", type="primary"):
     if st.session_state.df is None:
         st.error("먼저 엑셀 파일을 업로드해 주세요.")
     else:
@@ -421,19 +441,16 @@ if st.button("🔍 분석 실행", type="primary", use_container_width=False):
         st.session_state.filtered_count = len(filtered)
         st.session_state.filter_steps = steps
 
-        # 컬럼 매핑 디버그 표시
         if st.session_state.debug_mode:
             st.markdown("**🗂️ 컬럼 매핑 결과**")
             for k, v in col_map.items():
                 st.write(f"`{k}` → `{v}`")
 
-# 필터 단계 표시 (디버그 모드)
 if st.session_state.debug_mode and "filter_steps" in st.session_state:
     st.markdown("**🔎 필터 단계별 결과**")
     for step in st.session_state.filter_steps:
         st.write(step)
 
-# 결과 표시
 if st.session_state.result_df is not None:
     result = st.session_state.result_df
     preset_name = st.session_state.presets[st.session_state.active_preset]["name"]
@@ -443,14 +460,18 @@ if st.session_state.result_df is not None:
         buf = io.BytesIO()
         result.to_excel(buf, index=False)
         buf.seek(0)
-        st.download_button("📥 엑셀 다운로드", data=buf, file_name=f"키워드분석_{preset_name}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button(
+            "📥 엑셀 다운로드", data=buf,
+            file_name=f"키워드분석_{preset_name}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
         show_aggrid(result)
     else:
         st.warning("조건에 맞는 키워드가 없습니다. 필터 조건을 완화해 보세요.")
         if not st.session_state.debug_mode:
-            st.info("💡 '디버그 모드'를 켜고 다시 분석 실행하면 어느 단계에서 데이터가 제거되는지 확인할 수 있습니다.")
+            st.info("💡 '디버그 모드'를 켜고 다시 실행하면 어느 단계에서 제거되는지 확인할 수 있습니다.")
 else:
     if st.session_state.df is None:
-        st.markdown('<div class="card">📂 엑셀 파일을 업로드한 후 프리셋을 선택하고 분석을 실행하세요.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card">📂 엑셀 파일을 업로드한 후 분석을 실행하세요.</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="card">✅ 파일이 로드되었습니다. 프리셋 조건을 설정하고 <b>분석 실행</b>을 눌러주세요.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card">✅ 파일 로드 완료. 프리셋 조건을 설정하고 <b>분석 실행</b>을 눌러주세요.</div>', unsafe_allow_html=True)
