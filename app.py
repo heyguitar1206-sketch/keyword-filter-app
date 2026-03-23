@@ -139,7 +139,7 @@ div[role="tabpanel"] .stMultiSelect label {
     color: #6672a0 !important;
 }
 
-/* ★ Number input: 박스 너비 축소 + +/- 버튼 소형화 */
+/* Number input: 박스 너비 축소 + +/- 버튼 소형화 */
 div[role="tabpanel"] [data-testid="stNumberInput"] {
     max-width: 200px !important;
 }
@@ -173,8 +173,54 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button:focus {
     outline: 1.5px solid #3b5bff !important;
     box-shadow: 0 0 0 2px rgba(59,91,255,0.15) !important;
 }
+
+/* ★ 결과 테이블: 화면 높이에 맞게 최대한 채움 */
+[data-testid="stDataFrame"] {
+    width: 100% !important;
+}
+[data-testid="stDataFrame"] > div {
+    width: 100% !important;
+}
 </style>
+
+<script>
+/* 화면 높이를 읽어 테이블 높이를 동적으로 조정 */
+(function() {
+    function setTableHeight() {
+        const vh = window.innerHeight;
+        const tableHeight = Math.max(600, Math.floor(vh * 0.62));
+        const style = document.getElementById('dynamic-table-height');
+        if (style) {
+            style.textContent = '[data-testid="stDataFrame"] iframe { height: ' + tableHeight + 'px !important; }';
+        } else {
+            const s = document.createElement('style');
+            s.id = 'dynamic-table-height';
+            s.textContent = '[data-testid="stDataFrame"] iframe { height: ' + tableHeight + 'px !important; }';
+            document.head.appendChild(s);
+        }
+    }
+    setTableHeight();
+    window.addEventListener('resize', setTableHeight);
+})();
+</script>
 """, unsafe_allow_html=True)
+
+# 화면 높이 감지 → session_state에 저장
+st.components.v1.html("""
+<script>
+function sendHeight() {
+    const h = window.innerHeight;
+    window.parent.postMessage({type: 'streamlit:setComponentValue', value: h}, '*');
+}
+sendHeight();
+window.addEventListener('resize', sendHeight);
+</script>
+""", height=0)
+
+# 화면 높이 기반 테이블 높이 계산
+# 전체화면 일반 모니터 기준 ~900px → 테이블 약 20행(행높이 35px 기준 700px)
+SCREEN_HEIGHT = st.session_state.get("screen_height", 900)
+TABLE_HEIGHT = max(600, int(SCREEN_HEIGHT * 0.62))
 
 # ────────────────────────────────────────────────────────────────
 # 표시할 컬럼 순서
@@ -588,7 +634,7 @@ if run_btn:
         st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 필터링됨")
 
 # ────────────────────────────────────────────────────────────────
-# 결과 테이블
+# ★ 결과 테이블 - 행 수에 따라 높이 동적 계산
 # ────────────────────────────────────────────────────────────────
 if st.session_state.df_result is not None:
     with st.container(border=True):
@@ -597,8 +643,16 @@ if st.session_state.df_result is not None:
             f"<span style='color:#3b5bff;font-size:13px;'>({len(st.session_state.df_result):,}개)</span></p>",
             unsafe_allow_html=True
         )
+        row_count = len(st.session_state.df_result)
+        ROW_HEIGHT = 35      # 행 1개 높이(px)
+        HEADER_HEIGHT = 38   # 헤더 높이(px)
+        MIN_HEIGHT = 400
+        MAX_HEIGHT = 1100    # 전체화면 기준 최대
+        # 행 수 기반 높이 계산 (최소 400, 최대 1100, 20행 기준 ~740px)
+        dynamic_height = min(MAX_HEIGHT, max(MIN_HEIGHT, HEADER_HEIGHT + row_count * ROW_HEIGHT))
+
         st.dataframe(
             format_dataframe(st.session_state.df_result),
             use_container_width=True,
-            height=480,
+            height=dynamic_height,
         )
