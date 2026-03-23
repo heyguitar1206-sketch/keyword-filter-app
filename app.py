@@ -472,8 +472,8 @@ def render_settings_panel(idx: int):
 
 # 1) 타이틀 카드
 with st.container(border=True):
-    st.markdown('<p class="app-title">🚀 끝장캐리 키워드 분석</p>', unsafe_allow_html=True)
-    st.markdown('<p class="app-subtitle">네이버 쇼핑 키워드 데이터를 분석합니다.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-title">🚀 수동끝판왕 키워드서칭 by초코라떼</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-subtitle">쿠팡시장분석 & 키워드데이터 분석툴</p>', unsafe_allow_html=True)
 
 # 2) 파일 업로드 카드
 with st.container(border=True):
@@ -494,19 +494,19 @@ with st.container(border=True):
 
 # 3) 키워드 필터 카드
 with st.container(border=True):
-    st.markdown('<p class="card-title">🔑 키워드 필터</p>', unsafe_allow_html=True)
+    st.markdown('<p class="card-title">🔑 키워드서칭</p>', unsafe_allow_html=True)
 
     _, col_set, col_run, _ = st.columns([3, 2, 2, 3])
 
     with col_set:
         st.markdown('<div class="btn-settings">', unsafe_allow_html=True)
-        if st.button("⚙️ 키워드설정", key="toggle_settings"):
+        if st.button("⚙️ 필터링설정", key="toggle_settings"):
             st.session_state.show_settings = not st.session_state.show_settings
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_run:
         st.markdown('<div class="btn-run">', unsafe_allow_html=True)
-        run_btn = st.button("🔍 분석실행", key="run_analysis")
+        run_btn = st.button("🔍 키워드분석", key="run_analysis")
         st.markdown('</div>', unsafe_allow_html=True)
 
 # 4) 설정 패널
