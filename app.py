@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="수동끝판왕 키워드서칭머신 ver. 1.0", layout="wide")
+st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
 
 # ───────────────────────── CSS ─────────────────────────
 st.markdown("""
@@ -39,13 +39,27 @@ footer { display: none !important; }
     padding: 1.2rem 1.5rem !important;
 }
 
-/* 타이틀 */
+/* 앱 타이틀 */
 .app-title {
     font-size: 26px !important;
     font-weight: 900 !important;
     color: #1a2050 !important;
     letter-spacing: -0.5px !important;
+    margin-bottom: 0.1rem !important;
+}
+.app-subtitle {
+    font-size: 13px !important;
+    color: #7a84b3 !important;
+    margin-top: 0 !important;
     margin-bottom: 0 !important;
+}
+
+/* 섹션 헤더 */
+.section-header {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #1a2050 !important;
+    margin-bottom: 0.6rem !important;
 }
 
 /* 파일 업로더 */
@@ -66,49 +80,55 @@ footer { display: none !important; }
     padding: 6px 20px !important;
 }
 
-/* 키워드필터 카드 제목 */
-.card-title {
-    font-size: 17px !important;
-    font-weight: 800 !important;
-    color: #1a2050 !important;
-    margin-bottom: 0.3rem !important;
+/* 파일 로드 성공 메시지 */
+.file-success {
+    background: #eafaf1 !important;
+    border: 1px solid #b2dfdb !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+    color: #1a7a4a !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    margin-top: 0.5rem !important;
 }
 
-/* ══════════════════════════════════════════
-   키워드설정 · 분석실행 버튼
-   배경 제거 + 폰트 굵게 (이것만 변경)
-   ══════════════════════════════════════════ */
+/* 키워드 필터 카드 제목 */
+.card-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #1a2050 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* 키워드설정 · 분석실행 버튼 */
 .btn-settings .stButton > button,
 .btn-run     .stButton > button {
-    all: unset !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    background: #f4f6fb !important;
+    color: #3a3f5c !important;
+    border: 1.5px solid #c8cfe8 !important;
+    border-radius: 20px !important;
     font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 22px !important;
-    font-weight: 900 !important;
-    color: #1a2050 !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 4px 8px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    padding: 6px 22px !important;
     min-height: 36px !important;
     width: 100% !important;
     cursor: pointer !important;
+    box-shadow: 0 1px 4px rgba(60,80,180,0.07) !important;
+    transition: background 0.15s !important;
 }
 .btn-settings .stButton > button:hover,
 .btn-run     .stButton > button:hover {
+    background: #e0e5f7 !important;
     color: #3b5bff !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+    border-color: #3b5bff !important;
 }
 .btn-settings .stButton > button:focus,
 .btn-run     .stButton > button:focus,
 .btn-settings .stButton > button:active,
 .btn-run     .stButton > button:active {
-    background: transparent !important;
-    border: none !important;
+    background: #e0e5f7 !important;
+    border-color: #3b5bff !important;
     box-shadow: none !important;
     outline: none !important;
 }
@@ -181,6 +201,14 @@ div[role="tabpanel"] .stButton > button {
 }
 div[role="tabpanel"] .stButton > button:hover {
     background: #2244dd !important;
+}
+
+/* 결과 카드 제목 */
+.result-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #1a2050 !important;
+    margin-bottom: 0.5rem !important;
 }
 
 /* 데이터프레임 */
@@ -441,9 +469,15 @@ def render_settings_panel(idx: int):
         st.success(f"✅ 프리셋 {idx+1} 저장 완료!")
 
 # ───────────────── 메인 UI ─────────────────
-with st.container(border=True):
-    st.markdown('<p class="app-title">🚀 수동끝판왕 키워드서칭머신 ver. 1.0</p>', unsafe_allow_html=True)
 
+# 1) 타이틀 카드
+with st.container(border=True):
+    st.markdown('<p class="app-title">🚀 끝장캐리 키워드 분석</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-subtitle">네이버 쇼핑 키워드 데이터를 분석합니다.</p>', unsafe_allow_html=True)
+
+# 2) 파일 업로드 카드
+with st.container(border=True):
+    st.markdown('<p class="section-header">📂 엑셀 파일 업로드</p>', unsafe_allow_html=True)
     uploaded_file = st.file_uploader(
         "엑셀 파일 업로드",
         type=["xlsx"], key="file_uploader", label_visibility="collapsed"
@@ -453,9 +487,15 @@ with st.container(border=True):
         st.session_state.uploaded_file_name  = uploaded_file.name
 
     if st.session_state.uploaded_file_name:
-        st.caption(f"📂 {st.session_state.uploaded_file_name}")
+        st.markdown(
+            f'<div class="file-success">✅ 파일 로드됨: {st.session_state.uploaded_file_name}</div>',
+            unsafe_allow_html=True
+        )
 
-    # 버튼 행: 키워드설정 | 분석실행
+# 3) 키워드 필터 카드
+with st.container(border=True):
+    st.markdown('<p class="card-title">🔑 키워드 필터</p>', unsafe_allow_html=True)
+
     _, col_set, col_run, _ = st.columns([3, 2, 2, 3])
 
     with col_set:
@@ -469,7 +509,7 @@ with st.container(border=True):
         run_btn = st.button("🔍 분석실행", key="run_analysis")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# ── 설정 패널 ──
+# 4) 설정 패널
 if st.session_state.show_settings:
     with st.container(border=True):
         st.markdown('<p class="card-title">⚙️ 키워드 필터 설정</p>', unsafe_allow_html=True)
@@ -478,7 +518,7 @@ if st.session_state.show_settings:
             with tab:
                 render_settings_panel(i)
 
-# ── 분석 실행 ──
+# 5) 분석 실행
 if run_btn:
     if not st.session_state.uploaded_file_bytes:
         st.warning("⚠️ 먼저 엑셀 파일을 업로드하세요.")
@@ -492,11 +532,11 @@ if run_btn:
         if st.session_state.df_result is not None:
             st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드")
 
-# ── 결과 테이블 ──
+# 6) 결과 테이블
 if st.session_state.df_result is not None:
     df      = st.session_state.df_result
     row_cnt = len(df)
     height  = min(1100, max(400, 38 + row_cnt * 35))
     with st.container(border=True):
-        st.markdown(f'<p class="card-title">📊 분석 결과 ({row_cnt:,}개)</p>', unsafe_allow_html=True)
+        st.markdown(f'<p class="result-title">📊 분석 결과 ({row_cnt:,}개)</p>', unsafe_allow_html=True)
         st.dataframe(format_dataframe(df), use_container_width=True, height=height)
