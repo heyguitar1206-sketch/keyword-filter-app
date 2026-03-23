@@ -5,611 +5,453 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
 
+# ───────────────────────── CSS ─────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap');
 
-* { font-family: 'Noto Sans KR', sans-serif !important; box-sizing: border-box; }
+*, *::before, *::after {
+    font-family: 'Noto Sans KR', sans-serif !important;
+    box-sizing: border-box;
+}
 
-[data-testid="stHeader"]     { display: none !important; }
-[data-testid="stToolbar"]    { display: none !important; }
-[data-testid="stDecoration"] { display: none !important; }
-footer                       { display: none !important; }
+/* 기본 Streamlit UI 숨기기 */
+[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+footer { display: none !important; }
 
-/* ── 배경: 더 진한 회청색 ── */
-.stApp, body { background-color: #d4d9e8 !important; }
+/* 페이지 배경 */
+.stApp, body { background: #dde2ef !important; }
 
+/* 메인 컨테이너 너비 60% */
 .block-container {
     max-width: 60% !important;
     margin: 0 auto !important;
-    padding: 32px 0 60px 0 !important;
+    padding: 32px 0 60px !important;
 }
 
-/* ════════════════════════════════
-   카드: 흰색 + 진한 테두리 + 그림자
-════════════════════════════════ */
+/* ── 공통 카드 스타일 ──
+   st.container(border=True) → [data-testid="stVerticalBlockBorderWrapper"]
+*/
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff !important;
+    border: 1.5px solid #c0c8de !important;
     border-radius: 16px !important;
-    border: 2px solid #c8cfe0 !important;
-    box-shadow: 0 3px 16px rgba(40,60,140,0.13) !important;
+    box-shadow: 0 2px 14px rgba(60,80,180,0.10) !important;
     padding: 20px 24px !important;
-    margin-bottom: 18px !important;
-}
-[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border: 2px solid #c8cfe0 !important;
-    box-shadow: 0 3px 16px rgba(40,60,140,0.13) !important;
+    margin-bottom: 16px !important;
 }
 
-/* ── 헤더 카드 ── */
-.header-card {
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 22px 32px;
-    margin-bottom: 18px;
-    border: 2px solid #c8cfe0;
-    box-shadow: 0 3px 16px rgba(40,60,140,0.13);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.header-title { font-size: 20px; font-weight: 700; color: #1a1a2e; }
-.header-title span { color: #3b5bff; }
-.header-sub { font-size: 13px; color: #888; margin-top: 4px; }
-.version-badge {
-    background: #f0f3ff; color: #3b5bff;
-    border: 1px solid #c7d0ff; border-radius: 20px;
-    padding: 4px 14px; font-size: 12px; font-weight: 600;
-}
-
-/* ════════════════════════════════
-   업로드 카드: 흰색 박스 + 한글 오버레이
-════════════════════════════════ */
-.upload-wrapper {
-    background: #ffffff;
-    border-radius: 16px;
-    border: 2px solid #c8cfe0;
-    box-shadow: 0 3px 16px rgba(40,60,140,0.13);
-    margin-bottom: 18px;
-    overflow: hidden;
-    position: relative;
-}
-
-/* 영문 텍스트 숨기기 */
-[data-testid="stFileUploaderDropzoneInstructions"] { display: none !important; }
-
-/* 파일업로더 내부 스타일 */
+/* ── 파일 업로더 영역 ──
+   "Browse files" 버튼이 박스 밖으로 나가지 않도록 */
 [data-testid="stFileUploader"] {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    background: #f5f7ff !important;
+    border: 2px dashed #a0aad4 !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
 }
-[data-testid="stFileUploader"] > label { display: none !important; }
+[data-testid="stFileUploader"] section {
+    padding: 0 !important;
+}
 [data-testid="stFileUploaderDropzone"] {
     background: transparent !important;
     border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    min-height: 72px !important;
+    padding: 8px 0 !important;
     display: flex !important;
+    flex-direction: column !important;
     align-items: center !important;
-    justify-content: flex-start !important;
+    gap: 8px !important;
 }
-
-/* Browse files 버튼 → 오른쪽 정렬 */
+/* "Browse files" 버튼 */
 [data-testid="stFileUploaderDropzone"] button {
     background: #3b5bff !important;
-    color: white !important;
+    color: #ffffff !important;
     border: none !important;
     border-radius: 22px !important;
-    padding: 10px 28px !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 8px 24px !important;
     cursor: pointer !important;
-    position: absolute !important;
-    right: 24px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    white-space: nowrap !important;
+    width: auto !important;
+    display: inline-block !important;
 }
-[data-testid="stFileUploaderDropzone"] button:hover {
+[data-testid="stFileUploaderDropzoneInstructions"] {
+    font-size: 13px !important;
+    color: #6672a0 !important;
+}
+
+/* ── 탭 숫자 1 2 3 4 5 크고 굵게 ── */
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"],
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] p,
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] * {
+    font-size: 22px !important;
+    font-weight: 900 !important;
+    color: #3a3f5c !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+}
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"],
+div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"] p {
+    color: #3b5bff !important;
+    border-bottom: 3px solid #3b5bff !important;
+}
+
+/* ── 탭 콘텐츠 (키워드설정 패널) 흰색 배경 ── */
+div[data-testid="stTabs"] div[role="tabpanel"] {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #c0c8de !important;
+    padding: 20px !important;
+    margin-top: 8px !important;
+    box-shadow: 0 2px 10px rgba(60,80,180,0.08) !important;
+}
+
+/* ── 일반 Streamlit 버튼 (키워드설정·분석실행·엑셀다운로드) ── */
+.stButton > button {
+    font-family: 'Noto Sans KR', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    border-radius: 22px !important;
+    padding: 8px 18px !important;
+    min-height: 40px !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    transform: none !important;
+    position: relative !important;
+    top: 0 !important;
+}
+
+/* 키워드설정 버튼 – 흰 배경, 인디고 테두리 */
+.btn-settings .stButton > button {
+    background: #ffffff !important;
+    color: #3b5bff !important;
+    border: 1.5px solid #3b5bff !important;
+}
+.btn-settings .stButton > button:hover {
+    background: #f0f3ff !important;
+}
+
+/* 분석실행 버튼 – 인디고 배경 */
+.btn-run .stButton > button {
+    background: #3b5bff !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+.btn-run .stButton > button:hover {
     background: #2a47e0 !important;
 }
 
-/* 한글 안내 텍스트 (가상 요소로 삽입) */
-.upload-text-overlay {
-    position: absolute;
-    left: 60px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    z-index: 1;
-}
-.upload-text-overlay .main { font-size: 14px; font-weight: 600; color: #1a1a2e; }
-.upload-text-overlay .sub  { font-size: 12px; color: #999; margin-top: 3px; }
-.upload-icon-kor {
-    position: absolute;
-    left: 22px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 22px;
-    pointer-events: none;
-    z-index: 1;
-}
-
-/* ════════════════════════════════
-   버튼 초기화 + 재정의 (14px 600)
-════════════════════════════════ */
-.stButton { display: flex !important; align-items: center !important; justify-content: center !important; }
-
-.stButton > button {
-    all: unset !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 5px !important;
-    background: #ffffff !important;
-    color: #333 !important;
-    border: 1.5px solid #c8cfe0 !important;
-    border-radius: 999px !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    padding: 0 20px !important;
-    height: 40px !important;
-    min-width: 100px !important;
-    width: 100% !important;
-    white-space: nowrap !important;
-    cursor: pointer !important;
-    transition: all 0.15s ease !important;
-    box-sizing: border-box !important;
-    line-height: 1 !important;
-    letter-spacing: -0.02em !important;
-}
-.stButton > button:hover {
-    background: #f0f3ff !important;
-    border-color: #3b5bff !important;
-    color: #3b5bff !important;
-}
-.stButton > button:active, .stButton > button:focus {
-    transform: none !important; outline: none !important; box-shadow: none !important;
-}
-
-/* 분석 실행 */
-.btn-run .stButton > button,
-.btn-run .stButton > button:active,
-.btn-run .stButton > button:focus {
-    background: #3b5bff !important;
-    color: #ffffff !important;
-    border-color: #3b5bff !important;
-    outline: none !important; transform: none !important; box-shadow: none !important;
-}
-.btn-run .stButton > button:hover { background: #2a47e0 !important; border-color: #2a47e0 !important; }
-
-/* 닫기 */
-.btn-close .stButton > button,
-.btn-close .stButton > button:active,
-.btn-close .stButton > button:focus {
-    min-width: 32px !important; width: 32px !important; height: 32px !important;
-    padding: 0 !important; font-size: 14px !important;
-    background: #f0f0f0 !important; color: #888 !important;
-    border: none !important; border-radius: 50% !important;
-    outline: none !important; transform: none !important; box-shadow: none !important;
-}
-.btn-close .stButton > button:hover { background: #ffe0e0 !important; color: #e00 !important; }
-
-/* 다운로드 */
-.btn-download .stDownloadButton > button,
+/* 엑셀다운로드 버튼 – 흰 배경, 파란 테두리 */
 .btn-download .stButton > button {
-    all: unset !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 5px !important;
     background: #ffffff !important;
-    color: #333 !important;
-    border: 1.5px solid #c8cfe0 !important;
-    border-radius: 999px !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    padding: 0 20px !important;
-    height: 40px !important;
-    min-width: 100px !important;
-    width: 100% !important;
-    white-space: nowrap !important;
-    cursor: pointer !important;
-    box-sizing: border-box !important;
-    transition: all 0.15s !important;
-    letter-spacing: -0.02em !important;
-}
-.btn-download .stDownloadButton > button:hover,
-.btn-download .stButton > button:hover {
-    background: #f0f3ff !important; border-color: #3b5bff !important; color: #3b5bff !important;
-}
-.btn-download .stButton > button:disabled {
-    color: #bbb !important; border-color: #e0e0e0 !important;
-    cursor: not-allowed !important; background: #f9f9f9 !important;
-}
-
-/* ════════════════════════════════
-   탭 숫자: p 태그까지 모두 강제
-════════════════════════════════ */
-div[data-testid="stTabs"] div[role="tablist"] {
-    border-bottom: 2px solid #e4e8f0 !important;
-    margin-bottom: 20px !important;
-    padding-bottom: 0 !important;
-    gap: 0 !important;
-}
-div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] {
-    font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 22px !important;
-    font-weight: 900 !important;
-    color: #c0c0c0 !important;
-    background: transparent !important;
-    border: none !important;
-    border-bottom: 3px solid transparent !important;
-    border-radius: 0 !important;
-    padding: 10px 32px !important;
-    margin: 0 !important;
-    min-width: 72px !important;
-    cursor: pointer !important;
-    transition: color 0.15s !important;
-    line-height: 1.2 !important;
-}
-div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] p {
-    font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 22px !important;
-    font-weight: 900 !important;
-    color: inherit !important;
-    margin: 0 !important; padding: 0 !important; line-height: 1.2 !important;
-}
-div[data-testid="stTabs"] div[role="tablist"] button[role="tab"]:hover {
-    color: #3b5bff !important; background: #f4f6ff !important;
-}
-div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"] {
     color: #3b5bff !important;
-    font-weight: 900 !important;
-    border-bottom: 3px solid #3b5bff !important;
-    background: transparent !important;
+    border: 1.5px solid #3b5bff !important;
 }
-div[data-testid="stTabs"] div[role="tablist"] button[role="tab"][aria-selected="true"] p {
-    color: #3b5bff !important; font-weight: 900 !important;
+.btn-download .stButton > button:hover {
+    background: #f0f3ff !important;
 }
 
-/* ── 설정 패널 ── */
-.settings-title {
-    font-size: 15px; font-weight: 700; color: #1a1a2e;
-    padding-bottom: 14px; border-bottom: 1.5px solid #e8ecf4;
-    display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
-}
-.section-label {
-    font-size: 11px; font-weight: 700; color: #bbb;
-    text-transform: uppercase; letter-spacing: 0.08em; margin: 18px 0 8px 0;
+/* 버튼 클릭시 위치 흔들림 방지 */
+.stButton > button:active,
+.stButton > button:focus {
+    transform: none !important;
+    top: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
 }
 
-/* 프리셋 라벨 */
-.preset-label-inline {
-    display: flex; align-items: center; height: 40px;
-    font-size: 14px; font-weight: 600; color: #666; white-space: nowrap;
+/* AgGrid 결과 테이블 */
+.ag-theme-streamlit {
+    border-radius: 10px !important;
+    overflow: hidden !important;
 }
-
-/* 결과 */
-.result-count { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
-.result-count span { color: #3b5bff; }
-
-/* AgGrid */
-.ag-theme-streamlit .ag-header { background: #f0f3ff !important; font-weight: 700 !important; font-size: 12px !important; }
-.ag-theme-streamlit .ag-row-even { background: #fafbff !important; }
-.ag-theme-streamlit .ag-row-odd  { background: #ffffff !important; }
-.ag-theme-streamlit .ag-row:hover { background: #e8f0fe !important; }
-.ag-theme-streamlit .ag-cell { font-size: 12px !important; display: flex !important; align-items: center !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── 세션 상태 ─────────────────────────────────────────────────────────────────
+
+# ───────────────────────── 기본 프리셋 정의 ─────────────────────────
 DEFAULT_PRESET = {
     "이름": "프리셋",
-    "브랜드키워드": "전체", "시즌성": "전체",
-    "작년검색량_min": 0, "작년검색량_max": 9999999,
-    "피크월검색량_min": 0, "피크월검색량_max": 9999999,
-    "작년최대검색월": [],
-    "쿠팡리뷰수_min": 0, "쿠팡리뷰수_max": 9999999,
-    "쿠팡해외배송비율_min": 0.0, "쿠팡해외배송비율_max": 100.0,
+    "brand_keyword": "전체",
+    "search_min": 0,
+    "search_max": 999999,
+    "max_months": [],
+    "peak_start": 1,
+    "peak_end": 12,
+    "seasonality_min": 0.0,
+    "seasonality_max": 1.0,
+    "coupang_min": 0.0,
+    "coupang_max": 1.0,
 }
 
 def make_preset(name, **kwargs):
-    p = DEFAULT_PRESET.copy(); p["이름"] = name; p.update(kwargs); return p
+    p = DEFAULT_PRESET.copy()
+    p["이름"] = name
+    p.update(kwargs)
+    return p
 
-if "presets"        not in st.session_state: st.session_state.presets        = [make_preset(str(i)) for i in range(1,6)]
-if "active_preset"  not in st.session_state: st.session_state.active_preset  = 0
-if "show_settings"  not in st.session_state: st.session_state.show_settings  = False
-if "df"             not in st.session_state: st.session_state.df             = None
-if "result_df"      not in st.session_state: st.session_state.result_df      = None
-if "filtered_count" not in st.session_state: st.session_state.filtered_count = 0
-if "file_name"      not in st.session_state: st.session_state.file_name      = None
+if "presets" not in st.session_state:
+    st.session_state.presets = [make_preset(str(i + 1)) for i in range(5)]
 
-# ── 유틸 ──────────────────────────────────────────────────────────────────────
-@st.cache_data
-def load_excel(file_bytes: bytes):
+if "active_preset" not in st.session_state:
+    st.session_state.active_preset = 0
+
+if "df_result" not in st.session_state:
+    st.session_state.df_result = None
+
+if "show_settings" not in st.session_state:
+    st.session_state.show_settings = False
+
+
+# ───────────────────────── 유틸 함수 ─────────────────────────
+MONTH_MAP = {
+    "1월": 1, "2월": 2, "3월": 3, "4월": 4,
+    "5월": 5, "6월": 6, "7월": 7, "8월": 8,
+    "9월": 9, "10월": 10, "11월": 11, "12월": 12,
+}
+
+def load_excel(file):
     try:
-        raw = pd.read_excel(io.BytesIO(file_bytes), sheet_name="all", header=[0,1,2])
-    except Exception:
-        raw = pd.read_excel(io.BytesIO(file_bytes), header=0)
-    cols = []
-    for col in raw.columns:
-        if isinstance(col, tuple):
-            parts = [str(c).strip() for c in col if str(c).strip() not in ("nan","")]
-            cols.append("_".join(dict.fromkeys(parts)))
-        else:
-            cols.append(str(col).strip())
-    raw.columns = cols
-    return raw.reset_index(drop=True)
+        df = pd.read_excel(file, engine="openpyxl")
+        return df
+    except Exception as e:
+        st.error(f"엑셀 파일 로드 실패: {e}")
+        return None
 
-def find_col(df, keywords):
-    kws = [k.lower() for k in keywords]
+def normalize_columns(df):
+    rename = {}
     for col in df.columns:
-        if all(k in col.lower() for k in kws): return col
-    return None
+        c = col.strip()
+        if "키워드" in c:
+            rename[col] = "키워드"
+        elif "브랜드" in c:
+            rename[col] = "브랜드키워드"
+        elif "검색량" in c and "합" in c:
+            rename[col] = "연간검색량"
+        elif "최대" in c and "월" in c:
+            rename[col] = "최대월"
+        elif "피크" in c and "시작" in c:
+            rename[col] = "피크시작월"
+        elif "피크" in c and "종료" in c:
+            rename[col] = "피크종료월"
+        elif "계절성" in c or "시즈널" in c:
+            rename[col] = "계절성"
+        elif "쿠팡" in c and ("해외" in c or "직구" in c or "배송" in c):
+            rename[col] = "쿠팡해외배송비율"
+    df = df.rename(columns=rename)
+    return df
 
-def find_col_any(df, kw_sets):
-    for kws in kw_sets:
-        r = find_col(df, kws)
-        if r: return r
-    return None
+def apply_preset(df, preset):
+    result = df.copy()
+    # 브랜드 키워드 필터
+    if "브랜드키워드" in result.columns and preset["brand_keyword"] != "전체":
+        val = True if preset["brand_keyword"] == "O" else False
+        result = result[result["브랜드키워드"] == val]
+    # 연간검색량
+    if "연간검색량" in result.columns:
+        result = result[
+            (result["연간검색량"] >= preset["search_min"]) &
+            (result["연간검색량"] <= preset["search_max"])
+        ]
+    # 최대월
+    if "최대월" in result.columns and preset["max_months"]:
+        result = result[result["최대월"].isin(preset["max_months"])]
+    # 피크 시작·종료월
+    if "피크시작월" in result.columns:
+        result = result[result["피크시작월"] >= preset["peak_start"]]
+    if "피크종료월" in result.columns:
+        result = result[result["피크종료월"] <= preset["peak_end"]]
+    # 계절성
+    if "계절성" in result.columns:
+        result = result[
+            (result["계절성"] >= preset["seasonality_min"]) &
+            (result["계절성"] <= preset["seasonality_max"])
+        ]
+    # 쿠팡 해외배송
+    if "쿠팡해외배송비율" in result.columns:
+        result = result[
+            (result["쿠팡해외배송비율"] >= preset["coupang_min"]) &
+            (result["쿠팡해외배송비율"] <= preset["coupang_max"])
+        ]
+    return result
 
-def get_col_map(df):
-    return {
-        "키워드":           find_col(df, ["키워드"]),
-        "브랜드키워드":     find_col_any(df, [["브랜드","키워드"],["brand"]]),
-        "쇼핑성키워드":     find_col_any(df, [["쇼핑성"],["shopping"]]),
-        "경쟁강도":         find_col_any(df, [["경쟁강도"],["경쟁"]]),
-        "계절성":           find_col_any(df, [["계절성"],["시즌"],["season"]]),
-        "작년검색량":       find_col_any(df, [["작년","검색량"],["검색량_합"],["총검색량"]]),
-        "작년최대검색월":   find_col_any(df, [["작년","최대","검색월"],["최대검색월"],["피크","월"]]),
-        "피크월검색량":     find_col_any(df, [["피크월","검색량"],["최대검색월","검색량"],
-                                              ["작년최대검색월","검색량"],["피크","검색량"],["최대월","검색량"]]),
-        "쿠팡리뷰수":       find_col_any(df, [["쿠팡","리뷰"],["리뷰수"]]),
-        "쿠팡해외배송비율": find_col_any(df, [["해외","배송","비율"],["해외배송"],["overseas"]]),
-    }
 
-def normalize_month(val):
-    import re
-    if val is None: return val
-    m = re.search(r"(\d+)", str(val).strip())
-    return f"{m.group(1)}월" if m else str(val).strip()
-
-def apply_preset(df, preset, col_map):
-    fdf = df.copy()
-    if col_map.get("쇼핑성키워드"):
-        fdf = fdf[fdf[col_map["쇼핑성키워드"]].astype(str).str.strip()
-                  .isin(["O","o","Y","y","1","True","true","쇼핑성"])]
-    if col_map.get("브랜드키워드") and preset.get("브랜드키워드","전체") != "전체":
-        vals = fdf[col_map["브랜드키워드"]].astype(str).str.strip()
-        fdf = fdf[vals.isin(["O","o","Y","y","1","True","true"]) if preset["브랜드키워드"]=="O"
-                  else vals.isin(["X","x","N","n","0","False","false"])]
-    if col_map.get("계절성") and preset.get("시즌성","전체") != "전체":
-        vals = fdf[col_map["계절성"]].astype(str).str.strip()
-        fdf = fdf[vals.isin(["O","o","있음","Y","y","1","True","true"]) if preset["시즌성"]=="있음"
-                  else vals.isin(["X","x","없음","N","n","0","False","false"])]
-    for key, mn_k, mx_k in [("작년검색량","작년검색량_min","작년검색량_max"),
-                              ("피크월검색량","피크월검색량_min","피크월검색량_max"),
-                              ("쿠팡리뷰수","쿠팡리뷰수_min","쿠팡리뷰수_max")]:
-        if col_map.get(key):
-            s = pd.to_numeric(fdf[col_map[key]], errors="coerce")
-            fdf = fdf[s.between(preset.get(mn_k,0), preset.get(mx_k,9999999)) | s.isna()]
-    if col_map.get("작년최대검색월") and preset.get("작년최대검색월"):
-        selected = [f"{m}월" for m in preset["작년최대검색월"]]
-        fdf = fdf[fdf[col_map["작년최대검색월"]].apply(normalize_month).isin(selected)]
-    if col_map.get("쿠팡해외배송비율"):
-        s = pd.to_numeric(fdf[col_map["쿠팡해외배송비율"]], errors="coerce")
-        mn_p, mx_p = preset.get("쿠팡해외배송비율_min",0.0), preset.get("쿠팡해외배송비율_max",100.0)
-        mx_val = s.max(skipna=True)
-        if mx_val is not None and mx_val <= 1.0:
-            fdf = fdf[s.between(mn_p/100, mx_p/100) | s.isna()]
-        else:
-            fdf = fdf[s.between(mn_p, mx_p) | s.isna()]
-    return fdf.reset_index(drop=True)
-
-def build_display(df, col_map):
-    cols_order = [
-        ("키워드","키워드"),("브랜드키워드","브랜드"),("계절성","시즌성"),
-        ("작년검색량","작년검색량"),("작년최대검색월","최대검색월"),
-        ("피크월검색량","피크월검색량"),("쿠팡리뷰수","쿠팡리뷰수"),
-        ("쿠팡해외배송비율","해외배송비율(%)"),
-    ]
-    records, rename = {}, {}
-    for key, label in cols_order:
-        orig = col_map.get(key)
-        if orig and orig in df.columns:
-            records[orig] = df[orig]; rename[orig] = label
-    out = pd.DataFrame(records).rename(columns=rename)
-    if "최대검색월" in out.columns:
-        out["최대검색월"] = out["최대검색월"].apply(normalize_month)
-    if "해외배송비율(%)" in out.columns:
-        s = pd.to_numeric(out["해외배송비율(%)"], errors="coerce")
-        mx = s.max(skipna=True)
-        out["해외배송비율(%)"] = ((s*100).round(1).astype(str)+"%" if mx is not None and mx<=1.0
-                                  else s.round(1).astype(str)+"%")
-    return out
-
-def show_aggrid(df):
-    locale_text = {
-        "page":"페이지","more":"더보기","to":"~","of":"/","next":"다음",
-        "last":"마지막","first":"처음","previous":"이전","loadingOoo":"로딩 중...",
-        "noRowsToShow":"데이터가 없습니다.","filterOoo":"필터...","applyFilter":"적용",
-        "equals":"같음","notEqual":"같지않음","lessThan":"미만","greaterThan":"초과",
-        "contains":"포함","notContains":"미포함","startsWith":"시작","endsWith":"끝남",
-        "andCondition":"AND","orCondition":"OR",
-    }
-    col_widths = {
-        "키워드":180,"브랜드":70,"시즌성":70,"작년검색량":110,
-        "최대검색월":90,"피크월검색량":120,"쿠팡리뷰수":100,"해외배송비율(%)":120,
-    }
-    gb = GridOptionsBuilder.from_dataframe(df)
-    gb.configure_default_column(resizable=True, sortable=True, filter=True, min_width=70)
-    for col, w in col_widths.items():
-        if col in df.columns: gb.configure_column(col, width=w)
-    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
-    gb.configure_grid_options(localeText=locale_text, domLayout="normal")
-    AgGrid(df, gridOptions=gb.build(), update_mode=GridUpdateMode.NO_UPDATE,
-           theme="streamlit", height=460, allow_unsafe_jscode=True,
-           fit_columns_on_grid_load=False)
-
-# ══════════════════════════════ UI ═══════════════════════════════════════════
-
-# 1. 헤더
-st.markdown("""
-<div class="header-card">
-  <div>
-    <div class="header-title">끝장캐리 <span>키워드 분석</span></div>
-    <div class="header-sub">쇼핑성 키워드 선별 및 데이터 전략 분석 도구</div>
-  </div>
-  <div class="version-badge">Premium Version v1.7</div>
-</div>
-""", unsafe_allow_html=True)
-
-# 2. 업로드 — 한글 오버레이 + 흰 카드
-st.markdown("""
-<div class="upload-wrapper" style="min-height:80px;">
-  <div class="upload-icon-kor">📁</div>
-  <div class="upload-text-overlay">
-    <div class="main">분석 파일을 이곳에 올려주세요</div>
-    <div class="sub">엑셀(.xlsx) 파일을 드래그하거나 클릭하여 선택</div>
-  </div>
-""", unsafe_allow_html=True)
-uploaded = st.file_uploader("파일 업로드", type=["xlsx"], label_visibility="collapsed")
-st.markdown('</div>', unsafe_allow_html=True)
-
-if uploaded:
-    file_bytes = uploaded.read()
-    if st.session_state.file_name != uploaded.name:
-        st.session_state.file_name = uploaded.name
-        st.session_state.df        = load_excel(file_bytes)
-        st.session_state.result_df = None
-        cm = get_col_map(st.session_state.df)
-        msg = f"✅ 파일 로드 완료 — 총 {len(st.session_state.df):,}개 키워드"
-        st.success(msg + (f" | 피크월검색량: `{cm['피크월검색량']}`" if cm.get("피크월검색량") else " | 피크월검색량 컬럼 없음"))
-
-# 3. 키워드 필터 바 (버튼 3개)
+# ───────────────────────── UI: 헤더 ─────────────────────────
 with st.container(border=True):
-    label_col, spacer_col, set_col, run_col, dl_col = st.columns([1.2, 3.8, 2.1, 2.1, 2.3])
+    st.markdown(
+        "<h2 style='margin:0; color:#1a2050; font-size:22px; font-weight:800;'>"
+        "🚀 끝장캐리 키워드 분석</h2>"
+        "<p style='margin:4px 0 0; color:#6672a0; font-size:13px;'>"
+        "네이버 쇼핑 키워드 데이터를 업로드하여 조건별로 분석하세요.</p>",
+        unsafe_allow_html=True,
+    )
+
+# ───────────────────────── UI: 파일 업로더 ─────────────────────────
+with st.container(border=True):
+    st.markdown(
+        "<p style='font-size:14px; font-weight:700; color:#1a2050; margin-bottom:8px;'>"
+        "📂 엑셀 파일 업로드</p>",
+        unsafe_allow_html=True,
+    )
+    uploaded_file = st.file_uploader(
+        "네이버 쇼핑 키워드 엑셀 파일을 업로드하세요 (.xlsx)",
+        type=["xlsx"],
+        label_visibility="collapsed",
+    )
+    if uploaded_file:
+        st.success(f"✅ 파일 로드됨: {uploaded_file.name}")
+
+
+# ───────────────────────── UI: 키워드 필터 박스 ─────────────────────────
+with st.container(border=True):
+    # 상단 행: "키워드 필터" 라벨 + 버튼 3개 가로정렬
+    label_col, sp, c1, c2, c3 = st.columns([3, 1, 2, 2, 2])
 
     with label_col:
-        st.markdown('<div class="preset-label-inline">키워드 필터</div>', unsafe_allow_html=True)
+        st.markdown(
+            "<p style='font-size:15px; font-weight:800; color:#1a2050; "
+            "margin:0; padding-top:6px;'>🔖 키워드 필터</p>",
+            unsafe_allow_html=True,
+        )
 
-    with set_col:
-        if st.button("⚙️ 키워드 설정", key="btn_settings"):
+    with c1:
+        st.markdown('<div class="btn-settings">', unsafe_allow_html=True)
+        if st.button("⚙️ 키워드설정", key="btn_settings"):
             st.session_state.show_settings = not st.session_state.show_settings
-            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    with run_col:
+    with c2:
         st.markdown('<div class="btn-run">', unsafe_allow_html=True)
-        run_clicked = st.button("🔍 분석 실행", key="btn_run")
-        st.markdown('</div>', unsafe_allow_html=True)
+        run_clicked = st.button("🔍 분석실행", key="btn_run")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    with dl_col:
+    with c3:
         st.markdown('<div class="btn-download">', unsafe_allow_html=True)
-        if st.session_state.result_df is not None and len(st.session_state.result_df) > 0:
-            disp = build_display(st.session_state.result_df, get_col_map(st.session_state.df))
-            buf  = io.BytesIO()
-            disp.to_excel(buf, index=False, engine="openpyxl")
-            st.download_button("📥 엑셀 다운로드", data=buf.getvalue(),
-                               file_name="filtered_keywords.xlsx",
-                               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                               key="btn_dl")
-        else:
-            st.button("📥 엑셀 다운로드", disabled=True, key="btn_dl_dis")
-        st.markdown('</div>', unsafe_allow_html=True)
+        download_placeholder = st.empty()
+        st.markdown("</div>", unsafe_allow_html=True)
 
-# 4. 설정 패널
-if st.session_state.show_settings:
-    with st.container(border=True):
-        title_col, close_col = st.columns([11, 1])
-        with title_col:
-            st.markdown('<div class="settings-title">⚙️ 키워드 설정</div>', unsafe_allow_html=True)
-        with close_col:
-            st.markdown('<div class="btn-close">', unsafe_allow_html=True)
-            if st.button("✕", key="btn_close"):
-                st.session_state.show_settings = False
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        tabs = st.tabs(["1", "2", "3", "4", "5"])
-        for i, tab in enumerate(tabs):
+    # 키워드설정 패널 (탭 1~5)
+    if st.session_state.show_settings:
+        st.markdown("---")
+        preset_tabs = st.tabs(["1", "2", "3", "4", "5"])
+        for idx, tab in enumerate(preset_tabs):
             with tab:
-                p = st.session_state.presets[i]
-                p["이름"] = st.text_input("프리셋 이름", p["이름"], key=f"name_{i}")
+                p = st.session_state.presets[idx]
 
-                st.markdown('<div class="section-label">키워드 유형</div>', unsafe_allow_html=True)
-                c1, c2 = st.columns(2)
-                with c1:
-                    p["브랜드키워드"] = st.radio("브랜드키워드", ["전체","O","X"],
-                        index=["전체","O","X"].index(p.get("브랜드키워드","전체")),
-                        key=f"brand_{i}", horizontal=True)
-                with c2:
-                    p["시즌성"] = st.radio("시즌성", ["전체","있음","없음"],
-                        index=["전체","있음","없음"].index(p.get("시즌성","전체")),
-                        key=f"season_{i}", horizontal=True)
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    brand = st.selectbox(
+                        "브랜드 키워드",
+                        ["전체", "O", "X"],
+                        index=["전체", "O", "X"].index(p["brand_keyword"]),
+                        key=f"brand_{idx}",
+                    )
+                    s_min = st.number_input(
+                        "연간검색량 최소", value=int(p["search_min"]),
+                        min_value=0, key=f"smin_{idx}"
+                    )
+                    s_max = st.number_input(
+                        "연간검색량 최대", value=int(p["search_max"]),
+                        min_value=0, key=f"smax_{idx}"
+                    )
+                    all_months = [f"{m}월" for m in range(1, 13)]
+                    selected_months = st.multiselect(
+                        "최대월 선택 (비워두면 전체)",
+                        all_months,
+                        default=p["max_months"],
+                        key=f"months_{idx}",
+                    )
 
-                st.markdown('<div class="section-label">검색량 범위</div>', unsafe_allow_html=True)
-                c3, c4 = st.columns(2)
-                with c3:
-                    p["작년검색량_min"] = st.number_input("작년검색량 최소", value=int(p.get("작년검색량_min",0)), min_value=0, key=f"ys_min_{i}")
-                with c4:
-                    p["작년검색량_max"] = st.number_input("작년검색량 최대", value=int(p.get("작년검색량_max",9999999)), min_value=0, key=f"ys_max_{i}")
-                c5, c6 = st.columns(2)
-                with c5:
-                    p["피크월검색량_min"] = st.number_input("피크월검색량 최소", value=int(p.get("피크월검색량_min",0)), min_value=0, key=f"pk_min_{i}")
-                with c6:
-                    p["피크월검색량_max"] = st.number_input("피크월검색량 최대", value=int(p.get("피크월검색량_max",9999999)), min_value=0, key=f"pk_max_{i}")
+                with col_b:
+                    peak_s = st.slider(
+                        "피크 시작월", 1, 12, int(p["peak_start"]), key=f"ps_{idx}"
+                    )
+                    peak_e = st.slider(
+                        "피크 종료월", 1, 12, int(p["peak_end"]), key=f"pe_{idx}"
+                    )
+                    seas_min, seas_max = st.slider(
+                        "계절성 범위", 0.0, 1.0,
+                        (float(p["seasonality_min"]), float(p["seasonality_max"])),
+                        0.01, key=f"seas_{idx}"
+                    )
+                    coup_min, coup_max = st.slider(
+                        "쿠팡 해외배송비율 범위", 0.0, 1.0,
+                        (float(p["coupang_min"]), float(p["coupang_max"])),
+                        0.01, key=f"coup_{idx}"
+                    )
 
-                st.markdown('<div class="section-label">검색 시기</div>', unsafe_allow_html=True)
-                p["작년최대검색월"] = st.multiselect("작년최대검색월 (다중선택)",
-                    options=list(range(1,13)), format_func=lambda x: f"{x}월",
-                    default=p.get("작년최대검색월",[]), key=f"month_{i}")
+                if st.button("💾 저장", key=f"save_{idx}"):
+                    st.session_state.presets[idx].update({
+                        "brand_keyword": brand,
+                        "search_min": s_min,
+                        "search_max": s_max,
+                        "max_months": selected_months,
+                        "peak_start": peak_s,
+                        "peak_end": peak_e,
+                        "seasonality_min": seas_min,
+                        "seasonality_max": seas_max,
+                        "coupang_min": coup_min,
+                        "coupang_max": coup_max,
+                    })
+                    st.success(f"프리셋 {idx + 1} 저장 완료!")
 
-                st.markdown('<div class="section-label">쿠팡 데이터</div>', unsafe_allow_html=True)
-                c7, c8 = st.columns(2)
-                with c7:
-                    p["쿠팡리뷰수_min"] = st.number_input("쿠팡리뷰수 최소", value=int(p.get("쿠팡리뷰수_min",0)), min_value=0, key=f"rv_min_{i}")
-                with c8:
-                    p["쿠팡리뷰수_max"] = st.number_input("쿠팡리뷰수 최대", value=int(p.get("쿠팡리뷰수_max",9999999)), min_value=0, key=f"rv_max_{i}")
-                c9, c10 = st.columns(2)
-                with c9:
-                    p["쿠팡해외배송비율_min"] = st.number_input("해외배송비율 최소(%)", value=float(p.get("쿠팡해외배송비율_min",0.0)), min_value=0.0, max_value=100.0, key=f"os_min_{i}")
-                with c10:
-                    p["쿠팡해외배송비율_max"] = st.number_input("해외배송비율 최대(%)", value=float(p.get("쿠팡해외배송비율_max",100.0)), min_value=0.0, max_value=100.0, key=f"os_max_{i}")
-                st.session_state.presets[i] = p
 
-# 5. 분석 실행
+# ───────────────────────── 분석 실행 ─────────────────────────
 if run_clicked:
-    if st.session_state.df is None:
-        st.error("❌ 파일을 먼저 업로드해주세요.")
+    if uploaded_file is None:
+        st.warning("⚠️ 먼저 엑셀 파일을 업로드하세요.")
     else:
-        col_map = get_col_map(st.session_state.df)
-        preset  = st.session_state.presets[st.session_state.active_preset]
-        result  = apply_preset(st.session_state.df, preset, col_map)
-        st.session_state.result_df      = result
-        st.session_state.filtered_count = len(result)
-        st.rerun()
+        df_raw = load_excel(uploaded_file)
+        if df_raw is not None:
+            df_raw = normalize_columns(df_raw)
+            preset = st.session_state.presets[st.session_state.active_preset]
+            df_filtered = apply_preset(df_raw, preset)
+            st.session_state.df_result = df_filtered
+            st.success(f"✅ 분석 완료: {len(df_filtered):,}개 키워드 필터링됨")
 
-# 6. 결과 카드
-with st.container(border=True):
-    if st.session_state.result_df is not None:
-        cnt = st.session_state.filtered_count
+
+# ───────────────────────── 결과 테이블 ─────────────────────────
+if st.session_state.df_result is not None:
+    df_show = st.session_state.df_result
+
+    with st.container(border=True):
         st.markdown(
-            f'<div class="result-count">필터링 결과: <span>{cnt:,}개</span> 키워드</div>',
-            unsafe_allow_html=True)
-        if cnt > 0:
-            show_aggrid(build_display(st.session_state.result_df, get_col_map(st.session_state.df)))
-        else:
-            st.warning("⚠️ 조건에 맞는 키워드가 없습니다. 필터 조건을 완화해보세요.")
-    else:
-        st.markdown(
-            '<div style="text-align:center;color:#aaa;padding:20px 0;">'
-            '📂 파일을 업로드하고 분석 실행 버튼을 눌러주세요.</div>',
-            unsafe_allow_html=True)
+            "<p style='font-size:14px; font-weight:700; color:#1a2050; margin-bottom:8px;'>"
+            "📊 분석 결과</p>",
+            unsafe_allow_html=True,
+        )
+
+        gb = GridOptionsBuilder.from_dataframe(df_show)
+        gb.configure_pagination(paginationAutoPageSize=True)
+        gb.configure_side_bar()
+        gb.configure_default_column(
+            resizable=True, sortable=True, filter=True, wrapText=False
+        )
+        grid_options = gb.build()
+
+        AgGrid(
+            df_show,
+            gridOptions=grid_options,
+            update_mode=GridUpdateMode.NO_UPDATE,
+            allow_unsafe_jscode=True,
+            theme="streamlit",
+            height=420,
+        )
+
+        # 엑셀 다운로드
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df_show.to_excel(writer, index=False, sheet_name="결과")
+        excel_bytes = output.getvalue()
+
+        with download_placeholder:
+            st.markdown('<div class="btn-download">', unsafe_allow_html=True)
+            st.download_button(
+                label="📥 엑셀다운로드",
+                data=excel_bytes,
+                file_name="키워드분석결과.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="dl_btn",
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
