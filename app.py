@@ -21,9 +21,6 @@ st.markdown("""
     .field-label { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 4px; }
     .stButton > button { border-radius: 24px !important; font-weight: 700 !important; }
     .stTabs [aria-selected="true"] { color: #4361ee !important; }
-    /* 파일 업로드 영역 최소화 */
-    .stFileUploader { padding: 0 !important; }
-    .stFileUploader > div { padding: 8px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -174,9 +171,6 @@ def apply_preset(df, col_map, preset):
     return fdf.reset_index(drop=True)
 
 def build_display_df(fdf, col_map):
-    # ✅ 컬럼 순서: 키워드 → 브랜드 → 경쟁률 → 작년검색량
-    #              → 작년최대검색월 → 피크월검색량 → 계절성
-    #              → 계절성월 → 경쟁강도 → 쿠팡총리뷰 → 쿠팡해외배송비율
     mapping = {
         "키워드":           "키워드",
         "브랜드":           "브랜드",
@@ -197,7 +191,6 @@ def build_display_df(fdf, col_map):
 
     result = fdf[list(display_cols.keys())].rename(columns=display_cols)
 
-    # 소수 → % 변환
     if "해외배송(%)" in result.columns:
         result["해외배송(%)"] = (
             pd.to_numeric(result["해외배송(%)"], errors="coerce") * 100
@@ -258,24 +251,24 @@ def show_aggrid(result_df):
         sortable=True,
         filter=True,
         resizable=True,
-        # ✅ 헤더 줄바꿈 OFF → 한 줄로 표시
-        wrapHeaderText=False,
-        autoHeaderHeight=False,
+        # ✅ 헤더 줄바꿈 허용 → 컬럼명 전체 표시
+        wrapHeaderText=True,
+        autoHeaderHeight=True,
         suppressMenu=False,
     )
 
-    # ✅ 컬럼별 너비 최적화
-    gb.configure_column("키워드",       minWidth=140, maxWidth=200)
-    gb.configure_column("브랜드",       minWidth=60,  maxWidth=70)
-    gb.configure_column("경쟁률",       minWidth=75,  maxWidth=85)
-    gb.configure_column("작년검색량",   minWidth=95,  maxWidth=105)
-    gb.configure_column("최대검색월",   minWidth=90,  maxWidth=100)
-    gb.configure_column("피크월검색량", minWidth=100, maxWidth=110)
-    gb.configure_column("계절성",       minWidth=70,  maxWidth=80)
-    gb.configure_column("계절성월",     minWidth=90,  maxWidth=120)
-    gb.configure_column("경쟁강도",     minWidth=70,  maxWidth=80)
-    gb.configure_column("총리뷰수",     minWidth=75,  maxWidth=85)
-    gb.configure_column("해외배송(%)",  minWidth=90,  maxWidth=100,
+    # ✅ 컬럼별 너비 최적화 (충분히 넓게)
+    gb.configure_column("키워드",       minWidth=150, maxWidth=220, pinned="left")
+    gb.configure_column("브랜드",       width=70)
+    gb.configure_column("경쟁률",       width=80)
+    gb.configure_column("작년검색량",   width=110)
+    gb.configure_column("최대검색월",   width=100)
+    gb.configure_column("피크월검색량", width=110)
+    gb.configure_column("계절성",       width=80)
+    gb.configure_column("계절성월",     width=120)
+    gb.configure_column("경쟁강도",     width=80)
+    gb.configure_column("총리뷰수",     width=85)
+    gb.configure_column("해외배송(%)",  width=100,
                         valueFormatter="value + '%'")
 
     grid_options = gb.build()
@@ -285,7 +278,8 @@ def show_aggrid(result_df):
         result_df,
         gridOptions=grid_options,
         update_mode=GridUpdateMode.NO_UPDATE,
-        fit_columns_on_grid_load=True,
+        # ✅ fit_columns_on_grid_load=False → 설정 너비 그대로 사용
+        fit_columns_on_grid_load=False,
         height=600,
         theme="alpine",
     )
@@ -298,7 +292,7 @@ st.markdown("""
 <div class="sub-title">쇼핑성 키워드 선별 및 데이터 전략 분석 도구</div>
 """, unsafe_allow_html=True)
 
-# ── 파일 업로드 (컴팩트) ──
+# ── 파일 업로드 ──
 st.markdown('<div class="card">', unsafe_allow_html=True)
 col_up, col_info = st.columns([3, 1])
 with col_up:
@@ -315,7 +309,8 @@ with col_info:
 if uploaded:
     file_bytes = uploaded.read()
     st.session_state.df = load_excel(file_bytes)
-    st.success(f"✅ 파일 로드 완료! 총 **{len(st.session_state.df):,}개** 키워드")
+    st.success(
+        f"✅ 파일 로드 완료! 총 **{len(st.session_state.df):,}개** 키워드")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ── 프리셋 선택 바 ──
@@ -526,14 +521,20 @@ if st.session_state.result_df is not None:
     st.markdown('</div>', unsafe_allow_html=True)
 
 else:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown("""
-    <div style="text-align:center; padding:40px; color:#bbb;">
-        <div style="font-size:48px;">📂</div>
-        <div style="font-size:16px; margin-top:12px;">
-            파일을 업로드하고 분석 버튼을 눌러주세요.</div>
-        <div style="font-size:13px; margin-top:6px; color:#ccc;">
-            데이터가 없습니다.</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    # ✅ 파일 없을 때 안내 메시지
+    if st.session_state.df is None:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align:center; padding:40px; color:#bbb;">
+            <div style="font-size:48px;">📂</div>
+            <div style="font-size:16px; margin-top:12px;">
+                파일을 업로드하고 분석 버튼을 눌러주세요.</div>
+            <div style="font-size:13px; margin-top:6px; color:#ccc;">
+                데이터가 없습니다.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.info("📂 파일이 로드됐어요! 프리셋을 선택하고 **분석 실행** 버튼을 눌러주세요.")
+        st.markdown('</div>', unsafe_allow_html=True)
