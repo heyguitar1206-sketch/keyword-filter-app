@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import io
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
 
@@ -221,6 +220,12 @@ div[role="tabpanel"] .stButton > button {
     box-sizing: border-box !important;
 }
 div[role="tabpanel"] .stButton > button:hover { background: #f0f3ff !important; }
+
+/* ── 결과 데이터프레임 ── */
+[data-testid="stDataFrame"] {
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -249,24 +254,22 @@ def make_preset(name, **kwargs):
     p.update(kwargs)
     return p
 
-if "presets" not in st.session_state:
-    st.session_state.presets = [make_preset(str(i + 1)) for i in range(5)]
-if "active_preset" not in st.session_state:
-    st.session_state.active_preset = 0
-if "df_result" not in st.session_state:
-    st.session_state.df_result = None
-if "show_settings" not in st.session_state:
-    st.session_state.show_settings = False
-if "run_clicked" not in st.session_state:       # ← 핵심 수정
-    st.session_state.run_clicked = False
-if "uploaded_file_data" not in st.session_state:
-    st.session_state.uploaded_file_data = None
+for key, val in {
+    "presets": [make_preset(str(i + 1)) for i in range(5)],
+    "active_preset": 0,
+    "df_result": None,
+    "show_settings": False,
+    "uploaded_file_bytes": None,
+    "uploaded_file_name": "",
+}.items():
+    if key not in st.session_state:
+        st.session_state[key] = val
 
 
 # ───────────────────────── 유틸 함수 ─────────────────────────
-def load_excel(file):
+def load_excel(file_bytes):
     try:
-        return pd.read_excel(file, engine="openpyxl")
+        return pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
     except Exception as e:
         st.error(f"엑셀 파일 로드 실패: {e}")
         return None
@@ -344,13 +347,16 @@ def render_settings_panel(idx):
         brand = st.radio("브랜드 키워드", ["전체", "O", "X"],
             index=["전체", "O", "X"].index(p["brand_keyword"]),
             horizontal=True, key=f"brand_{idx}", label_visibility="collapsed")
+
         st.markdown('<div class="filter-section-title">② 작년 검색량</div>', unsafe_allow_html=True)
         s_min = st.number_input("최소", value=int(p["search_min"]), min_value=0, key=f"smin_{idx}")
         s_max = st.number_input("최대", value=int(p["search_max"]), min_value=0, key=f"smax_{idx}")
+
         st.markdown('<div class="filter-section-title">③ 계절성</div>', unsafe_allow_html=True)
         seasonality = st.radio("계절성", ["전체", "있음", "없음"],
             index=["전체", "있음", "없음"].index(p["seasonality"]),
             horizontal=True, key=f"seas_{idx}", label_visibility="collapsed")
+
         st.markdown('<div class="filter-section-title">⑤ 피크월 검색량</div>', unsafe_allow_html=True)
         peak_min = st.number_input("최소", value=int(p["peak_vol_min"]), min_value=0, key=f"pvmin_{idx}")
         peak_max = st.number_input("최대", value=int(p["peak_vol_max"]), min_value=0, key=f"pvmax_{idx}")
@@ -363,15 +369,20 @@ def render_settings_panel(idx):
             with month_cols[(m - 1) % 6]:
                 if st.checkbox(str(m), value=(m in p["max_months"]), key=f"month_{idx}_{m}"):
                     selected_months.append(m)
+
         st.markdown('<div class="filter-section-title">⑥ 쿠팡 평균가 (원)</div>', unsafe_allow_html=True)
         cp_min = st.number_input("최소", value=int(p["coupang_price_min"]), min_value=0, key=f"cpmin_{idx}")
         cp_max = st.number_input("최대", value=int(p["coupang_price_max"]), min_value=0, key=f"cpmax_{idx}")
+
         st.markdown('<div class="filter-section-title">⑦ 쿠팡 총 리뷰수</div>', unsafe_allow_html=True)
         cr_min = st.number_input("최소", value=int(p["coupang_review_min"]), min_value=0, key=f"crmin_{idx}")
         cr_max = st.number_input("최대", value=int(p["coupang_review_max"]), min_value=0, key=f"crmax_{idx}")
+
         st.markdown('<div class="filter-section-title">⑧ 쿠팡 해외배송비율 % (결과 내림차순 정렬)</div>', unsafe_allow_html=True)
-        co_min = st.number_input("최소 (%)", value=int(p["coupang_overseas_min"]), min_value=0, max_value=100, step=1, key=f"comin_{idx}")
-        co_max = st.number_input("최대 (%)", value=int(p["coupang_overseas_max"]), min_value=0, max_value=100, step=1, key=f"comax_{idx}")
+        co_min = st.number_input("최소 (%)", value=int(p["coupang_overseas_min"]),
+                                  min_value=0, max_value=100, step=1, key=f"comin_{idx}")
+        co_max = st.number_input("최대 (%)", value=int(p["coupang_overseas_max"]),
+                                  min_value=0, max_value=100, step=1, key=f"comax_{idx}")
 
     if st.button("💾 저장", key=f"save_{idx}"):
         st.session_state.presets[idx].update({
@@ -387,7 +398,9 @@ def render_settings_panel(idx):
         st.success(f"✅ 프리셋 {idx + 1} 저장 완료!")
 
 
-# ───────────────────────── UI 레이아웃 ─────────────────────────
+# ═══════════════════════════════════════════════
+#  UI 렌더링
+# ═══════════════════════════════════════════════
 
 # 1) 헤더
 with st.container(border=True):
@@ -410,20 +423,26 @@ with st.container(border=True):
         "파일을 끌어다 놓거나 버튼을 클릭하세요",
         type=["xlsx"],
         label_visibility="collapsed",
+        key="file_uploader",
     )
-    # 업로드된 파일을 session_state에 바이트로 저장 (run 버튼 클릭 후에도 유지)
+    # 업로드 즉시 bytes로 저장 → 이후 rerun에서도 유지
     if uploaded_file is not None:
-        st.session_state.uploaded_file_data = uploaded_file.read()
-        st.success(f"✅ 파일 로드됨: {uploaded_file.name}")
+        file_bytes = uploaded_file.read()
+        if file_bytes:
+            st.session_state.uploaded_file_bytes = file_bytes
+            st.session_state.uploaded_file_name = uploaded_file.name
 
-# 3) 키워드 필터
+    if st.session_state.uploaded_file_bytes is not None:
+        st.success(f"✅ 파일 로드됨: {st.session_state.uploaded_file_name}")
+
+# 3) 키워드 필터 카드
 with st.container(border=True):
     col_label, col_sp, col_s, col_r, col_d = st.columns([3, 1, 2, 2, 2])
 
     with col_label:
         st.markdown(
             "<p style='font-size:15px;font-weight:800;color:#1a2050;"
-            "margin:0;padding-top:8px;'>🔖 키워드 필터</p>",
+            "margin:0;padding-top:6px;'>🔖 키워드 필터</p>",
             unsafe_allow_html=True,
         )
     with col_s:
@@ -434,20 +453,18 @@ with st.container(border=True):
 
     with col_r:
         st.markdown('<div class="btn-run">', unsafe_allow_html=True)
-        # ← 핵심: 버튼 클릭 시 session_state에 플래그 저장
-        if st.button("🔍 분석실행", key="btn_run"):
-            st.session_state.run_clicked = True
+        run_btn = st.button("🔍 분석실행", key="btn_run")
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_d:
         st.markdown('<div class="btn-download">', unsafe_allow_html=True)
         if st.session_state.df_result is not None:
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine="openpyxl") as writer:
-                st.session_state.df_result.to_excel(writer, index=False, sheet_name="결과")
+            out = io.BytesIO()
+            with pd.ExcelWriter(out, engine="openpyxl") as w:
+                st.session_state.df_result.to_excel(w, index=False, sheet_name="결과")
             st.download_button(
                 label="📥 엑셀다운로드",
-                data=output.getvalue(),
+                data=out.getvalue(),
                 file_name="키워드분석결과.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 key="dl_btn",
@@ -456,48 +473,41 @@ with st.container(border=True):
             st.button("📥 엑셀다운로드", key="dl_disabled", disabled=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
+    # 키워드 설정 패널
     if st.session_state.show_settings:
         st.markdown("<hr style='margin:16px 0;border-color:#e0e4f0;'>", unsafe_allow_html=True)
-        preset_tabs = st.tabs(["1", "2", "3", "4", "5"])
-        for idx, tab in enumerate(preset_tabs):
+        tabs = st.tabs(["1", "2", "3", "4", "5"])
+        for i, tab in enumerate(tabs):
             with tab:
-                render_settings_panel(idx)
+                render_settings_panel(i)
 
-
-# ───────────────────────── 분석 실행 (컨테이너 밖에서 처리) ─────────────────────────
-if st.session_state.run_clicked:
-    st.session_state.run_clicked = False   # 플래그 초기화
-
-    if st.session_state.uploaded_file_data is None:
+# ── 분석 실행 ──────────────────────────────────────────────
+# with 블록 밖, 최상위에서 처리 → rerun 후에도 정상 동작
+if run_btn:
+    if st.session_state.uploaded_file_bytes is None:
         st.warning("⚠️ 먼저 엑셀 파일을 업로드하세요.")
     else:
-        df_raw = load_excel(io.BytesIO(st.session_state.uploaded_file_data))
-        if df_raw is not None:
-            df_raw = normalize_columns(df_raw)
-            preset = st.session_state.presets[st.session_state.active_preset]
-            df_filtered = apply_preset(df_raw, preset)
-            st.session_state.df_result = df_filtered
-            st.success(f"✅ 분석 완료: {len(df_filtered):,}개 키워드 필터링됨")
+        with st.spinner("분석 중..."):
+            df_raw = load_excel(st.session_state.uploaded_file_bytes)
+            if df_raw is not None:
+                df_raw = normalize_columns(df_raw)
+                preset = st.session_state.presets[st.session_state.active_preset]
+                df_filtered = apply_preset(df_raw, preset)
+                st.session_state.df_result = df_filtered
+        st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 필터링됨")
 
-
-# ───────────────────────── 결과 테이블 ─────────────────────────
+# ── 결과 테이블 ────────────────────────────────────────────
 if st.session_state.df_result is not None:
     with st.container(border=True):
+        df_show = st.session_state.df_result
         st.markdown(
-            "<p style='font-size:14px;font-weight:700;color:#1a2050;margin-bottom:8px;'>"
-            "📊 분석 결과</p>",
+            f"<p style='font-size:14px;font-weight:700;color:#1a2050;margin-bottom:8px;'>"
+            f"📊 분석 결과 &nbsp;<span style='font-size:12px;color:#6672a0;font-weight:500;'>"
+            f"총 {len(df_show):,}개</span></p>",
             unsafe_allow_html=True,
         )
-        df_show = st.session_state.df_result
-        gb = GridOptionsBuilder.from_dataframe(df_show)
-        gb.configure_pagination(paginationAutoPageSize=True)
-        gb.configure_side_bar()
-        gb.configure_default_column(resizable=True, sortable=True, filter=True)
-        AgGrid(
+        st.dataframe(
             df_show,
-            gridOptions=gb.build(),
-            update_mode=GridUpdateMode.NO_UPDATE,
-            allow_unsafe_jscode=True,
-            theme="streamlit",
-            height=420,
+            use_container_width=True,
+            height=460,
         )
