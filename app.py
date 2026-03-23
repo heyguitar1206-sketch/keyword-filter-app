@@ -13,24 +13,20 @@ html, body, [class*="css"] {
     font-family: 'Noto Sans KR', sans-serif !important;
 }
 
-/* 전체 배경 */
 .stApp {
     background: #dde2ef !important;
 }
 
-/* 헤더/푸터 제거 */
 header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
 #MainMenu { display: none !important; }
 
-/* 메인 패딩 */
 .block-container {
     padding-top: 1.5rem !important;
     padding-bottom: 1rem !important;
     max-width: 1400px !important;
 }
 
-/* 카드 스타일 */
 [data-testid="stVerticalBlockBorderWrapper"] > div {
     background: #ffffff !important;
     border-radius: 14px !important;
@@ -39,7 +35,6 @@ footer { display: none !important; }
     padding: 1.2rem 1.5rem !important;
 }
 
-/* 앱 타이틀 */
 .app-title {
     font-size: 26px !important;
     font-weight: 900 !important;
@@ -54,7 +49,6 @@ footer { display: none !important; }
     margin-bottom: 0 !important;
 }
 
-/* 섹션 헤더 */
 .section-header {
     font-size: 15px !important;
     font-weight: 700 !important;
@@ -62,7 +56,6 @@ footer { display: none !important; }
     margin-bottom: 0.6rem !important;
 }
 
-/* 파일 업로더 */
 [data-testid="stFileUploader"] {
     background: #f4f6fb !important;
     border-radius: 10px !important;
@@ -80,7 +73,6 @@ footer { display: none !important; }
     padding: 6px 20px !important;
 }
 
-/* 파일 로드 성공 메시지 */
 .file-success {
     background: #eafaf1 !important;
     border: 1px solid #b2dfdb !important;
@@ -92,7 +84,6 @@ footer { display: none !important; }
     margin-top: 0.5rem !important;
 }
 
-/* 키워드 필터 카드 제목 */
 .card-title {
     font-size: 15px !important;
     font-weight: 700 !important;
@@ -100,7 +91,6 @@ footer { display: none !important; }
     margin-bottom: 0.5rem !important;
 }
 
-/* 키워드설정 · 분석실행 버튼 */
 .btn-settings .stButton > button,
 .btn-run     .stButton > button {
     background: #f4f6fb !important;
@@ -133,7 +123,6 @@ footer { display: none !important; }
     outline: none !important;
 }
 
-/* 탭 스타일 */
 [data-testid="stTabs"] [role="tablist"] {
     gap: 6px !important;
     border-bottom: 2px solid #dde2ef !important;
@@ -155,7 +144,6 @@ footer { display: none !important; }
     border-bottom: 2px solid #3b5bff !important;
 }
 
-/* 필터 섹션 제목 */
 .filter-section-title {
     font-size: 13px !important;
     font-weight: 700 !important;
@@ -163,7 +151,14 @@ footer { display: none !important; }
     margin: 0.7rem 0 0.2rem 0 !important;
 }
 
-/* 숫자 입력 width */
+/* 월 체크박스 레이아웃 */
+.month-checkbox-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px 14px !important;
+    margin-top: 4px !important;
+}
+
 div[role="tabpanel"] [data-testid="stNumberInput"] {
     max-width: 200px !important;
 }
@@ -171,7 +166,6 @@ div[role="tabpanel"] [data-testid="stNumberInput"] > div {
     max-width: 200px !important;
 }
 
-/* ± 버튼 */
 div[role="tabpanel"] [data-testid="stNumberInput"] button {
     background: #e8ecf8 !important;
     color: #3b5bff !important;
@@ -188,7 +182,6 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
     background: #d0d8f0 !important;
 }
 
-/* 저장 버튼 */
 div[role="tabpanel"] .stButton > button {
     background: #3b5bff !important;
     color: #fff !important;
@@ -203,7 +196,6 @@ div[role="tabpanel"] .stButton > button:hover {
     background: #2244dd !important;
 }
 
-/* 결과 카드 제목 */
 .result-title {
     font-size: 15px !important;
     font-weight: 700 !important;
@@ -211,7 +203,6 @@ div[role="tabpanel"] .stButton > button:hover {
     margin-bottom: 0.5rem !important;
 }
 
-/* 데이터프레임 */
 [data-testid="stDataFrame"] {
     border-radius: 10px !important;
     overflow: hidden !important;
@@ -229,6 +220,7 @@ FORMAT_INT_COLUMNS = [
     "작년검색량","피크월검색량","쿠팡평균가","쿠팡총리뷰수",
     "쿠팡최대리뷰수","쿠팡해외배송총리뷰수","쿠팡해외배송최대리뷰수",
 ]
+ALL_MONTHS = [str(i) for i in range(1, 13)]
 
 DEFAULT_PRESET = {
     "이름": "프리셋",
@@ -414,41 +406,59 @@ def render_settings_panel(idx: int):
     col_a, col_b = st.columns(2)
 
     with col_a:
+        # (1) 브랜드 키워드
         st.markdown('<p class="filter-section-title">(1) 브랜드 키워드</p>', unsafe_allow_html=True)
         brand = st.radio(
             "브랜드키워드", ["전체","O","X"],
             index=["전체","O","X"].index(p["brand_keyword"]),
             horizontal=True, key=f"brand_{idx}", label_visibility="collapsed"
         )
+
+        # (2) 작년검색량
         st.markdown('<p class="filter-section-title">(2) 작년검색량</p>', unsafe_allow_html=True)
         s_min = st.number_input("최소", value=int(p["search_min"]), min_value=0, step=1000, key=f"smin_{idx}")
         s_max = st.number_input("최대", value=int(p["search_max"]), min_value=0, step=1000, key=f"smax_{idx}")
 
+        # (3) 계절성
         st.markdown('<p class="filter-section-title">(3) 계절성</p>', unsafe_allow_html=True)
         seasonality = st.radio(
             "계절성", ["전체","Y","N"],
             index=["전체","Y","N"].index(p["seasonality"]),
             horizontal=True, key=f"season_{idx}", label_visibility="collapsed"
         )
+
+        # ★ (4) 작년최대검색월 – 체크박스 방식으로 변경
         st.markdown('<p class="filter-section-title">(4) 작년최대검색월</p>', unsafe_allow_html=True)
-        all_months = [str(i) for i in range(1, 13)]
-        sel_months = st.multiselect(
-            "월 선택", all_months,
-            default=p["max_months"], key=f"months_{idx}", label_visibility="collapsed"
-        )
+        sel_months = []
+        # 4열로 배치 (1~4월, 5~8월, 9~12월 순)
+        cb_cols = st.columns(4)
+        for i, m in enumerate(ALL_MONTHS):
+            with cb_cols[i % 4]:
+                checked = st.checkbox(
+                    f"{m}월",
+                    value=(m in [str(x) for x in p["max_months"]]),
+                    key=f"month_{idx}_{m}"
+                )
+                if checked:
+                    sel_months.append(m)
+
+        # (5) 피크월검색량
         st.markdown('<p class="filter-section-title">(5) 피크월검색량</p>', unsafe_allow_html=True)
         peak_min = st.number_input("최소", value=int(p["peak_vol_min"]), min_value=0, step=1000, key=f"pkmin_{idx}")
         peak_max = st.number_input("최대", value=int(p["peak_vol_max"]), min_value=0, step=1000, key=f"pkmax_{idx}")
 
     with col_b:
+        # (6) 쿠팡평균가
         st.markdown('<p class="filter-section-title">(6) 쿠팡평균가</p>', unsafe_allow_html=True)
         cp_min = st.number_input("최소 (원)", value=int(p["coupang_price_min"]), min_value=0, step=1000, key=f"cpmin_{idx}")
         cp_max = st.number_input("최대 (원)", value=int(p["coupang_price_max"]), min_value=0, step=1000, key=f"cpmax_{idx}")
 
+        # (7) 쿠팡총리뷰수
         st.markdown('<p class="filter-section-title">(7) 쿠팡총리뷰수</p>', unsafe_allow_html=True)
         cr_min = st.number_input("최소", value=int(p["coupang_review_min"]), min_value=0, step=100, key=f"crmin_{idx}")
         cr_max = st.number_input("최대", value=int(p["coupang_review_max"]), min_value=0, step=100, key=f"crmax_{idx}")
 
+        # (8) 쿠팡해외배송비율
         st.markdown('<p class="filter-section-title">(8) 쿠팡해외배송비율 (%)</p>', unsafe_allow_html=True)
         co_min = st.number_input("최소 (%)", value=float(p["coupang_overseas_min"]),
                                   min_value=0.0, max_value=100.0, step=1.0, key=f"comin_{idx}")
@@ -460,7 +470,7 @@ def render_settings_panel(idx: int):
             "brand_keyword": brand,
             "search_min": s_min, "search_max": s_max,
             "seasonality": seasonality,
-            "max_months": sel_months,
+            "max_months": sel_months,          # ← 체크박스에서 수집된 리스트
             "peak_vol_min": peak_min, "peak_vol_max": peak_max,
             "coupang_price_min": cp_min, "coupang_price_max": cp_max,
             "coupang_review_min": cr_min, "coupang_review_max": cr_max,
@@ -472,8 +482,8 @@ def render_settings_panel(idx: int):
 
 # 1) 타이틀 카드
 with st.container(border=True):
-    st.markdown('<p class="app-title">🚀 수동끝판왕 키워드서칭 by초코라떼</p>', unsafe_allow_html=True)
-    st.markdown('<p class="app-subtitle">쿠팡시장분석 & 키워드데이터 분석툴</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-title">🚀 끝장캐리 키워드 분석</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-subtitle">네이버 쇼핑 키워드 데이터를 분석합니다.</p>', unsafe_allow_html=True)
 
 # 2) 파일 업로드 카드
 with st.container(border=True):
@@ -494,19 +504,19 @@ with st.container(border=True):
 
 # 3) 키워드 필터 카드
 with st.container(border=True):
-    st.markdown('<p class="card-title">🔑 키워드서칭</p>', unsafe_allow_html=True)
+    st.markdown('<p class="card-title">🔑 키워드 필터</p>', unsafe_allow_html=True)
 
     _, col_set, col_run, _ = st.columns([3, 2, 2, 3])
 
     with col_set:
         st.markdown('<div class="btn-settings">', unsafe_allow_html=True)
-        if st.button("⚙️ 필터링설정", key="toggle_settings"):
+        if st.button("⚙️ 키워드설정", key="toggle_settings"):
             st.session_state.show_settings = not st.session_state.show_settings
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_run:
         st.markdown('<div class="btn-run">', unsafe_allow_html=True)
-        run_btn = st.button("🔍 키워드분석", key="run_analysis")
+        run_btn = st.button("🔍 분석실행", key="run_analysis")
         st.markdown('</div>', unsafe_allow_html=True)
 
 # 4) 설정 패널
