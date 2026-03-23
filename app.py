@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
+st.set_page_config(page_title="수동끝판왕 키워드서칭머신", layout="wide")
 
 # ────────────────────────────────────────────────────────────────
 # CSS
@@ -75,7 +75,7 @@ st.markdown("""
 }
 [data-testid="stFileUploaderDropzone"] button:hover { background: #2a47e0 !important; }
 
-/* Top two buttons - text only */
+/* ★ 키워드설정·분석실행 버튼 - 박스 없이 글자만, 제목과 동일 폰트(22px/900) */
 .btn-settings .stButton > button,
 .btn-run .stButton > button {
     all: unset !important;
@@ -83,11 +83,12 @@ st.markdown("""
     align-items: center !important;
     justify-content: center !important;
     font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 14px !important;
-    font-weight: 800 !important;
-    color: #3a3f5c !important;
+    font-size: 22px !important;
+    font-weight: 900 !important;
+    color: #1a2050 !important;
     background: transparent !important;
     border: none !important;
+    box-shadow: none !important;
     padding: 4px 8px !important;
     min-height: 36px !important;
     width: 100% !important;
@@ -97,7 +98,7 @@ st.markdown("""
 .btn-run .stButton > button { color: #3b5bff !important; }
 .btn-run .stButton > button:hover { color: #1a3bcc !important; }
 
-/* ★ Tabs - 키워드필터 텍스트와 동일한 폰트/두께로 */
+/* Tabs */
 .stTabs [data-baseweb="tab-list"] { gap: 6px !important; border-bottom: 2px solid #e0e4f0 !important; }
 .stTabs [data-baseweb="tab"] {
     font-size: 15px !important;
@@ -532,9 +533,10 @@ def render_settings_panel(idx: int):
 # 메인 UI
 # ────────────────────────────────────────────────────────────────
 
+# ★ 제목 변경
 with st.container(border=True):
     st.markdown(
-        "<h2 style='margin:0;color:#1a2050;font-size:22px;font-weight:900;'>🚀 끝장캐리 키워드 분석</h2>"
+        "<h2 style='margin:0;color:#1a2050;font-size:22px;font-weight:900;'>🚀 수동끝판왕 키워드서칭머신 ver. 1.0</h2>"
         "<p style='margin:4px 0 0;color:#6672a0;font-size:13px;'>네이버 쇼핑 키워드 데이터를 분석합니다.</p>",
         unsafe_allow_html=True
     )
