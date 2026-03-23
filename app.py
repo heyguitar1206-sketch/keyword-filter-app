@@ -7,7 +7,7 @@ st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
 
 * { font-family: 'Noto Sans KR', sans-serif !important; box-sizing: border-box; }
 
@@ -18,8 +18,9 @@ footer                       { display: none !important; }
 
 .stApp, body { background-color: #e8ecf4 !important; }
 
+/* ── 60% 폭 ── */
 .block-container {
-    max-width: 72% !important;
+    max-width: 60% !important;
     margin: 0 auto !important;
     padding: 32px 0 60px 0 !important;
 }
@@ -96,8 +97,9 @@ footer                       { display: none !important; }
     border: none !important;
     border-radius: 22px !important;
     padding: 10px 28px !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
     cursor: pointer !important;
 }
 [data-testid="stFileUploaderDropzone"] button:hover {
@@ -105,7 +107,7 @@ footer                       { display: none !important; }
 }
 
 /* ═══════════════════════════════
-   버튼 완전 초기화 & 기본 스타일
+   버튼 완전 초기화 & 기본
 ═══════════════════════════════ */
 .stButton {
     display: flex !important;
@@ -118,20 +120,22 @@ footer                       { display: none !important; }
     align-items: center !important;
     justify-content: center !important;
     background: #ffffff !important;
-    color: #555 !important;
+    color: #444 !important;
     border: 1.5px solid #d0d5e8 !important;
     border-radius: 999px !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    padding: 0 24px !important;
-    height: 40px !important;
-    min-width: 100px !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 0 18px !important;
+    height: 38px !important;
+    min-width: 90px !important;
     width: 100% !important;
     white-space: nowrap !important;
     cursor: pointer !important;
     transition: all 0.15s ease !important;
     box-sizing: border-box !important;
     line-height: 1 !important;
+    letter-spacing: -0.01em !important;
 }
 .stButton > button:hover {
     background: #f0f3ff !important;
@@ -145,17 +149,15 @@ footer                       { display: none !important; }
     box-shadow: none !important;
 }
 
-/* 설정 버튼 */
+/* 설정(키워드설정) 버튼 */
 .btn-settings .stButton > button,
 .btn-settings .stButton > button:active,
 .btn-settings .stButton > button:focus {
-    min-width: 44px !important;
-    width: 44px !important;
-    padding: 0 !important;
-    font-size: 17px !important;
     background: #ffffff !important;
-    color: #555 !important;
+    color: #444 !important;
     border: 1.5px solid #d0d5e8 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
     outline: none !important;
     transform: none !important;
     box-shadow: none !important;
@@ -173,8 +175,8 @@ footer                       { display: none !important; }
     background: #3b5bff !important;
     color: #ffffff !important;
     border-color: #3b5bff !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
-    font-size: 14px !important;
     outline: none !important;
     transform: none !important;
     box-shadow: none !important;
@@ -192,8 +194,8 @@ footer                       { display: none !important; }
     width: 32px !important;
     height: 32px !important;
     padding: 0 !important;
-    font-size: 16px !important;
-    background: #f5f5f5 !important;
+    font-size: 14px !important;
+    background: #f0f0f0 !important;
     color: #888 !important;
     border: none !important;
     border-radius: 50% !important;
@@ -214,32 +216,37 @@ footer                       { display: none !important; }
     align-items: center !important;
     justify-content: center !important;
     background: #ffffff !important;
-    color: #3b5bff !important;
-    border: 1.5px solid #c7d0ff !important;
+    color: #444 !important;
+    border: 1.5px solid #d0d5e8 !important;
     border-radius: 999px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    padding: 0 20px !important;
-    height: 40px !important;
-    min-width: 100px !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 0 18px !important;
+    height: 38px !important;
+    min-width: 90px !important;
     width: 100% !important;
     white-space: nowrap !important;
     cursor: pointer !important;
     box-sizing: border-box !important;
     transition: all 0.15s !important;
+    letter-spacing: -0.01em !important;
 }
 .btn-download .stDownloadButton > button:hover,
 .btn-download .stButton > button:hover {
     background: #f0f3ff !important;
+    border-color: #3b5bff !important;
+    color: #3b5bff !important;
 }
 .btn-download .stButton > button:disabled {
     color: #bbb !important;
-    border-color: #e0e0e0 !important;
+    border-color: #e8e8e8 !important;
     cursor: not-allowed !important;
+    background: #fafafa !important;
 }
 
 /* ═══════════════════════════════
-   프리셋 설정 패널
+   설정 패널
 ═══════════════════════════════ */
 .settings-title {
     font-size: 15px;
@@ -261,28 +268,41 @@ footer                       { display: none !important; }
     margin: 18px 0 8px 0;
 }
 
-/* ── 프리셋 탭 번호 크게 ── */
+/* ═══════════════════════════════
+   탭 숫자 크고 굵게 ← 핵심 수정
+═══════════════════════════════ */
+/* 탭 버튼 전체 초기화 후 재정의 */
 [data-testid="stTabs"] [role="tablist"] {
-    gap: 4px !important;
     border-bottom: 2px solid #e8ecf4 !important;
-    margin-bottom: 16px !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 20px !important;
+    gap: 0 !important;
 }
-[data-testid="stTabs"] button[role="tab"] {
-    font-size: 17px !important;
-    font-weight: 700 !important;
-    color: #aaa !important;
-    padding: 10px 20px !important;
-    border-radius: 8px 8px 0 0 !important;
-    border: none !important;
-    background: transparent !important;
+
+/* 탭 각각의 버튼 — !important 전체 강제 */
+[data-testid="stTabs"] [role="tablist"] button {
+    all: unset !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+    font-size: 20px !important;
+    font-weight: 800 !important;
+    color: #bbbbbb !important;
+    padding: 8px 28px !important;
+    cursor: pointer !important;
+    border-bottom: 3px solid transparent !important;
     transition: all 0.15s !important;
-    min-width: 60px !important;
+    min-width: 64px !important;
+    background: transparent !important;
+    margin-bottom: -2px !important;
 }
-[data-testid="stTabs"] button[role="tab"]:hover {
+[data-testid="stTabs"] [role="tablist"] button:hover {
     color: #3b5bff !important;
-    background: #f0f3ff !important;
+    background: #f4f6ff !important;
+    border-radius: 8px 8px 0 0 !important;
 }
-[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+[data-testid="stTabs"] [role="tablist"] button[aria-selected="true"] {
     color: #3b5bff !important;
     font-weight: 800 !important;
     border-bottom: 3px solid #3b5bff !important;
@@ -293,17 +313,18 @@ footer                       { display: none !important; }
 .preset-label-inline {
     display: flex;
     align-items: center;
-    height: 40px;
-    font-size: 13px;
-    font-weight: 600;
+    height: 38px;
+    font-size: 12px;
+    font-weight: 700;
     color: #888;
     white-space: nowrap;
+    letter-spacing: -0.01em;
 }
 
 /* ═══════════════════════════════
    결과 카드
 ═══════════════════════════════ */
-.result-count { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; }
+.result-count { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
 .result-count span { color: #3b5bff; }
 
 /* ═══════════════════════════════
@@ -312,13 +333,13 @@ footer                       { display: none !important; }
 .ag-theme-streamlit .ag-header {
     background: #f0f3ff !important;
     font-weight: 700 !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
 }
 .ag-theme-streamlit .ag-row-even { background: #fafbff !important; }
 .ag-theme-streamlit .ag-row-odd  { background: #ffffff !important; }
 .ag-theme-streamlit .ag-row:hover { background: #e8f0fe !important; }
 .ag-theme-streamlit .ag-cell {
-    font-size: 13px !important;
+    font-size: 12px !important;
     display: flex !important;
     align-items: center !important;
 }
@@ -461,17 +482,17 @@ def show_aggrid(df):
         "andCondition":"AND","orCondition":"OR",
     }
     col_widths = {
-        "키워드":200,"브랜드":80,"시즌성":80,"작년검색량":120,
-        "최대검색월":100,"피크월검색량":130,"쿠팡리뷰수":110,"해외배송비율(%)":130,
+        "키워드":180,"브랜드":70,"시즌성":70,"작년검색량":110,
+        "최대검색월":90,"피크월검색량":120,"쿠팡리뷰수":100,"해외배송비율(%)":120,
     }
     gb = GridOptionsBuilder.from_dataframe(df)
-    gb.configure_default_column(resizable=True, sortable=True, filter=True, min_width=80)
+    gb.configure_default_column(resizable=True, sortable=True, filter=True, min_width=70)
     for col, w in col_widths.items():
         if col in df.columns: gb.configure_column(col, width=w)
     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
     gb.configure_grid_options(localeText=locale_text, domLayout="normal")
     AgGrid(df, gridOptions=gb.build(), update_mode=GridUpdateMode.NO_UPDATE,
-           theme="streamlit", height=480, allow_unsafe_jscode=True,
+           theme="streamlit", height=460, allow_unsafe_jscode=True,
            fit_columns_on_grid_load=False)
 
 # ══════════════════════════════ UI ═══════════════════════════════════════════
@@ -499,14 +520,12 @@ if uploaded:
         msg = f"✅ 파일 로드 완료 — 총 {len(st.session_state.df):,}개 키워드"
         st.success(msg + (f" | 피크월검색량: `{cm['피크월검색량']}`" if cm.get("피크월검색량") else " | 피크월검색량 컬럼 없음"))
 
-# 3. 프리셋 바 ── 버튼 3개만 (키워드설정 / 분석실행 / 엑셀다운로드)
+# 3. 프리셋 바 (버튼 3개만)
 with st.container(border=True):
-    label_col, spacer, set_col, run_col, dl_col = st.columns([1.2, 5.5, 1.8, 1.8, 2.0])
+    label_col, spacer_col, set_col, run_col, dl_col = st.columns([1.0, 4.5, 1.8, 1.8, 2.0])
 
     with label_col:
         st.markdown('<div class="preset-label-inline">분석 프리셋</div>', unsafe_allow_html=True)
-
-    # spacer: 빈 공간
 
     with set_col:
         st.markdown('<div class="btn-settings">', unsafe_allow_html=True)
@@ -537,7 +556,6 @@ with st.container(border=True):
 # 4. 설정 패널
 if st.session_state.show_settings:
     with st.container(border=True):
-        # 제목 + 닫기
         title_col, close_col = st.columns([11, 1])
         with title_col:
             st.markdown('<div class="settings-title">⚙️ 키워드 설정</div>', unsafe_allow_html=True)
@@ -548,12 +566,11 @@ if st.session_state.show_settings:
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # 탭: 1 2 3 4 5 — 크고 굵게
-        tabs = st.tabs(["  1  ", "  2  ", "  3  ", "  4  ", "  5  "])
+        # 탭: 숫자에 공백 padding 추가해 클릭 영역 확보
+        tabs = st.tabs(["1", "2", "3", "4", "5"])
         for i, tab in enumerate(tabs):
             with tab:
                 p = st.session_state.presets[i]
-
                 p["이름"] = st.text_input("프리셋 이름", p["이름"], key=f"name_{i}")
 
                 st.markdown('<div class="section-label">키워드 유형</div>', unsafe_allow_html=True)
@@ -595,7 +612,6 @@ if st.session_state.show_settings:
                     p["쿠팡해외배송비율_min"] = st.number_input("해외배송비율 최소(%)", value=float(p.get("쿠팡해외배송비율_min",0.0)), min_value=0.0, max_value=100.0, key=f"os_min_{i}")
                 with c10:
                     p["쿠팡해외배송비율_max"] = st.number_input("해외배송비율 최대(%)", value=float(p.get("쿠팡해외배송비율_max",100.0)), min_value=0.0, max_value=100.0, key=f"os_max_{i}")
-
                 st.session_state.presets[i] = p
 
 # 5. 분석 실행
