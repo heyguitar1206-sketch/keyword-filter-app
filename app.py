@@ -24,27 +24,15 @@ footer                       { display: none !important; }
     padding: 32px 0 60px 0 !important;
 }
 
-/* ── 공통 카드: st.container(border=True) 스타일 덮어쓰기 ── */
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff !important;
-    border-radius: 16px !important;
-    border: none !important;
-    box-shadow: 0 2px 12px rgba(60,80,180,0.08) !important;
-    padding: 20px 28px !important;
-    margin-bottom: 18px !important;
-}
-[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    border: none !important;
-    box-shadow: 0 2px 12px rgba(60,80,180,0.08) !important;
-}
-
-/* ── 헤더 카드 (HTML div 방식 유지) ── */
+/* ═══════════════════════════════
+   헤더 카드
+═══════════════════════════════ */
 .header-card {
     background: #ffffff;
     border-radius: 16px;
     padding: 22px 32px;
     margin-bottom: 18px;
-    box-shadow: 0 2px 12px rgba(60,80,180,0.07);
+    box-shadow: 0 1px 4px rgba(60,80,180,0.08);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -62,12 +50,14 @@ footer                       { display: none !important; }
     font-weight: 600;
 }
 
-/* ── 업로드 영역 ── */
+/* ═══════════════════════════════
+   업로드 영역
+═══════════════════════════════ */
 [data-testid="stFileUploader"] {
     background: #ffffff !important;
     border-radius: 16px !important;
-    padding: 8px 20px !important;
-    box-shadow: 0 2px 12px rgba(60,80,180,0.07) !important;
+    padding: 6px 20px !important;
+    box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
     margin-bottom: 18px !important;
 }
 [data-testid="stFileUploader"] > label { display: none !important; }
@@ -95,77 +85,173 @@ footer                       { display: none !important; }
     background: #2a47e0 !important;
 }
 
-/* ── 프리셋 라벨 ── */
-.preset-label {
-    font-size: 13px; font-weight: 600; color: #888;
-    margin-bottom: 14px; letter-spacing: 0.05em;
+/* ═══════════════════════════════
+   프리셋 컨테이너 (st.container border)
+═══════════════════════════════ */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    border: 1.5px solid #e2e6f0 !important;
+    box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
+    padding: 0 !important;
+    margin-bottom: 18px !important;
 }
 
-/* ══════════════════════════════════════════
-   모든 stButton: 인디고 블루 (Browse files 동일)
-   ══════════════════════════════════════════ */
-.stButton > button {
-    background-color: #3b5bff !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 22px !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    padding: 10px 20px !important;
-    width: 100% !important;
-    min-height: 44px !important;
-    white-space: nowrap !important;
-    transition: background 0.18s ease !important;
-    cursor: pointer !important;
+/* ═══════════════════════════════
+   버튼 완전 초기화 후 재정의
+═══════════════════════════════ */
+
+/* 모든 stButton 기본 래퍼 */
+.stButton {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
-.stButton > button:hover,
-.stButton > button:focus,
-.stButton > button:active {
-    background-color: #2a47e0 !important;
-    color: #ffffff !important;
-    border: none !important;
+
+/* ── 기본 버튼: outline pill (레퍼런스 비활성 스타일) ── */
+.stButton > button {
+    all: unset !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #ffffff !important;
+    color: #444 !important;
+    border: 1.5px solid #d0d5e8 !important;
+    border-radius: 999px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: 0 24px !important;
+    height: 40px !important;
+    min-width: 96px !important;
+    width: 100% !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    box-sizing: border-box !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    position: relative !important;
+    top: 0 !important;
+    transform: none !important;
+}
+.stButton > button:hover {
+    background: #f0f3ff !important;
+    border-color: #3b5bff !important;
+    color: #3b5bff !important;
+}
+/* 클릭 시 위아래 움직임 완전 제거 */
+.stButton > button:active,
+.stButton > button:focus {
+    background: #ffffff !important;
+    border-color: #d0d5e8 !important;
+    color: #444 !important;
+    transform: none !important;
+    top: 0 !important;
     outline: none !important;
     box-shadow: none !important;
 }
 
-/* 활성 프리셋 */
-.active-preset-btn .stButton > button {
-    background-color: #1a3bcc !important;
-    border: 2.5px solid #0d2299 !important;
-    box-shadow: 0 3px 12px rgba(59,91,255,0.35) !important;
+/* ── 활성 프리셋 버튼: 인디고 채움 (레퍼런스 활성 스타일) ── */
+.active-preset-btn .stButton > button,
+.active-preset-btn .stButton > button:hover,
+.active-preset-btn .stButton > button:active,
+.active-preset-btn .stButton > button:focus {
+    background: #3b5bff !important;
+    color: #ffffff !important;
+    border: 1.5px solid #3b5bff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(59,91,255,0.25) !important;
+    transform: none !important;
+    top: 0 !important;
+    outline: none !important;
 }
 
-/* 설정 버튼 */
-.btn-settings .stButton > button {
-    background-color: #f0f3ff !important;
-    color: #3b5bff !important;
-    border: 1.5px solid #c7d0ff !important;
-    font-size: 18px !important;
+/* ── 설정 버튼 ── */
+.btn-settings .stButton > button,
+.btn-settings .stButton > button:hover,
+.btn-settings .stButton > button:active,
+.btn-settings .stButton > button:focus {
+    background: #ffffff !important;
+    color: #666 !important;
+    border: 1.5px solid #d0d5e8 !important;
+    font-size: 16px !important;
+    min-width: 44px !important;
+    width: 44px !important;
+    padding: 0 !important;
+    transform: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 .btn-settings .stButton > button:hover {
-    background-color: #e0e7ff !important;
+    background: #f0f3ff !important;
+    border-color: #3b5bff !important;
     color: #3b5bff !important;
-    border: 1.5px solid #c7d0ff !important;
 }
 
-/* 다운로드 버튼 */
+/* ── 분석 실행 버튼 ── */
+.btn-run .stButton > button,
+.btn-run .stButton > button:hover,
+.btn-run .stButton > button:active,
+.btn-run .stButton > button:focus {
+    background: #3b5bff !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    transform: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+.btn-run .stButton > button:hover {
+    background: #2a47e0 !important;
+}
+
+/* ── 다운로드 버튼 ── */
 .btn-download .stDownloadButton > button,
 .btn-download .stButton > button {
-    background-color: #f0f3ff !important;
+    all: unset !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #ffffff !important;
     color: #3b5bff !important;
     border: 1.5px solid #c7d0ff !important;
+    border-radius: 999px !important;
     font-size: 13px !important;
+    font-weight: 600 !important;
+    padding: 0 20px !important;
+    height: 40px !important;
+    min-width: 120px !important;
+    width: 100% !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    transition: all 0.15s !important;
+    box-sizing: border-box !important;
+    transform: none !important;
 }
-.btn-download .stDownloadButton > button:hover {
-    background-color: #e0e7ff !important;
-    color: #3b5bff !important;
+.btn-download .stDownloadButton > button:hover,
+.btn-download .stButton > button:hover {
+    background: #f0f3ff !important;
+    border-color: #3b5bff !important;
 }
 
-/* ── 결과 카드 내부 텍스트 ── */
+/* 비활성 다운로드 */
+.btn-download .stButton > button:disabled {
+    background: #f5f5f5 !important;
+    color: #bbb !important;
+    border-color: #e0e0e0 !important;
+    cursor: not-allowed !important;
+}
+
+/* ═══════════════════════════════
+   결과 카드
+═══════════════════════════════ */
 .result-count { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; }
 .result-count span { color: #3b5bff; }
 
-/* ── AgGrid ── */
+/* ═══════════════════════════════
+   AgGrid
+═══════════════════════════════ */
 .ag-theme-streamlit .ag-header {
     background: #f0f3ff !important;
     font-weight: 700 !important;
@@ -333,7 +419,7 @@ def show_aggrid(df):
 
 # ══════════════════════════════ UI ═══════════════════════════════════════════
 
-# 1. 헤더 (HTML 카드)
+# 1. 헤더
 st.markdown("""
 <div class="header-card">
   <div>
@@ -344,7 +430,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 2. 업로드 (Streamlit 네이티브 → CSS로 카드화)
+# 2. 업로드
 uploaded = st.file_uploader("파일 업로드", type=["xlsx"], label_visibility="collapsed")
 if uploaded:
     file_bytes = uploaded.read()
@@ -359,35 +445,48 @@ if uploaded:
         else:
             st.warning(msg + " | 피크월검색량 컬럼을 찾지 못했습니다.")
 
-# 3. 프리셋 카드 (st.container 사용 → 빈 박스 없음)
+# 3. 프리셋 카드
 with st.container(border=True):
-    st.markdown('<p class="preset-label">분석 프리셋</p>', unsafe_allow_html=True)
+    # 라벨 + 버튼을 한 행에 배치
+    # 비율: 라벨(1) + 프리셋5개(각2) + 설정(0.8) + 실행(2) + 다운로드(2)
+    label_col, *btn_cols = st.columns([1.2, 2, 2, 2, 2, 2, 0.8, 2, 2.2])
+
+    with label_col:
+        st.markdown(
+            '<div style="display:flex;align-items:center;height:40px;">'
+            '<span style="font-size:13px;font-weight:600;color:#888;white-space:nowrap;">분석 프리셋</span>'
+            '</div>',
+            unsafe_allow_html=True
+        )
 
     presets = st.session_state.presets
-    n = len(presets)
-    cols = st.columns([1.2]*n + [0.7, 1.8, 1.8])
-
+    # 프리셋 버튼 5개 (btn_cols[0]~[4])
     for i, p in enumerate(presets):
-        with cols[i]:
-            if i == st.session_state.active_preset:
-                st.markdown('<div class="active-preset-btn">', unsafe_allow_html=True)
+        with btn_cols[i]:
+            is_active = (i == st.session_state.active_preset)
+            wrap_class = "active-preset-btn" if is_active else ""
+            st.markdown(f'<div class="{wrap_class}">', unsafe_allow_html=True)
             if st.button(p["이름"], key=f"preset_btn_{i}"):
                 st.session_state.active_preset = i
                 st.rerun()
-            if i == st.session_state.active_preset:
-                st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-    with cols[n]:
+    # 설정 버튼 (btn_cols[5])
+    with btn_cols[5]:
         st.markdown('<div class="btn-settings">', unsafe_allow_html=True)
         if st.button("⚙️", key="btn_settings"):
             st.session_state.show_settings = not st.session_state.show_settings
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    with cols[n+1]:
+    # 분석 실행 버튼 (btn_cols[6])
+    with btn_cols[6]:
+        st.markdown('<div class="btn-run">', unsafe_allow_html=True)
         run_clicked = st.button("🔍 분석 실행", key="btn_run")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    with cols[n+2]:
+    # 다운로드 버튼 (btn_cols[7])
+    with btn_cols[7]:
         st.markdown('<div class="btn-download">', unsafe_allow_html=True)
         if st.session_state.result_df is not None and len(st.session_state.result_df) > 0:
             disp = build_display(st.session_state.result_df, get_col_map(st.session_state.df))
@@ -453,7 +552,7 @@ if run_clicked:
         st.session_state.filtered_count = len(result)
         st.rerun()
 
-# 6. 결과 카드 (st.container 사용)
+# 6. 결과 카드
 with st.container(border=True):
     if st.session_state.result_df is not None:
         cnt = st.session_state.filtered_count
