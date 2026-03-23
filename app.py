@@ -172,6 +172,27 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button:focus {
 """, unsafe_allow_html=True)
 
 # ────────────────────────────────────────────────────────────────
+# 표시할 컬럼 순서 (이 목록에 없는 컬럼은 결과에서 제외)
+# ────────────────────────────────────────────────────────────────
+DISPLAY_COLUMNS = [
+    "키워드",
+    "브랜드키워드",
+    "쇼핑성키워드",
+    "경쟁률",
+    "작년검색량",
+    "작년최대검색월",
+    "피크월검색량",
+    "계절성",
+    "계절성월",
+    "쿠팡해외배송비율",
+    "쿠팡평균가",
+    "쿠팡총리뷰수",
+    "쿠팡최대리뷰수",
+    "쿠팡해외배송총리뷰수",
+    "쿠팡해외배송최대리뷰수",
+]
+
+# ────────────────────────────────────────────────────────────────
 # 기본 프리셋
 # ────────────────────────────────────────────────────────────────
 DEFAULT_PRESET = {
@@ -225,7 +246,7 @@ def load_excel(file_bytes):
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    # 1) 삭제할 컬럼 먼저 제거
+    # 1) 삭제할 컬럼 먼저 제거 (필요없는 컬럼)
     DROP_KEYWORDS = [
         "카테고리",
         "최근1개월", "최근 1개월",
@@ -233,6 +254,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         "최근3개월", "최근 3개월",
         "예상3개월", "예상 3개월",
         "상승률",
+        "신규진입",
     ]
     drop_cols = [c for c in df.columns if any(kw in str(c) for kw in DROP_KEYWORDS)]
     df = df.drop(columns=drop_cols, errors="ignore")
@@ -250,8 +272,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
             new_cols.append(s)
     df.columns = new_cols
 
-    # 3) 컬럼명 표준화
-    # "키워드" 컬럼은 실제 값이 텍스트인 컬럼만 매핑 (O/X·숫자 컬럼 제외)
+    # 3) 컬럼명 표준화 매핑
     rename = {}
     used = set()
 
@@ -259,7 +280,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         c = str(col).strip()
         target = None
 
-        # 키워드: 값 샘플링으로 실제 텍스트 컬럼 판별
+        # 키워드: 실제 텍스트 값인 컬럼만 매핑 (O/X·숫자 컬럼 제외)
         if "키워드" not in used:
             sample = df[col].dropna().astype(str).head(20)
             unique_vals = sample.str.strip().str.upper().unique()
@@ -277,46 +298,56 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
                 target = "키워드"
 
         if target is None:
-            if "브랜드" in c and "브랜드키워드" not in used:
+            if "브랜드" in c and "키워드" in c and "브랜드키워드" not in used:
                 target = "브랜드키워드"
             elif "쇼핑성" in c and "쇼핑성키워드" not in used:
                 target = "쇼핑성키워드"
             elif "경쟁률" in c and "경쟁률" not in used:
                 target = "경쟁률"
             elif (
-                "작년" in c and "검색량" in c and "최대" not in c
+                (("작년" in c or "연간" in c) and "검색량" in c and "최대" not in c and "피크" not in c)
             ) and "작년검색량" not in used:
                 target = "작년검색량"
             elif (
-                "연간" in c and "검색량" in c
-            ) and "작년검색량" not in used:
-                target = "작년검색량"
-            elif (
-                "최대" in c and "월" in c and "검색량" not in c
+                ("최대" in c and "검색월" in c) or
+                ("최대" in c and "월" in c and "검색량" not in c and "피크" not in c)
             ) and "작년최대검색월" not in used:
                 target = "작년최대검색월"
             elif (
-                "최대" in c and "검색량" in c
+                ("최대" in c and "검색량" in c) or
+                ("피크" in c and "검색량" in c) or
+                ("작년최대검색월검색량" in c)
             ) and "피크월검색량" not in used:
                 target = "피크월검색량"
-            elif (
-                "피크" in c and "검색량" in c
-            ) and "피크월검색량" not in used:
-                target = "피크월검색량"
-            elif "계절성" in c and "계절성" not in used:
+            elif "계절성" in c and "월" not in c and "계절성" not in used:
                 target = "계절성"
+            elif ("계절성" in c and "월" in c) and "계절성월" not in used:
+                target = "계절성월"
             elif (
-                "쿠팡" in c and ("가격" in c or "평균가" in c)
+                "쿠팡" in c and "해외" in c and "배송" in c and
+                "리뷰" not in c and "최대" not in c
+            ) and "쿠팡해외배송비율" not in used:
+                target = "쿠팡해외배송비율"
+            elif (
+                "쿠팡" in c and ("가격" in c or "평균가" in c) and "해외" not in c
             ) and "쿠팡평균가" not in used:
                 target = "쿠팡평균가"
             elif (
-                "쿠팡" in c and "리뷰" in c
+                "쿠팡" in c and "총" in c and "리뷰" in c and "해외" not in c
             ) and "쿠팡총리뷰수" not in used:
                 target = "쿠팡총리뷰수"
             elif (
-                "해외" in c and "배송" in c
-            ) and "쿠팡해외배송비율" not in used:
-                target = "쿠팡해외배송비율"
+                "쿠팡" in c and "최대" in c and "리뷰" in c and "해외" not in c
+            ) and "쿠팡최대리뷰수" not in used:
+                target = "쿠팡최대리뷰수"
+            elif (
+                "쿠팡" in c and "해외" in c and "총" in c and "리뷰" in c
+            ) and "쿠팡해외배송총리뷰수" not in used:
+                target = "쿠팡해외배송총리뷰수"
+            elif (
+                "쿠팡" in c and "해외" in c and "최대" in c and "리뷰" in c
+            ) and "쿠팡해외배송최대리뷰수" not in used:
+                target = "쿠팡해외배송최대리뷰수"
 
         if target:
             rename[col] = target
@@ -324,6 +355,11 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.rename(columns=rename)
     df = df.loc[:, ~df.columns.duplicated()]
+
+    # 4) DISPLAY_COLUMNS 순서대로 존재하는 컬럼만 남김
+    final_cols = [c for c in DISPLAY_COLUMNS if c in df.columns]
+    df = df[final_cols]
+
     return df
 
 
@@ -334,7 +370,6 @@ def safe_numeric(series: pd.Series) -> pd.Series:
 def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
     r = df.copy()
 
-    # 브랜드키워드
     if "브랜드키워드" in r.columns and preset["brand_keyword"] != "전체":
         want = preset["brand_keyword"] == "O"
         r = r[r["브랜드키워드"].astype(str).str.strip().isin(
@@ -342,12 +377,10 @@ def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
             ["False", "0", "X", "x", "아니오", "N", "n"]
         )]
 
-    # 작년검색량
     if "작년검색량" in r.columns:
         col = safe_numeric(r["작년검색량"])
         r = r[(col >= preset["search_min"]) & (col <= preset["search_max"])]
 
-    # 계절성
     if "계절성" in r.columns and preset["seasonality"] != "전체":
         want = preset["seasonality"] == "있음"
         r = r[r["계절성"].astype(str).str.strip().isin(
@@ -355,27 +388,22 @@ def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
             ["False", "0", "X", "x", "없음", "N", "n"]
         )]
 
-    # 작년최대검색월
     if "작년최대검색월" in r.columns and preset["max_months"]:
         month_nums = [int(m.replace("월", "")) for m in preset["max_months"]]
         r = r[safe_numeric(r["작년최대검색월"]).isin(month_nums)]
 
-    # 피크월검색량
     if "피크월검색량" in r.columns:
         col = safe_numeric(r["피크월검색량"])
         r = r[(col >= preset["peak_vol_min"]) & (col <= preset["peak_vol_max"])]
 
-    # 쿠팡평균가
     if "쿠팡평균가" in r.columns:
         col = safe_numeric(r["쿠팡평균가"])
         r = r[(col >= preset["coupang_price_min"]) & (col <= preset["coupang_price_max"])]
 
-    # 쿠팡총리뷰수
     if "쿠팡총리뷰수" in r.columns:
         col = safe_numeric(r["쿠팡총리뷰수"])
         r = r[(col >= preset["coupang_review_min"]) & (col <= preset["coupang_review_max"])]
 
-    # 쿠팡해외배송비율 (입력값 0~100%, 실제 데이터는 0.0~1.0 비율)
     if "쿠팡해외배송비율" in r.columns:
         col = safe_numeric(r["쿠팡해외배송비율"])
         o_min = preset["coupang_overseas_min"] / 100.0
