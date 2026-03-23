@@ -17,7 +17,7 @@ st.markdown("""
         padding-top: 2rem !important;
     }
 
-    /* 헤더 카드 */
+    /* ── 헤더 ── */
     .header-card {
         background: white;
         border-radius: 16px;
@@ -28,42 +28,43 @@ st.markdown("""
         justify-content: space-between;
         align-items: center;
     }
-    .main-title {
-        font-size: 24px; font-weight: 900;
-        color: #1a1a2e; margin: 0 0 3px 0;
-    }
+    .main-title { font-size: 24px; font-weight: 900; color: #1a1a2e; margin: 0 0 3px 0; }
     .main-title span { color: #3b82f6; }
-    .sub-title { font-size: 12px; color: #9ca3af; margin: 0; }
+    .sub-title   { font-size: 12px; color: #9ca3af; margin: 0; }
     .version-badge {
         border: 1.5px solid #3b82f6; color: #3b82f6;
         border-radius: 20px; padding: 5px 14px;
-        font-size: 11px; font-weight: 700;
-        white-space: nowrap;
+        font-size: 11px; font-weight: 700; white-space: nowrap;
     }
 
-    /* 업로드 카드 — Streamlit 기본 UI 완전 통합 */
-    .upload-wrapper {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-        margin-bottom: 16px;
-        border: 2px dashed #3b82f6;
-        padding: 28px 32px 20px;
-        text-align: center;
+    /* ── 업로드 영역 ── */
+    /* 전체 감싸는 박스 */
+    div[data-testid="stFileUploader"] {
+        background: white !important;
+        border: 2px dashed #3b82f6 !important;
+        border-radius: 16px !important;
+        padding: 28px 32px !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07) !important;
+        margin-bottom: 16px !important;
+        text-align: center !important;
     }
-    .upload-icon { font-size: 32px; margin-bottom: 6px; }
-    .upload-title { font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 3px; }
-    .upload-sub   { font-size: 12px; color: #9ca3af; margin-bottom: 12px; }
-
-    /* Streamlit 파일업로더 내부 UI 완전 숨김 */
+    /* 라벨(제목) 숨기기 */
     div[data-testid="stFileUploader"] > label { display: none !important; }
-    div[data-testid="stFileUploader"] section > div:first-child { display: none !important; }
+    /* 내부 드래그앤드롭 섹션 */
     div[data-testid="stFileUploader"] section {
         border: none !important;
         background: transparent !important;
         padding: 0 !important;
         box-shadow: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
     }
+    /* 아이콘+텍스트 영역 숨김 */
+    div[data-testid="stFileUploader"] section > div:first-child {
+        display: none !important;
+    }
+    /* Browse files 버튼 스타일 */
     div[data-testid="stFileUploader"] section button {
         background: #3b82f6 !important;
         color: white !important;
@@ -71,35 +72,39 @@ st.markdown("""
         border-radius: 20px !important;
         font-weight: 700 !important;
         font-size: 13px !important;
-        padding: 6px 20px !important;
+        padding: 8px 24px !important;
+        margin-top: 0 !important;
     }
-    div[data-testid="stFileUploader"] {
-        max-width: 100% !important;
+    /* 업로드 후 파일명 뱃지 */
+    div[data-testid="stFileUploader"] section [data-testid="stMarkdownContainer"] {
+        font-size: 13px !important;
+        color: #374151 !important;
     }
 
-    /* 프리셋 카드 */
+    /* ── 프리셋 바 ── */
     .preset-bar {
         background: white;
         border-radius: 16px;
-        padding: 14px 20px;
+        padding: 12px 20px;
         box-shadow: 0 2px 12px rgba(0,0,0,0.07);
         margin-bottom: 16px;
     }
 
-    /* 모든 버튼 기본 */
+    /* 일반 버튼 공통 */
     div[data-testid="stButton"] > button {
         border-radius: 20px !important;
         font-weight: 700 !important;
         font-size: 13px !important;
         white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
         height: 36px !important;
-        padding: 0 14px !important;
+        min-height: 36px !important;
+        line-height: 1 !important;
+        padding: 0 12px !important;
         border: 1.5px solid #e2e8f0 !important;
         background: white !important;
         color: #374151 !important;
-        transition: all 0.15s !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
     }
     div[data-testid="stButton"] > button:hover {
         border-color: #3b82f6 !important;
@@ -111,9 +116,12 @@ st.markdown("""
         background: #3b82f6 !important;
         color: white !important;
         border-color: #3b82f6 !important;
-        font-size: 14px !important;
         height: 40px !important;
-        padding: 0 24px !important;
+        font-size: 14px !important;
+        padding: 0 20px !important;
+    }
+    .run-wrap div[data-testid="stButton"] > button:hover {
+        background: #2563eb !important;
     }
 
     /* 다운로드 버튼 */
@@ -125,32 +133,26 @@ st.markdown("""
         font-weight: 700 !important;
         font-size: 14px !important;
         height: 40px !important;
-        padding: 0 24px !important;
         white-space: nowrap !important;
+        padding: 0 20px !important;
+        width: 100% !important;
+    }
+    div[data-testid="stDownloadButton"] > button:hover {
+        background: #059669 !important;
     }
 
-    /* 결과 카드 */
-    .result-card {
-        background: white;
-        border-radius: 16px;
-        padding: 20px 24px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    /* 비활성 다운로드 */
+    div[data-testid="stButton"].dl-disabled > button {
+        background: #d1fae5 !important;
+        color: #6ee7b7 !important;
+        border-color: #d1fae5 !important;
+        cursor: not-allowed !important;
+        height: 40px !important;
+        font-size: 14px !important;
+        padding: 0 20px !important;
     }
-    .result-meta {
-        font-size: 13px; color: #6b7280; font-weight: 600; margin-bottom: 14px;
-    }
-    .result-meta b { color: #3b82f6; font-size: 15px; }
 
-    /* AgGrid */
-    .ag-theme-streamlit { width: 100% !important; }
-    .ag-header { background: #f8fafc !important; }
-    .ag-header-cell-label { font-size: 13px !important; font-weight: 700 !important; color: #374151 !important; }
-    .ag-row-even { background: #ffffff !important; }
-    .ag-row-odd  { background: #f9fafb !important; }
-    .ag-row:hover { background: #eff6ff !important; }
-    .ag-cell { font-size: 14px !important; color: #1f2937 !important; }
-
-    /* 설정 패널 */
+    /* ── 설정 패널 ── */
     .settings-panel {
         background: white;
         border-radius: 16px;
@@ -159,11 +161,36 @@ st.markdown("""
         border: 1px solid #e2e8f0;
         margin-bottom: 16px;
     }
+
+    /* ── 결과 카드 ── */
+    .result-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 24px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+    .result-meta { font-size:13px; color:#6b7280; font-weight:600; margin-bottom:14px; }
+    .result-meta b { color:#3b82f6; font-size:15px; }
+
+    /* ── AgGrid ── */
+    .ag-theme-streamlit { width: 100% !important; }
+    .ag-header { background: #f8fafc !important; }
+    .ag-header-cell-label { font-size:13px !important; font-weight:700 !important; color:#374151 !important; }
+    .ag-row-even { background: #ffffff !important; }
+    .ag-row-odd  { background: #f9fafb !important; }
+    .ag-row:hover { background: #eff6ff !important; }
+    .ag-cell { font-size:14px !important; color:#1f2937 !important; }
+
+    /* 구분선 제거 */
     hr { display: none !important; }
+
+    /* 탭 */
+    .stTabs [data-baseweb="tab"] { font-size:13px !important; font-weight:700 !important; }
+    .stTabs [aria-selected="true"] { color:#3b82f6 !important; border-bottom-color:#3b82f6 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── 세션 상태 ──
+# ── 세션 상태 ──────────────────────────────────────────
 DEFAULT_PRESET = {
     "name": "프리셋",
     "브랜드": "전체", "시즌성": "전체",
@@ -181,12 +208,12 @@ if "presets" not in st.session_state:
         {**DEFAULT_PRESET, "name": "프리셋 4"},
         {**DEFAULT_PRESET, "name": "프리셋 5"},
     ]
-for k, v in [("active_preset",0),("show_modal",False),("df",None),
-              ("result_df",None),("filtered_count",0)]:
-    if k not in st.session_state:
-        st.session_state[k] = v
+for _k, _v in [("active_preset",0),("show_modal",False),
+               ("df",None),("result_df",None),("filtered_count",0)]:
+    if _k not in st.session_state:
+        st.session_state[_k] = _v
 
-# ── 데이터 함수 ──
+# ── 데이터 함수 ────────────────────────────────────────
 @st.cache_data
 def load_excel(file_bytes):
     raw = pd.read_excel(io.BytesIO(file_bytes), sheet_name="all", header=[0,1,2])
@@ -199,8 +226,7 @@ def load_excel(file_bytes):
 
 def find_col(df, kws):
     for col in df.columns:
-        if all(k in col for k in kws):
-            return col
+        if all(k in col for k in kws): return col
     return None
 
 def get_col_map(df):
@@ -258,16 +284,16 @@ def apply_preset(df, cm, preset):
             else f[v.isin(["X","x","없음","N","n","0","False","false"])]
     if cm.get("작년검색량"):
         c = cm["작년검색량"]; f[c] = pd.to_numeric(f[c], errors="coerce")
-        f = f[(f[c] >= preset.get("작년검색량_min",0)) & (f[c] <= preset.get("작년검색량_max",9999999))]
+        f = f[(f[c]>=preset.get("작년검색량_min",0)) & (f[c]<=preset.get("작년검색량_max",9999999))]
     months = preset.get("작년최대검색월",[])
     if cm.get("작년최대검색월") and months:
         f = f[f[cm["작년최대검색월"]].apply(normalize_month).isin(months)]
     if cm.get("피크월검색량"):
         c = cm["피크월검색량"]; f[c] = pd.to_numeric(f[c], errors="coerce")
-        f = f[(f[c] >= preset.get("피크월검색량_min",0)) & (f[c] <= preset.get("피크월검색량_max",9999999))]
+        f = f[(f[c]>=preset.get("피크월검색량_min",0)) & (f[c]<=preset.get("피크월검색량_max",9999999))]
     if cm.get("쿠팡총리뷰수"):
         c = cm["쿠팡총리뷰수"]; f[c] = pd.to_numeric(f[c], errors="coerce")
-        f = f[(f[c] >= preset.get("쿠팡총리뷰수_min",0)) & (f[c] <= preset.get("쿠팡총리뷰수_max",9999999))]
+        f = f[(f[c]>=preset.get("쿠팡총리뷰수_min",0)) & (f[c]<=preset.get("쿠팡총리뷰수_max",9999999))]
     if cm.get("쿠팡해외배송비율"):
         c = cm["쿠팡해외배송비율"]; f[c] = pd.to_numeric(f[c], errors="coerce")
         nn = f[c].notna().sum()
@@ -277,18 +303,18 @@ def apply_preset(df, cm, preset):
             mx_p = preset.get("쿠팡해외배송비율_max",100)
             mn_c = mn_p/100 if dmax<=1.0 else mn_p
             mx_c = mx_p/100 if dmax<=1.0 else mx_p
-            f = f[(f[c].isna()) | ((f[c] >= mn_c) & (f[c] <= mx_c))]
+            f = f[(f[c].isna())|((f[c]>=mn_c)&(f[c]<=mx_c))]
         f = f.sort_values(by=c, ascending=False, na_position="last")
     return f.reset_index(drop=True)
 
 def build_display(f, cm):
     mapping = [
-        ("키워드","키워드"), ("브랜드","브랜드"), ("경쟁률","경쟁률"),
-        ("작년검색량","작년검색량"), ("작년최대검색월","작년최대검색월"),
-        ("피크월검색량","피크월검색량"), ("계절성","계절성"),
-        ("쿠팡총리뷰수","쿠팡총리뷰"), ("쿠팡해외배송비율","쿠팡해외배송비율(%)"),
+        ("키워드","키워드"),("브랜드","브랜드"),("경쟁률","경쟁률"),
+        ("작년검색량","작년검색량"),("작년최대검색월","작년최대검색월"),
+        ("피크월검색량","피크월검색량"),("계절성","계절성"),
+        ("쿠팡총리뷰수","쿠팡총리뷰"),("쿠팡해외배송비율","쿠팡해외배송비율(%)"),
     ]
-    cols = [(cm[k], lbl) for k,lbl in mapping if cm.get(k) and cm[k] in f.columns]
+    cols = [(cm[k],lbl) for k,lbl in mapping if cm.get(k) and cm[k] in f.columns]
     if not cols: return pd.DataFrame()
     r = f[[c for c,_ in cols]].copy()
     r.columns = [lbl for _,lbl in cols]
@@ -324,10 +350,10 @@ def show_aggrid(df):
         cellStyle={"fontSize":"14px","color":"#1f2937"},
     )
     widths = {
-        "키워드":(180,260), "브랜드":(70,85), "경쟁률":(80,95),
-        "작년검색량":(110,130), "작년최대검색월":(115,135),
-        "피크월검색량":(110,130), "계절성":(75,90),
-        "쿠팡총리뷰":(95,115), "쿠팡해외배송비율(%)":(125,150),
+        "키워드":(180,260),"브랜드":(70,85),"경쟁률":(80,95),
+        "작년검색량":(110,130),"작년최대검색월":(115,135),
+        "피크월검색량":(110,130),"계절성":(75,90),
+        "쿠팡총리뷰":(95,115),"쿠팡해외배송비율(%)":(125,150),
     }
     for col,(mn,mx) in widths.items():
         if col in df.columns:
@@ -342,9 +368,9 @@ def show_aggrid(df):
            height=560, theme="streamlit",
            use_container_width=True)
 
-# ══════════════════════════
-#  UI
-# ══════════════════════════
+# ══════════════════════════════════════════
+#  UI 렌더링
+# ══════════════════════════════════════════
 
 # ① 헤더
 st.markdown("""
@@ -357,16 +383,25 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ② 파일 업로드 (커스텀 카드 + 업로더 통합)
+# ② 파일 업로드 — 커스텀 안내 텍스트 + 실제 업로더를 같은 카드처럼 보이게
 st.markdown("""
-<div class="upload-wrapper">
-  <div class="upload-icon">📁</div>
-  <div class="upload-title">분석할 파일을 이곳에 올려주세요</div>
-  <div class="upload-sub">엑셀(.xlsx) 파일을 드래그하거나 클릭하여 선택</div>
+<div style="text-align:center; margin-bottom:4px;">
+  <div style="font-size:28px; margin-bottom:6px;">📁</div>
+  <div style="font-size:15px; font-weight:700; color:#1a1a2e; margin-bottom:3px;">
+    분석할 파일을 이곳에 올려주세요
+  </div>
+  <div style="font-size:12px; color:#9ca3af; margin-bottom:8px;">
+    엑셀(.xlsx) 파일을 드래그하거나 클릭하여 선택
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
-uploaded = st.file_uploader("파일 업로드", type=["xlsx"], label_visibility="collapsed")
+uploaded = st.file_uploader(
+    "파일 업로드",
+    type=["xlsx"],
+    label_visibility="collapsed"
+)
+
 if uploaded:
     fb = uploaded.read()
     df_loaded = load_excel(fb)
@@ -379,43 +414,49 @@ if uploaded:
         with st.expander("컬럼 목록 확인"):
             st.write(list(df_loaded.columns))
 
+st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
+
 # ③ 프리셋 바
 st.markdown('<div class="preset-bar">', unsafe_allow_html=True)
-# 컬럼 비율: 프리셋5개 + 설정 + 여백 + 분석실행 + 다운로드
-cols = st.columns([1.1, 1.1, 1, 1, 1, 0.55, 2.8, 1.15, 1.3])
+
+# 컬럼 구성: [프리셋1~5] [⚙️] [여백] [분석실행] [다운로드]
+pcols = st.columns([1.2, 1.2, 1.05, 1.05, 1.05, 0.5, 2.3, 1.2, 1.3])
 
 for i in range(5):
-    with cols[i]:
+    with pcols[i]:
         p = st.session_state.presets[i]
         is_active = (i == st.session_state.active_preset)
-        # 활성 프리셋 스타일 개별 적용
-        st.markdown(f"""
+        # 활성 버튼 개별 색상 적용
+        uid = f"pb_{i}"
+        active_css = f"""
         <style>
-        div[data-testid="column"]:nth-of-type({i+1}) div[data-testid="stButton"] > button {{
+        [data-testid="stButton"][key="{uid}"] > button,
+        div.stButton:has(button[kind="secondary"]):nth-of-type({i+2}) > button {{
             background: {'#3b82f6' if is_active else 'white'} !important;
             color: {'white' if is_active else '#374151'} !important;
             border-color: {'#3b82f6' if is_active else '#e2e8f0'} !important;
         }}
         </style>
-        """, unsafe_allow_html=True)
-        if st.button(p["name"], key=f"pb_{i}", use_container_width=True):
+        """ 
+        st.markdown(active_css, unsafe_allow_html=True)
+        if st.button(p["name"], key=uid, use_container_width=True):
             st.session_state.active_preset = i
             st.rerun()
 
-with cols[5]:
+with pcols[5]:
     if st.button("⚙️", key="gear", use_container_width=True):
         st.session_state.show_modal = not st.session_state.show_modal
         st.rerun()
 
-with cols[6]:
+with pcols[6]:
     st.empty()
 
-with cols[7]:
+with pcols[7]:
     st.markdown('<div class="run-wrap">', unsafe_allow_html=True)
     run_clicked = st.button("🔍 분석 실행", key="run", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-with cols[8]:
+with pcols[8]:
     if st.session_state.result_df is not None and len(st.session_state.result_df) > 0:
         buf = io.BytesIO()
         st.session_state.result_df.to_excel(buf, index=False)
@@ -427,7 +468,7 @@ with cols[8]:
             use_container_width=True
         )
     else:
-        st.button("📥 엑셀 다운로드", key="dl_dummy", disabled=True, use_container_width=True)
+        st.button("📥 엑셀 다운로드", key="dl_off", disabled=True, use_container_width=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -456,13 +497,13 @@ if st.session_state.show_modal:
             st.markdown("**작년 최대검색월**")
             rows = [["1월","2월","3월","4월"],["5월","6월","7월","8월"],["9월","10월","11월","12월"]]
             sel = p.get("작년최대검색월",[])
-            nm = []
+            nm2 = []
             for row in rows:
                 rc = st.columns(4)
                 for j, m in enumerate(row):
                     with rc[j]:
-                        if st.checkbox(m, value=(m in sel), key=f"mo_{i}_{m}"): nm.append(m)
-            p["작년최대검색월"] = nm
+                        if st.checkbox(m, value=(m in sel), key=f"mo_{i}_{m}"): nm2.append(m)
+            p["작년최대검색월"] = nm2
             st.markdown("**피크월검색량 범위**")
             c5, c6 = st.columns(2)
             with c5: p["피크월검색량_min"] = st.number_input("최소", value=p.get("피크월검색량_min",0), step=1000, key=f"pm_{i}")
@@ -502,6 +543,7 @@ if st.session_state.result_df is not None:
 else:
     msg = "📂 엑셀 파일을 업로드한 후 분석을 실행하세요." if st.session_state.df is None \
           else "✅ 파일 로드 완료. 프리셋 조건을 설정하고 <b>분석 실행</b>을 눌러주세요."
-    st.markdown(f'<div style="text-align:center;color:#9ca3af;padding:32px 0;">{msg}</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="text-align:center;color:#9ca3af;padding:32px 0;">{msg}</div>',
+        unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
