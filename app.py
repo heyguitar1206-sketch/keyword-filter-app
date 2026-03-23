@@ -10,79 +10,102 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
 html, body, * { font-family: 'Noto Sans KR', sans-serif !important; }
 
-/* 배경 */
-[data-testid="stAppViewContainer"] > .main { background: #e8ebf2 !important; }
+/* ── 배경 ── */
+.stApp { background: #e8ebf2 !important; }
 [data-testid="stAppViewContainer"] { background: #e8ebf2 !important; }
+[data-testid="stAppViewContainer"] > section > div { background: #e8ebf2 !important; }
 
-/* 중앙 고정 너비 */
+/* ── 상단 잘림 완전 제거 ── */
+#root > div:first-child { padding-top: 0 !important; }
+.stApp > header { display: none !important; }
+[data-testid="stHeader"] { display: none !important; }
 .block-container {
-    max-width: 860px !important;
-    margin: 0 auto !important;
-    padding: 2.5rem 1rem 3rem !important;
+    padding-top: 2rem !important;
+    padding-bottom: 3rem !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 70vw !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
 }
 
-/* ── 카드 공통 ── */
+/* ── 카드 스타일 (border=True 컨테이너 타겟) ── */
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff !important;
     border-radius: 14px !important;
     border: none !important;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.08) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
     padding: 0 !important;
-    margin-bottom: 12px !important;
+    overflow: hidden !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"] > div {
+    padding: 0 !important;
 }
 
-/* ── 헤더 내부 ── */
-.hdr-inner {
+/* 카드 내부 여백 */
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
+    padding: 16px 22px !important;
+    gap: 0 !important;
+}
+
+/* ── 헤더 HTML ── */
+.hdr-wrap {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 18px 24px;
+    padding: 20px 26px;
 }
-.hdr-left-title {
-    font-size: 22px; font-weight: 900; color: #111827;
-    margin: 0 0 3px; line-height: 1.2;
-}
-.hdr-left-title span { color: #3b5bff; }
-.hdr-left-sub { font-size: 11px; color: #9ca3af; margin: 0; }
+.hdr-title { font-size: 22px; font-weight: 900; color: #111827; margin: 0 0 3px; }
+.hdr-title span { color: #3b5bff; }
+.hdr-sub { font-size: 11px; color: #9ca3af; margin: 0; }
 .hdr-badge {
     border: 1.5px solid #3b5bff; color: #3b5bff;
-    border-radius: 20px; padding: 4px 14px;
+    border-radius: 20px; padding: 5px 14px;
     font-size: 11px; font-weight: 700; white-space: nowrap;
 }
 
-/* ── 업로드 카드 내부 ── */
-.upl-inner {
+/* ── 업로드 존 ── */
+.upl-zone {
     border: 2.5px dashed #93a8ff;
     border-radius: 12px;
-    margin: 14px;
-    padding: 30px 20px 24px;
+    padding: 32px 20px 26px;
     text-align: center;
     cursor: pointer;
+    margin: 14px;
     background: #fff;
+    transition: background 0.15s;
 }
-.upl-circle {
-    width: 50px; height: 50px; border-radius: 50%;
+.upl-zone:hover { background: #f8f9ff; }
+.upl-icon {
+    width: 52px; height: 52px; border-radius: 50%;
     background: #eef1ff; margin: 0 auto 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px; line-height: 1;
+    font-size: 22px;
 }
 .upl-title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 5px; }
 .upl-sub   { font-size: 12px; color: #9ca3af; }
-.upl-fname {
+.upl-file  {
     display: inline-block; margin-top: 12px;
     background: #eef1ff; color: #3b5bff;
     border-radius: 20px; padding: 5px 16px;
     font-size: 12px; font-weight: 700;
 }
 
-/* 파일업로더 완전 숨김 */
+/* Streamlit 파일업로더 완전 숨김 */
 [data-testid="stFileUploader"] {
     height: 0 !important; overflow: hidden !important;
     opacity: 0 !important; position: absolute !important;
-    pointer-events: none !important; margin: 0 !important; padding: 0 !important;
+    pointer-events: none !important;
+    margin: 0 !important; padding: 0 !important;
 }
 
-/* ── 버튼 공통 초기화 ── */
+/* ── 프리셋 라벨 ── */
+.plabel {
+    font-size: 12px; font-weight: 700; color: #9ca3af;
+    white-space: nowrap; line-height: 34px; margin: 0;
+}
+
+/* ── 버튼 공통 ── */
 [data-testid="stButton"] > button {
     border-radius: 20px !important;
     font-size: 12.5px !important;
@@ -96,59 +119,46 @@ html, body, * { font-family: 'Noto Sans KR', sans-serif !important; }
     background: #ffffff !important;
     color: #374151 !important;
     box-shadow: none !important;
-    line-height: 34px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    transition: all 0.15s !important;
 }
 [data-testid="stButton"] > button:hover {
     border-color: #3b5bff !important;
     color: #3b5bff !important;
     background: #f5f6ff !important;
 }
-
 /* 활성 프리셋 */
 .ab [data-testid="stButton"] > button {
-    background: #3b5bff !important;
-    color: #fff !important;
+    background: #3b5bff !important; color: #fff !important;
     border-color: #3b5bff !important;
 }
-.ab [data-testid="stButton"] > button:hover { background: #2a47e8 !important; }
-
 /* 분석실행 */
 .rb [data-testid="stButton"] > button {
     background: #3b5bff !important; color: #fff !important;
     border-color: #3b5bff !important;
     height: 38px !important; font-size: 13px !important;
-    font-weight: 700 !important; padding: 0 20px !important;
-    line-height: 38px !important;
+    font-weight: 700 !important; padding: 0 22px !important;
 }
-.rb [data-testid="stButton"] > button:hover { background: #2a47e8 !important; }
-
-/* 다운로드 */
-[data-testid="stDownloadButton"] > button {
-    background: #10b981 !important; color: #fff !important;
-    border: none !important; border-radius: 20px !important;
-    font-weight: 700 !important; font-size: 13px !important;
-    height: 38px !important; padding: 0 16px !important;
-    white-space: nowrap !important; width: 100% !important;
-    line-height: 38px !important;
+/* 기어 */
+.gb [data-testid="stButton"] > button {
+    padding: 0 10px !important; color: #6b7280 !important;
+    font-size: 15px !important;
 }
-[data-testid="stDownloadButton"] > button:hover { background: #059669 !important; }
-
 /* 비활성 다운로드 */
 .db [data-testid="stButton"] > button {
     background: #f3f4f6 !important; color: #d1d5db !important;
     border-color: #f3f4f6 !important;
     height: 38px !important; font-size: 13px !important;
-    padding: 0 16px !important;
+    font-weight: 700 !important; padding: 0 16px !important;
 }
-
-/* 기어 버튼 */
-.gb [data-testid="stButton"] > button {
-    padding: 0 10px !important; font-size: 15px !important;
-    color: #6b7280 !important;
+/* 다운로드 */
+[data-testid="stDownloadButton"] > button {
+    background: #10b981 !important; color: #fff !important;
+    border: none !important; border-radius: 20px !important;
+    font-weight: 700 !important; font-size: 13px !important;
+    height: 38px !important; width: 100% !important;
+    white-space: nowrap !important; padding: 0 16px !important;
 }
+[data-testid="stDownloadButton"] > button:hover { background: #059669 !important; }
 
 /* ── AgGrid ── */
 .ag-theme-streamlit { width: 100% !important; }
@@ -163,16 +173,9 @@ html, body, * { font-family: 'Noto Sans KR', sans-serif !important; }
 hr { display: none !important; }
 .stTabs [data-baseweb="tab"] { font-size: 13px !important; font-weight: 600 !important; }
 .stTabs [aria-selected="true"] { color:#3b5bff !important; border-bottom-color:#3b5bff !important; }
-
-/* 프리셋 라벨 정렬 */
-.preset-lbl {
-    font-size: 12px; font-weight: 700; color: #9ca3af;
-    white-space: nowrap; margin-top: 8px; line-height: 34px;
-}
-/* 결과 메타 */
-.r-meta { font-size: 12px; color: #6b7280; font-weight: 600; margin-bottom: 12px; }
-.r-meta b { color: #3b5bff; font-size: 14px; }
-.r-empty { text-align:center; color:#b0b7c3; font-size:12px; padding:30px 0; }
+.r-meta { font-size:13px; color:#6b7280; font-weight:600; margin-bottom:12px; }
+.r-meta b { color:#3b5bff; font-size:14px; }
+.r-empty { text-align:center; color:#b0b7c3; font-size:13px; padding:30px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -186,7 +189,7 @@ DEFAULT_PRESET = {
     "쿠팡해외배송비율_min":0,"쿠팡해외배송비율_max":100,
 }
 if "presets" not in st.session_state:
-    st.session_state.presets = [
+    st.session_state.presets=[
         {**DEFAULT_PRESET,"name":"시즌소싱 26년봄"},
         {**DEFAULT_PRESET,"name":"비시즌 가구"},
         {**DEFAULT_PRESET,"name":"프리셋 3"},
@@ -327,16 +330,16 @@ def show_aggrid(df):
            height=520,theme="streamlit",use_container_width=True)
 
 # ══════════════════════════════════════════
-#  렌더링 — st.container(border=True) 사용
+#  렌더링
 # ══════════════════════════════════════════
 
-# ① 헤더 카드
+# ① 헤더 — border=True 컨테이너, 내부는 HTML로 레이아웃
 with st.container(border=True):
     st.markdown("""
-    <div class="hdr-inner">
+    <div class="hdr-wrap">
       <div>
-        <p class="hdr-left-title">끝장캐리 <span>키워드 분석</span></p>
-        <p class="hdr-left-sub">쇼핑성 키워드 선별 및 데이터 전략 분석 도구</p>
+        <p class="hdr-title">끝장캐리 <span>키워드 분석</span></p>
+        <p class="hdr-sub">쇼핑성 키워드 선별 및 데이터 전략 분석 도구</p>
       </div>
       <div class="hdr-badge">Premium Version v1.7</div>
     </div>
@@ -344,82 +347,79 @@ with st.container(border=True):
 
 # ② 업로드 카드
 with st.container(border=True):
-    fname = st.session_state.uname
-    file_tag = f'<div class="upl-fname">📎 {fname}</div>' if fname else ""
+    fname=st.session_state.uname
+    ftag=f'<div class="upl-file">📎 {fname}</div>' if fname else ""
     st.markdown(f"""
-    <div class="upl-inner"
-         onclick="document.querySelector('[data-testid=stFileUploader] input[type=file]').click()">
-      <div class="upl-circle">📄</div>
+    <div class="upl-zone"
+      onclick="(function(){{
+        var el=window.parent.document.querySelector('[data-testid=stFileUploader] input[type=file]');
+        if(el) el.click();
+      }})()">
+      <div class="upl-icon">📄</div>
       <div class="upl-title">분석할 파일을 이곳에 올려주세요</div>
       <div class="upl-sub">엑셀(.xlsx) 또는 CSV 파일을 드래그하거나 클릭하여 선택</div>
-      {file_tag}
+      {ftag}
     </div>
     """, unsafe_allow_html=True)
-    uploaded = st.file_uploader("u", type=["xlsx"], label_visibility="collapsed")
+    uploaded=st.file_uploader("u",type=["xlsx"],label_visibility="collapsed")
     if uploaded:
-        fb = uploaded.read()
-        st.session_state.df = load_excel(fb)
-        st.session_state.uname = uploaded.name
+        fb=uploaded.read()
+        st.session_state.df=load_excel(fb)
+        st.session_state.uname=uploaded.name
         st.rerun()
 
 # ③ 프리셋 바 카드
 with st.container(border=True):
-    # 내부 패딩
-    st.markdown('<div style="padding: 4px 6px;">', unsafe_allow_html=True)
-    cols = st.columns([0.82, 1.1, 1.1, 0.95, 0.95, 0.95, 0.42, 0.5, 1.08, 1.12])
+    pc=st.columns([0.78,1.05,1.05,0.92,0.92,0.92,0.4,0.45,1.05,1.1])
 
-    with cols[0]:
-        st.markdown('<div class="preset-lbl">분석 프리셋</div>', unsafe_allow_html=True)
+    with pc[0]:
+        st.markdown('<p class="plabel">분석 프리셋</p>', unsafe_allow_html=True)
 
     for i in range(5):
-        with cols[i+1]:
-            is_a = (i == st.session_state.active_preset)
-            st.markdown(f'<div class="{"ab" if is_a else ""}">', unsafe_allow_html=True)
-            if st.button(st.session_state.presets[i]["name"], key=f"pb_{i}", use_container_width=True):
-                st.session_state.active_preset = i
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+        with pc[i+1]:
+            is_a=(i==st.session_state.active_preset)
+            st.markdown(f'<div class="{"ab" if is_a else ""}">',unsafe_allow_html=True)
+            if st.button(st.session_state.presets[i]["name"],key=f"pb_{i}",use_container_width=True):
+                st.session_state.active_preset=i; st.rerun()
+            st.markdown('</div>',unsafe_allow_html=True)
 
-    with cols[6]:
-        st.markdown('<div class="gb">', unsafe_allow_html=True)
-        if st.button("⚙️", key="gear", use_container_width=True):
-            st.session_state.show_modal = not st.session_state.show_modal
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    with pc[6]:
+        st.markdown('<div class="gb">',unsafe_allow_html=True)
+        if st.button("⚙️",key="gear",use_container_width=True):
+            st.session_state.show_modal=not st.session_state.show_modal; st.rerun()
+        st.markdown('</div>',unsafe_allow_html=True)
 
-    with cols[7]:
-        st.empty()
+    with pc[7]: st.empty()
 
-    with cols[8]:
-        st.markdown('<div class="rb">', unsafe_allow_html=True)
-        run_clicked = st.button("🔍 분석 실행", key="run", use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    with pc[8]:
+        st.markdown('<div class="rb">',unsafe_allow_html=True)
+        run_clicked=st.button("🔍 분석 실행",key="run",use_container_width=True)
+        st.markdown('</div>',unsafe_allow_html=True)
 
-    with cols[9]:
-        has_r = st.session_state.result_df is not None and len(st.session_state.result_df) > 0
+    with pc[9]:
+        has_r=st.session_state.result_df is not None and len(st.session_state.result_df)>0
         if has_r:
-            buf = io.BytesIO()
-            st.session_state.result_df.to_excel(buf, index=False); buf.seek(0)
-            st.download_button("📥 엑셀 다운로드", data=buf,
+            buf=io.BytesIO()
+            st.session_state.result_df.to_excel(buf,index=False); buf.seek(0)
+            st.download_button("📥 엑셀 다운로드",data=buf,
                 file_name=f"키워드분석_{st.session_state.presets[st.session_state.active_preset]['name']}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True)
         else:
-            st.markdown('<div class="db">', unsafe_allow_html=True)
-            st.button("📥 엑셀 다운로드", key="dl_off", disabled=True, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('<div class="db">',unsafe_allow_html=True)
+            st.button("📥 엑셀 다운로드",key="dl_off",disabled=True,use_container_width=True)
+            st.markdown('</div>',unsafe_allow_html=True)
 
 # ④ 설정 패널
 if st.session_state.show_modal:
     with st.container(border=True):
         st.markdown("**⚙️ 프리셋 설정**")
-        tabs = st.tabs([p["name"] for p in st.session_state.presets])
-        for i, tab in enumerate(tabs):
+        tabs=st.tabs([p["name"] for p in st.session_state.presets])
+        for i,tab in enumerate(tabs):
             with tab:
-                p = st.session_state.presets[i]
-                p["name"] = st.text_input("프리셋 이름", value=p["name"], key=f"nm_{i}")
-                c1,c2 = st.columns(2)
+                p=st.session_state.presets[i]
+                p["name"]=st.text_input("프리셋 이름",value=p["name"],key=f"nm_{i}")
+                c1,c2=st.columns(2)
                 with c1: p["브랜드"]=st.radio("브랜드키워드",["전체","O","X"],
                     index=["전체","O","X"].index(p.get("브랜드","전체")),key=f"br_{i}",horizontal=True)
                 with c2: p["시즌성"]=st.radio("시즌성",["전체","있음","없음"],
@@ -455,27 +455,25 @@ if run_clicked:
     if st.session_state.df is None:
         st.error("먼저 엑셀 파일을 업로드해 주세요.")
     else:
-        cm_ = get_cm(st.session_state.df)
-        pr_ = st.session_state.presets[st.session_state.active_preset]
-        filtered_ = apply_preset(st.session_state.df, cm_, pr_)
-        st.session_state.result_df = build_display(filtered_, cm_)
-        st.session_state.filtered_count = len(filtered_)
+        cm_=get_cm(st.session_state.df)
+        pr_=st.session_state.presets[st.session_state.active_preset]
+        filtered_=apply_preset(st.session_state.df,cm_,pr_)
+        st.session_state.result_df=build_display(filtered_,cm_)
+        st.session_state.filtered_count=len(filtered_)
 
 # ⑥ 결과 카드
 with st.container(border=True):
-    st.markdown('<div style="padding: 6px 8px 2px;">', unsafe_allow_html=True)
     if st.session_state.result_df is not None:
-        pname_ = st.session_state.presets[st.session_state.active_preset]["name"]
+        pname_=st.session_state.presets[st.session_state.active_preset]["name"]
         st.markdown(
             f'<div class="r-meta">필터 결과: <b>{st.session_state.filtered_count:,}개</b> 키워드 ({pname_})</div>',
             unsafe_allow_html=True)
-        if len(st.session_state.result_df) > 0:
+        if len(st.session_state.result_df)>0:
             show_aggrid(st.session_state.result_df)
         else:
             st.markdown('<div class="r-empty">조건에 맞는 키워드가 없습니다. 필터 조건을 완화해 보세요.</div>',
                         unsafe_allow_html=True)
     else:
-        msg_ = "📂 파일을 업로드하고 분석 버튼을 눌러주세요." if st.session_state.df is None \
-               else "✅ 파일 로드 완료 — 분석 실행 버튼을 눌러주세요."
-        st.markdown(f'<div class="r-empty">{msg_}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        msg_="📂 파일을 업로드하고 분석 버튼을 눌러주세요." if st.session_state.df is None \
+             else "✅ 파일 로드 완료 — 분석 실행 버튼을 눌러주세요."
+        st.markdown(f'<div class="r-empty">{msg_}</div>',unsafe_allow_html=True)
