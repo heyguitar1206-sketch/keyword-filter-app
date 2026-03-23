@@ -81,9 +81,7 @@ footer { display: none !important; }
     margin: 0 !important;
     white-space: nowrap !important;
 }
-[data-testid="stFileUploaderDropzone"] button:hover {
-    background: #2a47e0 !important;
-}
+[data-testid="stFileUploaderDropzone"] button:hover { background: #2a47e0 !important; }
 
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] p,
 div[data-testid="stTabs"] div[role="tablist"] button[role="tab"] {
@@ -172,9 +170,7 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button {
     cursor: pointer !important;
     flex-shrink: 0 !important;
 }
-div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
-    background: #2a47e0 !important;
-}
+div[role="tabpanel"] [data-testid="stNumberInput"] button:hover { background: #2a47e0 !important; }
 
 .filter-section-title {
     font-size: 14px !important;
@@ -186,10 +182,7 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
 }
 div[role="tabpanel"] [data-testid="stRadio"] label,
 div[role="tabpanel"] [data-testid="stCheckbox"] label,
-div[role="tabpanel"] label {
-    font-size: 11px !important;
-    color: #4a5080 !important;
-}
+div[role="tabpanel"] label { font-size: 11px !important; color: #4a5080 !important; }
 div[role="tabpanel"] .stButton > button {
     all: unset !important;
     display: inline-flex !important;
@@ -210,6 +203,24 @@ div[role="tabpanel"] .stButton > button {
 div[role="tabpanel"] .stButton > button:hover { background: #f0f3ff !important; }
 </style>
 """, unsafe_allow_html=True)
+
+
+# ───────────────────────── 삭제할 컬럼 목록 ─────────────────────────
+# 결과에서 제거할 컬럼 키워드 (부분 일치)
+DROP_COL_KEYWORDS = [
+    "카테고리",
+    "최근1개월", "최근 1개월",
+    "예상1개월", "예상 1개월",
+    "최근3개월", "최근 3개월",
+    "예상3개월", "예상 3개월",
+    "상승률",
+]
+
+def should_drop(col_name: str) -> bool:
+    for kw in DROP_COL_KEYWORDS:
+        if kw in col_name:
+            return True
+    return False
 
 
 # ───────────────────────── 세션 초기화 ─────────────────────────
@@ -257,12 +268,8 @@ def load_excel(file_bytes):
         return None
 
 def normalize_columns(df):
-    """
-    중복 컬럼명 방지: 이미 표준명으로 매핑된 컬럼은 건너뜀.
-    컬럼 인덱스를 초기화하여 duplicate label 에러 방지.
-    """
-    # 1) 컬럼 인덱스 중복 제거 (같은 이름의 컬럼이 여러 개면 뒤에 _1, _2 붙임)
-    cols = pd.Series(df.columns)
+    # 1) 중복 컬럼명 처리
+    cols = pd.Series(df.columns.astype(str))
     for dup in cols[cols.duplicated()].unique():
         dup_idx = cols[cols == dup].index.tolist()
         for i, idx in enumerate(dup_idx[1:], 1):
@@ -273,31 +280,48 @@ def normalize_columns(df):
     used_targets = set()
 
     for col in df.columns:
-        c = col.strip()
+        c = str(col).strip()
         target = None
 
-        if "키워드" in c and "브랜드" not in c and "키워드" not in used_targets:
+        # ★ 핵심 수정: 키워드 컬럼은 "키워드"라는 단어가 포함되고
+        #   브랜드/쇼핑성/계절성 등 수식어가 없는 순수 키워드 컬럼만 매핑
+        if ("키워드" in c
+                and "브랜드" not in c
+                and "쇼핑" not in c
+                and "계절" not in c
+                and "키워드" not in used_targets):
             target = "키워드"
+
         elif "브랜드" in c and "브랜드키워드" not in used_targets:
             target = "브랜드키워드"
+
+        elif ("쇼핑" in c and "키워드" in c) and "쇼핑성키워드" not in used_targets:
+            target = "쇼핑성키워드"
+
         elif ("작년" in c or "연간" in c) and "검색량" in c \
                 and "최대" not in c and "피크" not in c \
                 and "작년검색량" not in used_targets:
             target = "작년검색량"
+
         elif ("계절성" in c or "시즈널" in c) and "계절성" not in used_targets:
             target = "계절성"
+
         elif "최대" in c and "월" in c and "검색량" not in c \
                 and "작년최대검색월" not in used_targets:
             target = "작년최대검색월"
+
         elif (("최대" in c and "검색량" in c) or ("피크" in c and "검색량" in c)) \
                 and "피크월검색량" not in used_targets:
             target = "피크월검색량"
+
         elif "쿠팡" in c and ("가격" in c or "평균가" in c or "평균" in c) \
                 and "쿠팡평균가" not in used_targets:
             target = "쿠팡평균가"
+
         elif "쿠팡" in c and ("리뷰" in c or "후기" in c) \
                 and "쿠팡총리뷰수" not in used_targets:
             target = "쿠팡총리뷰수"
+
         elif "쿠팡" in c and ("해외" in c or "직구" in c or "배송" in c) \
                 and "쿠팡해외배송비율" not in used_targets:
             target = "쿠팡해외배송비율"
@@ -307,36 +331,32 @@ def normalize_columns(df):
             used_targets.add(target)
 
     df = df.rename(columns=rename)
-
-    # 2) 혹시 남아있는 중복 컬럼 최종 제거 (첫 번째 컬럼만 유지)
     df = df.loc[:, ~df.columns.duplicated()]
-
     return df
 
+def drop_unnecessary_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """카테고리, 검색량 예측 관련 컬럼 삭제"""
+    cols_to_drop = [c for c in df.columns if should_drop(str(c))]
+    return df.drop(columns=cols_to_drop, errors="ignore")
+
 def safe_numeric(series):
-    """숫자 비교 전 강제로 numeric 변환, 실패하면 NaN"""
     return pd.to_numeric(series, errors="coerce")
 
 def apply_preset(df, preset):
     result = df.copy()
-
     try:
-        # 1. 브랜드키워드
         if "브랜드키워드" in result.columns and preset["brand_keyword"] != "전체":
             target_val = preset["brand_keyword"] == "O"
             col = result["브랜드키워드"]
-            # True/False 또는 'O'/'X' 문자열 모두 처리
             if col.dtype == object:
                 result = result[col.str.upper().str.strip() == ("O" if target_val else "X")]
             else:
                 result = result[col == target_val]
 
-        # 2. 작년검색량
         if "작년검색량" in result.columns:
             col = safe_numeric(result["작년검색량"])
             result = result[(col >= preset["search_min"]) & (col <= preset["search_max"])]
 
-        # 3. 계절성
         if "계절성" in result.columns and preset["seasonality"] != "전체":
             col = result["계절성"]
             if col.dtype == object:
@@ -347,27 +367,22 @@ def apply_preset(df, preset):
             else:
                 result = result[col == (preset["seasonality"] == "있음")]
 
-        # 4. 작년최대검색월
         if "작년최대검색월" in result.columns and preset["max_months"]:
             col = safe_numeric(result["작년최대검색월"])
             result = result[col.isin(preset["max_months"])]
 
-        # 5. 피크월검색량
         if "피크월검색량" in result.columns:
             col = safe_numeric(result["피크월검색량"])
             result = result[(col >= preset["peak_vol_min"]) & (col <= preset["peak_vol_max"])]
 
-        # 6. 쿠팡평균가
         if "쿠팡평균가" in result.columns:
             col = safe_numeric(result["쿠팡평균가"])
             result = result[(col >= preset["coupang_price_min"]) & (col <= preset["coupang_price_max"])]
 
-        # 7. 쿠팡총리뷰수
         if "쿠팡총리뷰수" in result.columns:
             col = safe_numeric(result["쿠팡총리뷰수"])
             result = result[(col >= preset["coupang_review_min"]) & (col <= preset["coupang_review_max"])]
 
-        # 8. 쿠팡해외배송비율 (퍼센트 → 비율 변환 후 필터, 내림차순 정렬)
         if "쿠팡해외배송비율" in result.columns:
             col = safe_numeric(result["쿠팡해외배송비율"])
             o_min = preset["coupang_overseas_min"] / 100.0
@@ -377,9 +392,8 @@ def apply_preset(df, preset):
 
     except Exception as e:
         st.error(f"필터 적용 중 오류: {e}")
-        return df  # 오류 시 원본 반환
+        return df
 
-    # 인덱스 리셋
     return result.reset_index(drop=True)
 
 
@@ -393,16 +407,13 @@ def render_settings_panel(idx):
         brand = st.radio("브랜드 키워드", ["전체", "O", "X"],
             index=["전체", "O", "X"].index(p["brand_keyword"]),
             horizontal=True, key=f"brand_{idx}", label_visibility="collapsed")
-
         st.markdown('<div class="filter-section-title">② 작년 검색량</div>', unsafe_allow_html=True)
         s_min = st.number_input("최소", value=int(p["search_min"]), min_value=0, key=f"smin_{idx}")
         s_max = st.number_input("최대", value=int(p["search_max"]), min_value=0, key=f"smax_{idx}")
-
         st.markdown('<div class="filter-section-title">③ 계절성</div>', unsafe_allow_html=True)
         seasonality = st.radio("계절성", ["전체", "있음", "없음"],
             index=["전체", "있음", "없음"].index(p["seasonality"]),
             horizontal=True, key=f"seas_{idx}", label_visibility="collapsed")
-
         st.markdown('<div class="filter-section-title">⑤ 피크월 검색량</div>', unsafe_allow_html=True)
         peak_min = st.number_input("최소", value=int(p["peak_vol_min"]), min_value=0, key=f"pvmin_{idx}")
         peak_max = st.number_input("최대", value=int(p["peak_vol_max"]), min_value=0, key=f"pvmax_{idx}")
@@ -415,15 +426,12 @@ def render_settings_panel(idx):
             with month_cols[(m - 1) % 6]:
                 if st.checkbox(str(m), value=(m in p["max_months"]), key=f"month_{idx}_{m}"):
                     selected_months.append(m)
-
         st.markdown('<div class="filter-section-title">⑥ 쿠팡 평균가 (원)</div>', unsafe_allow_html=True)
         cp_min = st.number_input("최소", value=int(p["coupang_price_min"]), min_value=0, key=f"cpmin_{idx}")
         cp_max = st.number_input("최대", value=int(p["coupang_price_max"]), min_value=0, key=f"cpmax_{idx}")
-
         st.markdown('<div class="filter-section-title">⑦ 쿠팡 총 리뷰수</div>', unsafe_allow_html=True)
         cr_min = st.number_input("최소", value=int(p["coupang_review_min"]), min_value=0, key=f"crmin_{idx}")
         cr_max = st.number_input("최대", value=int(p["coupang_review_max"]), min_value=0, key=f"crmax_{idx}")
-
         st.markdown('<div class="filter-section-title">⑧ 쿠팡 해외배송비율 % (결과 내림차순 정렬)</div>', unsafe_allow_html=True)
         co_min = st.number_input("최소 (%)", value=int(p["coupang_overseas_min"]),
                                   min_value=0, max_value=100, step=1, key=f"comin_{idx}")
@@ -448,7 +456,6 @@ def render_settings_panel(idx):
 #  UI 렌더링
 # ═══════════════════════════════════════════════
 
-# 1) 헤더
 with st.container(border=True):
     st.markdown(
         "<h2 style='margin:0;color:#1a2050;font-size:22px;font-weight:800;'>"
@@ -458,7 +465,6 @@ with st.container(border=True):
         unsafe_allow_html=True,
     )
 
-# 2) 파일 업로더
 with st.container(border=True):
     st.markdown(
         "<p style='font-size:14px;font-weight:700;color:#1a2050;margin-bottom:8px;'>"
@@ -476,11 +482,9 @@ with st.container(border=True):
         if file_bytes:
             st.session_state.uploaded_file_bytes = file_bytes
             st.session_state.uploaded_file_name = uploaded_file.name
-
     if st.session_state.uploaded_file_bytes is not None:
         st.success(f"✅ 파일 로드됨: {st.session_state.uploaded_file_name}")
 
-# 3) 키워드 필터
 with st.container(border=True):
     col_label, col_sp, col_s, col_r, col_d = st.columns([3, 1, 2, 2, 2])
 
@@ -495,12 +499,10 @@ with st.container(border=True):
         if st.button("⚙️ 키워드설정", key="btn_settings"):
             st.session_state.show_settings = not st.session_state.show_settings
         st.markdown("</div>", unsafe_allow_html=True)
-
     with col_r:
         st.markdown('<div class="btn-run">', unsafe_allow_html=True)
         run_btn = st.button("🔍 분석실행", key="btn_run")
         st.markdown("</div>", unsafe_allow_html=True)
-
     with col_d:
         st.markdown('<div class="btn-download">', unsafe_allow_html=True)
         if st.session_state.df_result is not None:
@@ -534,14 +536,20 @@ if run_btn:
             try:
                 df_raw = load_excel(st.session_state.uploaded_file_bytes)
                 if df_raw is not None:
-                    # 컬럼명 정규화
+                    # 컬럼 확인용 (문제 시 주석 해제)
+                    # st.write("원본 컬럼:", df_raw.columns.tolist())
+
                     df_raw = normalize_columns(df_raw)
 
-                    # 실제 존재하는 컬럼 목록 디버깅용 출력 (문제 시 확인)
-                    # st.write("인식된 컬럼:", df_raw.columns.tolist())
+                    # 정규화 후 컬럼 확인용 (문제 시 주석 해제)
+                    # st.write("정규화 후 컬럼:", df_raw.columns.tolist())
 
                     preset = st.session_state.presets[st.session_state.active_preset]
                     df_filtered = apply_preset(df_raw, preset)
+
+                    # ★ 불필요한 컬럼 제거 (카테고리, 검색량 예측 항목)
+                    df_filtered = drop_unnecessary_columns(df_filtered)
+
                     st.session_state.df_result = df_filtered
                     st.success(f"✅ 분석 완료: {len(df_filtered):,}개 키워드 필터링됨")
             except Exception as e:
