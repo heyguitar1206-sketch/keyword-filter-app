@@ -13,9 +13,12 @@ st.markdown("""
     .sub-title { font-size: 13px; color: #888; margin-bottom: 20px; }
     .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); margin-bottom: 20px; }
     .result-count { font-size: 15px; color: #4361ee; font-weight: 700; padding: 8px 0; }
-    .field-label { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 4px; }
     .stButton > button { border-radius: 24px !important; font-weight: 800 !important; }
     div[data-testid="stFileUploader"] { max-width: 480px; }
+    .ag-theme-streamlit { width: 100% !important; font-size: 14px !important; }
+    .ag-root-wrapper { width: 100% !important; }
+    .ag-header-cell-label { font-size: 13px !important; font-weight: 700 !important; }
+    .ag-cell { font-size: 14px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -52,8 +55,6 @@ if "result_df" not in st.session_state:
     st.session_state.result_df = None
 if "filtered_count" not in st.session_state:
     st.session_state.filtered_count = 0
-if "debug_mode" not in st.session_state:
-    st.session_state.debug_mode = False
 
 @st.cache_data
 def load_excel(file_bytes):
@@ -72,6 +73,14 @@ def find_col(df, keywords):
             return col
     return None
 
+def find_col_any(df, keyword_sets):
+    """여러 키워드 조합 중 하나라도 매칭되면 반환"""
+    for keywords in keyword_sets:
+        result = find_col(df, keywords)
+        if result:
+            return result
+    return None
+
 def get_col_map(df):
     keyword_col = next(
         (col for col in df.columns
@@ -81,6 +90,22 @@ def get_col_map(df):
          and "쇼핑성" not in col),
         None
     )
+
+    # 피크월검색량: 다양한 컬럼명 패턴 시도
+    peak_col = find_col_any(df, [
+        ["피크월", "검색량"],
+        ["최대검색월", "검색량"],
+        ["작년최대검색월", "검색량"],
+        ["피크", "검색량"],
+        ["최대월", "검색량"],
+    ])
+    # 위에서 못 찾으면 컬럼 전체에서 유사 이름 탐색
+    if not peak_col:
+        for col in df.columns:
+            if ("검색월" in col and "검색량" in col) or ("피크" in col and "검색량" in col):
+                peak_col = col
+                break
+
     return {
         "키워드": keyword_col,
         "브랜드": find_col(df, ["브랜드"]),
@@ -88,194 +113,140 @@ def get_col_map(df):
         "경쟁률": find_col(df, ["경쟁률"]),
         "작년검색량": find_col(df, ["작년", "검색량"]),
         "작년최대검색월": find_col(df, ["작년최대", "검색월"]),
-        "피크월검색량": find_col(df, ["피크월", "검색량"]),
+        "피크월검색량": peak_col,
         "계절성": find_col(df, ["계절성"]),
         "쿠팡총리뷰수": find_col(df, ["쿠팡", "총리뷰수"]),
         "쿠팡해외배송비율": find_col(df, ["쿠팡", "해외배송비율"]),
     }
 
 def normalize_month(val):
-    """월 값을 '6월' 형식으로 정규화"""
     s = str(val).strip()
-    # 이미 'X월' 형식이면 그대로
+    if s in ("nan", "None", ""):
+        return ""
     if s.endswith("월"):
+        prefix = s[:-1]
+        try:
+            n = int(float(prefix))
+            if 1 <= n <= 12:
+                return f"{n}월"
+        except:
+            pass
         return s
-    # 숫자만 있으면 'X월' 형식으로 변환
     try:
         n = int(float(s))
-        return f"{n}월"
+        if 1 <= n <= 12:
+            return f"{n}월"
     except:
-        return s
+        pass
+    return s
 
-def apply_preset(df, col_map, preset, debug=False):
+def apply_preset(df, col_map, preset):
     fdf = df.copy()
-    steps = []
-
-    total_start = len(fdf)
-    steps.append(f"📊 시작 데이터: {total_start}행")
 
     # 1. 쇼핑성 고정 O
     if col_map.get("쇼핑성"):
         col = col_map["쇼핑성"]
-        before = len(fdf)
-        vals = fdf[col].astype(str).str.strip()
-        if debug:
-            steps.append(f"🛒 쇼핑성 고유값: {vals.unique().tolist()}")
-        fdf = fdf[vals == "O"]
-        steps.append(f"✅ 쇼핑성=O 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
-    else:
-        steps.append("⚠️ 쇼핑성 컬럼 없음 - 건너뜀")
+        fdf = fdf[fdf[col].astype(str).str.strip() == "O"]
 
     # 2. 키워드 중복 제거
     if col_map.get("키워드"):
-        before = len(fdf)
         fdf = fdf.drop_duplicates(subset=[col_map["키워드"]])
-        steps.append(f"🔑 키워드 중복 제거 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
     # 3. 브랜드 필터
     brand_filter = preset.get("브랜드", "전체")
     if col_map.get("브랜드") and brand_filter != "전체":
         col = col_map["브랜드"]
-        before = len(fdf)
-        vals = fdf[col].astype(str).str.strip()
-        if debug:
-            steps.append(f"🏷️ 브랜드 고유값: {vals.unique().tolist()}")
-        fdf = fdf[vals == brand_filter]
-        steps.append(f"🏷️ 브랜드={brand_filter} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
+        fdf = fdf[fdf[col].astype(str).str.strip() == brand_filter]
 
     # 4. 시즌성 필터
     season_filter = preset.get("시즌성", "전체")
     if col_map.get("계절성") and season_filter != "전체":
         col = col_map["계절성"]
-        before = len(fdf)
         vals = fdf[col].astype(str).str.strip()
-        unique_vals = vals.unique().tolist()
-        steps.append(f"🌸 계절성 실제 고유값: {unique_vals}")
         if season_filter == "있음":
             fdf = fdf[vals.isin(["O", "o", "있음", "Y", "y", "1", "True", "true"])]
         elif season_filter == "없음":
             fdf = fdf[vals.isin(["X", "x", "없음", "N", "n", "0", "False", "false"])]
-        steps.append(f"🌸 시즌성={season_filter} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
     # 5. 작년검색량 범위
     if col_map.get("작년검색량"):
         col = col_map["작년검색량"]
         fdf[col] = pd.to_numeric(fdf[col], errors="coerce")
-        before = len(fdf)
         mn, mx = preset.get("작년검색량_min", 0), preset.get("작년검색량_max", 9999999)
-        if debug:
-            steps.append(f"📈 작년검색량 샘플: {fdf[col].dropna().head(5).tolist()}")
         fdf = fdf[(fdf[col] >= mn) & (fdf[col] <= mx)]
-        steps.append(f"📈 작년검색량 {mn}~{mx} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
-    # 6. 작년최대검색월 (다중선택) ← 핵심 수정: 숫자→'X월' 정규화
+    # 6. 작년최대검색월 다중선택
     selected_months = preset.get("작년최대검색월", [])
     if col_map.get("작년최대검색월") and selected_months:
         col = col_map["작년최대검색월"]
-        before = len(fdf)
-        # 실제 데이터 값을 'X월' 형식으로 정규화
-        normalized_vals = fdf[col].apply(normalize_month)
-        raw_sample = fdf[col].dropna().head(10).tolist()
-        normalized_sample = normalized_vals.dropna().head(10).tolist()
-        steps.append(f"📅 최대검색월 원본 샘플: {raw_sample}")
-        steps.append(f"📅 최대검색월 정규화 샘플: {normalized_sample}")
-        steps.append(f"📅 선택된 월: {selected_months}")
-        fdf = fdf[normalized_vals.isin(selected_months)]
-        steps.append(f"📅 최대검색월 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
+        normalized = fdf[col].apply(normalize_month)
+        fdf = fdf[normalized.isin(selected_months)]
 
     # 7. 피크월검색량 범위
     if col_map.get("피크월검색량"):
         col = col_map["피크월검색량"]
         fdf[col] = pd.to_numeric(fdf[col], errors="coerce")
-        before = len(fdf)
         mn, mx = preset.get("피크월검색량_min", 0), preset.get("피크월검색량_max", 9999999)
-        if debug:
-            steps.append(f"📊 피크월검색량 샘플: {fdf[col].dropna().head(5).tolist()}")
         fdf = fdf[(fdf[col] >= mn) & (fdf[col] <= mx)]
-        steps.append(f"📊 피크월검색량 {mn}~{mx} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
     # 8. 쿠팡 총리뷰수 범위
     if col_map.get("쿠팡총리뷰수"):
         col = col_map["쿠팡총리뷰수"]
         fdf[col] = pd.to_numeric(fdf[col], errors="coerce")
-        before = len(fdf)
         mn, mx = preset.get("쿠팡총리뷰수_min", 0), preset.get("쿠팡총리뷰수_max", 9999999)
-        if debug:
-            steps.append(f"⭐ 쿠팡총리뷰수 샘플: {fdf[col].dropna().head(5).tolist()}")
         fdf = fdf[(fdf[col] >= mn) & (fdf[col] <= mx)]
-        steps.append(f"⭐ 쿠팡총리뷰 {mn}~{mx} 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
 
-    # 9. 쿠팡 해외배송비율 범위 ← 핵심 수정: 빈값 처리 강화
+    # 9. 쿠팡 해외배송비율 범위
     if col_map.get("쿠팡해외배송비율"):
         col = col_map["쿠팡해외배송비율"]
         fdf[col] = pd.to_numeric(fdf[col], errors="coerce")
         non_null_count = fdf[col].notna().sum()
-        sample_vals = fdf[col].dropna().head(10).tolist()
-        steps.append(f"🚢 해외배송비율 유효값 수: {non_null_count}, 샘플: {sample_vals}")
-
-        mn_pct = preset.get("쿠팡해외배송비율_min", 0)
-        mx_pct = preset.get("쿠팡해외배송비율_max", 100)
-
-        # 값 범위 자동 감지: 0~1 사이인지 0~100 사이인지 판단
         if non_null_count > 0:
             data_max = fdf[col].dropna().max()
-            if data_max <= 1.0:
-                # 데이터가 0~1 범위 → 입력값을 /100 변환
-                mn_cmp = mn_pct / 100
-                mx_cmp = mx_pct / 100
-                steps.append(f"🚢 데이터 범위: 0~1 감지 → 비교값: {mn_cmp}~{mx_cmp}")
-            else:
-                # 데이터가 0~100 범위
-                mn_cmp = mn_pct
-                mx_cmp = mx_pct
-                steps.append(f"🚢 데이터 범위: 0~100 감지 → 비교값: {mn_cmp}~{mx_cmp}")
-
-            before = len(fdf)
+            mn_pct = preset.get("쿠팡해외배송비율_min", 0)
+            mx_pct = preset.get("쿠팡해외배송비율_max", 100)
+            mn_cmp = mn_pct / 100 if data_max <= 1.0 else mn_pct
+            mx_cmp = mx_pct / 100 if data_max <= 1.0 else mx_pct
             fdf = fdf[
                 (fdf[col].isna()) |
                 ((fdf[col] >= mn_cmp) & (fdf[col] <= mx_cmp))
             ]
-            steps.append(f"🚢 쿠팡해외배송비율 {mn_pct}%~{mx_pct}% 필터 후: {len(fdf)}행 (제거: {before - len(fdf)}행)")
-        else:
-            steps.append("🚢 해외배송비율 유효값 없음 - 필터 건너뜀")
+        fdf = fdf.sort_values(by=col, ascending=False, na_position="last")
 
-    # 정렬
-    if col_map.get("쿠팡해외배송비율"):
-        col = col_map["쿠팡해외배송비율"]
-        if col in fdf.columns:
-            fdf = fdf.sort_values(by=col, ascending=False, na_position="last")
-
-    return fdf.reset_index(drop=True), steps
+    return fdf.reset_index(drop=True)
 
 def build_display_df(fdf, col_map):
     mapping = [
-        ("키워드", "키워드"),
-        ("브랜드", "브랜드"),
-        ("경쟁률", "경쟁률"),
-        ("작년검색량", "작년검색량"),
-        ("작년최대검색월", "작년최대검색월"),
-        ("피크월검색량", "피크월검색량"),
-        ("계절성", "계절성"),
-        ("쿠팡총리뷰수", "쿠팡총리뷰"),
+        ("키워드",           "키워드"),
+        ("브랜드",           "브랜드"),
+        ("경쟁률",           "경쟁률"),
+        ("작년검색량",        "작년검색량"),
+        ("작년최대검색월",    "작년최대검색월"),
+        ("피크월검색량",      "피크월검색량"),   # ← 반드시 포함
+        ("계절성",           "계절성"),
+        ("쿠팡총리뷰수",     "쿠팡총리뷰"),
         ("쿠팡해외배송비율", "쿠팡해외배송비율(%)"),
     ]
-    cols_to_use = [(col_map[k], label) for k, label in mapping if col_map.get(k) and col_map[k] in fdf.columns]
+    cols_to_use = [
+        (col_map[k], label)
+        for k, label in mapping
+        if col_map.get(k) and col_map[k] in fdf.columns
+    ]
     if not cols_to_use:
         return pd.DataFrame()
+
     result = fdf[[c for c, _ in cols_to_use]].copy()
     result.columns = [label for _, label in cols_to_use]
 
+    if "작년최대검색월" in result.columns:
+        result["작년최대검색월"] = result["작년최대검색월"].apply(normalize_month)
+
     if "쿠팡해외배송비율(%)" in result.columns:
         numeric_vals = pd.to_numeric(result["쿠팡해외배송비율(%)"], errors="coerce")
-        # 자동 감지: 최대값이 1 이하면 ×100
-        if numeric_vals.dropna().max() <= 1.0:
+        if not numeric_vals.dropna().empty and numeric_vals.dropna().max() <= 1.0:
             result["쿠팡해외배송비율(%)"] = (numeric_vals * 100).round(1)
         else:
             result["쿠팡해외배송비율(%)"] = numeric_vals.round(1)
-
-    # 작년최대검색월 정규화 표시
-    if "작년최대검색월" in result.columns:
-        result["작년최대검색월"] = result["작년최대검색월"].apply(normalize_month)
 
     return result
 
@@ -309,23 +280,27 @@ LOCALE_TEXT = {
 def show_aggrid(display_df):
     gb = GridOptionsBuilder.from_dataframe(display_df)
     gb.configure_default_column(
-        resizable=True, sortable=True, filter=True,
-        wrapHeaderText=True, autoHeaderHeight=True,
+        resizable=True,
+        sortable=True,
+        filter=True,
+        wrapHeaderText=True,
+        autoHeaderHeight=True,
+        cellStyle={"fontSize": "14px"},
     )
     col_widths = {
-        "키워드": (140, 200),
-        "브랜드": (55, 70),
-        "경쟁률": (65, 80),
-        "작년검색량": (90, 110),
-        "작년최대검색월": (100, 120),
-        "피크월검색량": (90, 110),
-        "계절성": (60, 75),
-        "쿠팡총리뷰": (80, 100),
-        "쿠팡해외배송비율(%)": (110, 135),
+        "키워드":            (180, 280),
+        "브랜드":            (70,  85),
+        "경쟁률":            (80,  95),
+        "작년검색량":         (110, 130),
+        "작년최대검색월":     (115, 135),
+        "피크월검색량":       (110, 130),
+        "계절성":            (75,  90),
+        "쿠팡총리뷰":        (95,  115),
+        "쿠팡해외배송비율(%)": (125, 150),
     }
     for col, (mn, mx) in col_widths.items():
         if col in display_df.columns:
-            gb.configure_column(col, minWidth=mn, maxWidth=mx)
+            gb.configure_column(col, minWidth=mn, maxWidth=mx, cellStyle={"fontSize": "14px"})
     gb.configure_column("키워드", pinned="left")
     gb.configure_grid_options(localeText=LOCALE_TEXT)
     grid_options = gb.build()
@@ -333,10 +308,11 @@ def show_aggrid(display_df):
         display_df,
         gridOptions=grid_options,
         update_mode=GridUpdateMode.NO_UPDATE,
-        fit_columns_on_grid_load=False,
+        fit_columns_on_grid_load=True,
         allow_unsafe_jscode=True,
-        height=500,
+        height=560,
         theme="streamlit",
+        use_container_width=True,
     )
 
 # ─── UI ───────────────────────────────────────────────────────────────
@@ -348,9 +324,15 @@ if uploaded:
     file_bytes = uploaded.read()
     df = load_excel(file_bytes)
     st.session_state.df = df
-    st.success(f"✅ 파일 로드 완료 — 총 {len(df):,}개 키워드")
 
-st.session_state.debug_mode = st.checkbox("🔧 디버그 모드 (필터 단계별 확인)", value=st.session_state.debug_mode)
+    # 컬럼 매핑 확인 (피크월검색량 찾았는지 표시)
+    col_map_check = get_col_map(df)
+    peak_found = col_map_check.get("피크월검색량")
+    if peak_found:
+        st.success(f"✅ 파일 로드 완료 — 총 {len(df):,}개 키워드 | 피크월검색량 컬럼: `{peak_found}`")
+    else:
+        st.warning(f"⚠️ 파일 로드 완료 — 총 {len(df):,}개 키워드 | 피크월검색량 컬럼을 찾지 못했습니다. 컬럼명을 확인해 주세요.")
+        st.write("📋 전체 컬럼 목록:", list(df.columns))
 
 st.markdown("---")
 
@@ -436,20 +418,9 @@ if st.button("🔍 분석 실행", type="primary"):
         df = st.session_state.df
         col_map = get_col_map(df)
         preset = st.session_state.presets[st.session_state.active_preset]
-        filtered, steps = apply_preset(df, col_map, preset, debug=st.session_state.debug_mode)
+        filtered = apply_preset(df, col_map, preset)
         st.session_state.result_df = build_display_df(filtered, col_map)
         st.session_state.filtered_count = len(filtered)
-        st.session_state.filter_steps = steps
-
-        if st.session_state.debug_mode:
-            st.markdown("**🗂️ 컬럼 매핑 결과**")
-            for k, v in col_map.items():
-                st.write(f"`{k}` → `{v}`")
-
-if st.session_state.debug_mode and "filter_steps" in st.session_state:
-    st.markdown("**🔎 필터 단계별 결과**")
-    for step in st.session_state.filter_steps:
-        st.write(step)
 
 if st.session_state.result_df is not None:
     result = st.session_state.result_df
@@ -468,8 +439,6 @@ if st.session_state.result_df is not None:
         show_aggrid(result)
     else:
         st.warning("조건에 맞는 키워드가 없습니다. 필터 조건을 완화해 보세요.")
-        if not st.session_state.debug_mode:
-            st.info("💡 '디버그 모드'를 켜고 다시 실행하면 어느 단계에서 제거되는지 확인할 수 있습니다.")
 else:
     if st.session_state.df is None:
         st.markdown('<div class="card">📂 엑셀 파일을 업로드한 후 분석을 실행하세요.</div>', unsafe_allow_html=True)
