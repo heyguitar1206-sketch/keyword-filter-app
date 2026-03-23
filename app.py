@@ -25,6 +25,22 @@ footer                       { display: none !important; }
 }
 
 /* ═══════════════════════════════
+   st.container(border=True) 공통 카드
+═══════════════════════════════ */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    border: 1.5px solid #e2e6f0 !important;
+    box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
+    padding: 20px 24px !important;
+    margin-bottom: 18px !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    border: 1.5px solid #e2e6f0 !important;
+    box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
+}
+
+/* ═══════════════════════════════
    헤더 카드
 ═══════════════════════════════ */
 .header-card {
@@ -32,6 +48,7 @@ footer                       { display: none !important; }
     border-radius: 16px;
     padding: 22px 32px;
     margin-bottom: 18px;
+    border: 1.5px solid #e2e6f0;
     box-shadow: 0 1px 4px rgba(60,80,180,0.08);
     display: flex;
     align-items: center;
@@ -51,12 +68,13 @@ footer                       { display: none !important; }
 }
 
 /* ═══════════════════════════════
-   업로드 영역
+   업로드
 ═══════════════════════════════ */
 [data-testid="stFileUploader"] {
     background: #ffffff !important;
     border-radius: 16px !important;
     padding: 6px 20px !important;
+    border: 1.5px solid #e2e6f0 !important;
     box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
     margin-bottom: 18px !important;
 }
@@ -80,106 +98,130 @@ footer                       { display: none !important; }
     padding: 10px 28px !important;
     font-size: 14px !important;
     font-weight: 600 !important;
+    cursor: pointer !important;
 }
 [data-testid="stFileUploaderDropzone"] button:hover {
     background: #2a47e0 !important;
 }
 
 /* ═══════════════════════════════
-   프리셋 컨테이너 (st.container border)
+   설정 패널 제목
 ═══════════════════════════════ */
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff !important;
-    border-radius: 16px !important;
-    border: 1.5px solid #e2e6f0 !important;
-    box-shadow: 0 1px 4px rgba(60,80,180,0.08) !important;
-    padding: 0 !important;
-    margin-bottom: 18px !important;
+.settings-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid #e8ecf4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.settings-close {
+    margin-left: auto;
+    cursor: pointer;
+    color: #888;
+    font-size: 18px;
+    line-height: 1;
+}
+.section-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 16px 0 8px 0;
 }
 
 /* ═══════════════════════════════
-   버튼 완전 초기화 후 재정의
+   프리셋 라벨
 ═══════════════════════════════ */
+.preset-label-inline {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    white-space: nowrap;
+}
 
-/* 모든 stButton 기본 래퍼 */
+/* ═══════════════════════════════
+   버튼 완전 초기화
+═══════════════════════════════ */
 .stButton {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
 }
 
-/* ── 기본 버튼: outline pill (레퍼런스 비활성 스타일) ── */
 .stButton > button {
     all: unset !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     background: #ffffff !important;
-    color: #444 !important;
+    color: #555 !important;
     border: 1.5px solid #d0d5e8 !important;
     border-radius: 999px !important;
     font-size: 13px !important;
     font-weight: 500 !important;
-    padding: 0 24px !important;
+    padding: 0 20px !important;
     height: 40px !important;
-    min-width: 96px !important;
+    min-width: 80px !important;
     width: 100% !important;
     white-space: nowrap !important;
     cursor: pointer !important;
     transition: all 0.15s ease !important;
     box-sizing: border-box !important;
     line-height: 1 !important;
-    vertical-align: middle !important;
-    position: relative !important;
-    top: 0 !important;
-    transform: none !important;
+    text-align: center !important;
 }
 .stButton > button:hover {
     background: #f0f3ff !important;
     border-color: #3b5bff !important;
     color: #3b5bff !important;
 }
-/* 클릭 시 위아래 움직임 완전 제거 */
 .stButton > button:active,
 .stButton > button:focus {
     background: #ffffff !important;
     border-color: #d0d5e8 !important;
-    color: #444 !important;
+    color: #555 !important;
     transform: none !important;
-    top: 0 !important;
     outline: none !important;
     box-shadow: none !important;
 }
 
-/* ── 활성 프리셋 버튼: 인디고 채움 (레퍼런스 활성 스타일) ── */
+/* 활성 프리셋 */
 .active-preset-btn .stButton > button,
 .active-preset-btn .stButton > button:hover,
 .active-preset-btn .stButton > button:active,
 .active-preset-btn .stButton > button:focus {
     background: #3b5bff !important;
     color: #ffffff !important;
-    border: 1.5px solid #3b5bff !important;
+    border-color: #3b5bff !important;
     font-weight: 700 !important;
     box-shadow: 0 2px 8px rgba(59,91,255,0.25) !important;
-    transform: none !important;
-    top: 0 !important;
     outline: none !important;
+    transform: none !important;
 }
 
-/* ── 설정 버튼 ── */
+/* 설정 버튼 */
 .btn-settings .stButton > button,
 .btn-settings .stButton > button:hover,
 .btn-settings .stButton > button:active,
 .btn-settings .stButton > button:focus {
+    min-width: 40px !important;
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    font-size: 16px !important;
     background: #ffffff !important;
     color: #666 !important;
     border: 1.5px solid #d0d5e8 !important;
-    font-size: 16px !important;
-    min-width: 44px !important;
-    width: 44px !important;
-    padding: 0 !important;
-    transform: none !important;
     outline: none !important;
+    transform: none !important;
     box-shadow: none !important;
 }
 .btn-settings .stButton > button:hover {
@@ -188,25 +230,49 @@ footer                       { display: none !important; }
     color: #3b5bff !important;
 }
 
-/* ── 분석 실행 버튼 ── */
+/* 분석 실행 버튼 */
 .btn-run .stButton > button,
 .btn-run .stButton > button:hover,
 .btn-run .stButton > button:active,
 .btn-run .stButton > button:focus {
     background: #3b5bff !important;
     color: #ffffff !important;
-    border: none !important;
+    border-color: #3b5bff !important;
     font-weight: 700 !important;
     font-size: 14px !important;
-    transform: none !important;
     outline: none !important;
+    transform: none !important;
     box-shadow: none !important;
 }
 .btn-run .stButton > button:hover {
     background: #2a47e0 !important;
+    border-color: #2a47e0 !important;
 }
 
-/* ── 다운로드 버튼 ── */
+/* 닫기 버튼 */
+.btn-close .stButton > button,
+.btn-close .stButton > button:hover,
+.btn-close .stButton > button:active,
+.btn-close .stButton > button:focus {
+    min-width: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    font-size: 16px !important;
+    background: #f5f5f5 !important;
+    color: #888 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    outline: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+.btn-close .stButton > button:hover {
+    background: #ffe0e0 !important;
+    color: #e00 !important;
+}
+
+/* 다운로드 버튼 */
 .btn-download .stDownloadButton > button,
 .btn-download .stButton > button {
     all: unset !important;
@@ -219,35 +285,31 @@ footer                       { display: none !important; }
     border-radius: 999px !important;
     font-size: 13px !important;
     font-weight: 600 !important;
-    padding: 0 20px !important;
+    padding: 0 16px !important;
     height: 40px !important;
-    min-width: 120px !important;
     width: 100% !important;
     white-space: nowrap !important;
     cursor: pointer !important;
-    transition: all 0.15s !important;
     box-sizing: border-box !important;
-    transform: none !important;
+    transition: all 0.15s !important;
 }
 .btn-download .stDownloadButton > button:hover,
 .btn-download .stButton > button:hover {
     background: #f0f3ff !important;
-    border-color: #3b5bff !important;
 }
-
-/* 비활성 다운로드 */
 .btn-download .stButton > button:disabled {
-    background: #f5f5f5 !important;
     color: #bbb !important;
     border-color: #e0e0e0 !important;
     cursor: not-allowed !important;
 }
 
 /* ═══════════════════════════════
-   결과 카드
+   설정 패널 탭 스타일
 ═══════════════════════════════ */
-.result-count { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; }
-.result-count span { color: #3b5bff; }
+[data-testid="stTabs"] [data-testid="stTab"] {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
 
 /* ═══════════════════════════════
    AgGrid
@@ -265,6 +327,10 @@ footer                       { display: none !important; }
     display: flex !important;
     align-items: center !important;
 }
+
+/* result count */
+.result-count { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; }
+.result-count span { color: #3b5bff; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -440,38 +506,25 @@ if uploaded:
         st.session_state.result_df = None
         cm = get_col_map(st.session_state.df)
         msg = f"✅ 파일 로드 완료 — 총 {len(st.session_state.df):,}개 키워드"
-        if cm.get("피크월검색량"):
-            st.success(msg + f" | 피크월검색량: `{cm['피크월검색량']}`")
-        else:
-            st.warning(msg + " | 피크월검색량 컬럼을 찾지 못했습니다.")
+        st.success(msg + (f" | 피크월검색량: `{cm['피크월검색량']}`" if cm.get("피크월검색량") else " | 피크월검색량 컬럼 없음"))
 
-# 3. 프리셋 카드
+# 3. 프리셋 바
 with st.container(border=True):
-    # 라벨 + 버튼을 한 행에 배치
-    # 비율: 라벨(1) + 프리셋5개(각2) + 설정(0.8) + 실행(2) + 다운로드(2)
-    label_col, *btn_cols = st.columns([1.2, 2, 2, 2, 2, 2, 0.8, 2, 2.2])
+    label_col, *btn_cols = st.columns([1.0, 1.8, 1.8, 1.8, 1.8, 1.8, 0.7, 1.8, 2.0])
 
     with label_col:
-        st.markdown(
-            '<div style="display:flex;align-items:center;height:40px;">'
-            '<span style="font-size:13px;font-weight:600;color:#888;white-space:nowrap;">분석 프리셋</span>'
-            '</div>',
-            unsafe_allow_html=True
-        )
+        st.markdown('<div class="preset-label-inline">분석 프리셋</div>', unsafe_allow_html=True)
 
     presets = st.session_state.presets
-    # 프리셋 버튼 5개 (btn_cols[0]~[4])
     for i, p in enumerate(presets):
         with btn_cols[i]:
-            is_active = (i == st.session_state.active_preset)
-            wrap_class = "active-preset-btn" if is_active else ""
-            st.markdown(f'<div class="{wrap_class}">', unsafe_allow_html=True)
+            wrap = "active-preset-btn" if i == st.session_state.active_preset else ""
+            st.markdown(f'<div class="{wrap}">', unsafe_allow_html=True)
             if st.button(p["이름"], key=f"preset_btn_{i}"):
                 st.session_state.active_preset = i
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # 설정 버튼 (btn_cols[5])
     with btn_cols[5]:
         st.markdown('<div class="btn-settings">', unsafe_allow_html=True)
         if st.button("⚙️", key="btn_settings"):
@@ -479,13 +532,11 @@ with st.container(border=True):
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 분석 실행 버튼 (btn_cols[6])
     with btn_cols[6]:
         st.markdown('<div class="btn-run">', unsafe_allow_html=True)
         run_clicked = st.button("🔍 분석 실행", key="btn_run")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 다운로드 버튼 (btn_cols[7])
     with btn_cols[7]:
         st.markdown('<div class="btn-download">', unsafe_allow_html=True)
         if st.session_state.result_df is not None and len(st.session_state.result_df) > 0:
@@ -500,44 +551,74 @@ with st.container(border=True):
             st.button("📥 엑셀 다운로드", disabled=True, key="btn_dl_dis")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# 4. 설정 패널
+# 4. 설정 패널 (st.expander 제거 → st.container 사용)
 if st.session_state.show_settings:
-    with st.expander("⚙️ 프리셋 설정", expanded=True):
+    with st.container(border=True):
+        # 제목 + 닫기 버튼
+        title_col, close_col = st.columns([11, 1])
+        with title_col:
+            st.markdown(
+                f'<div class="settings-title">⚙️ 프리셋 설정 — '
+                f'<span style="color:#3b5bff">{presets[st.session_state.active_preset]["이름"]}</span></div>',
+                unsafe_allow_html=True
+            )
+        with close_col:
+            st.markdown('<div class="btn-close">', unsafe_allow_html=True)
+            if st.button("✕", key="btn_close"):
+                st.session_state.show_settings = False
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # 탭
         tabs = st.tabs([p["이름"] for p in presets])
         for i, tab in enumerate(tabs):
             with tab:
                 p = st.session_state.presets[i]
+
                 p["이름"] = st.text_input("프리셋 이름", p["이름"], key=f"name_{i}")
+
+                st.markdown('<div class="section-label">키워드 유형</div>', unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
                 with c1:
                     p["브랜드키워드"] = st.radio("브랜드키워드", ["전체","O","X"],
-                        index=["전체","O","X"].index(p.get("브랜드키워드","전체")), key=f"brand_{i}")
+                        index=["전체","O","X"].index(p.get("브랜드키워드","전체")), key=f"brand_{i}",
+                        horizontal=True)
                 with c2:
                     p["시즌성"] = st.radio("시즌성", ["전체","있음","없음"],
-                        index=["전체","있음","없음"].index(p.get("시즌성","전체")), key=f"season_{i}")
+                        index=["전체","있음","없음"].index(p.get("시즌성","전체")), key=f"season_{i}",
+                        horizontal=True)
+
+                st.markdown('<div class="section-label">검색량 범위</div>', unsafe_allow_html=True)
                 c3, c4 = st.columns(2)
                 with c3:
                     p["작년검색량_min"] = st.number_input("작년검색량 최소", value=int(p.get("작년검색량_min",0)), min_value=0, key=f"ys_min_{i}")
                 with c4:
                     p["작년검색량_max"] = st.number_input("작년검색량 최대", value=int(p.get("작년검색량_max",9999999)), min_value=0, key=f"ys_max_{i}")
+
                 c5, c6 = st.columns(2)
                 with c5:
                     p["피크월검색량_min"] = st.number_input("피크월검색량 최소", value=int(p.get("피크월검색량_min",0)), min_value=0, key=f"pk_min_{i}")
                 with c6:
                     p["피크월검색량_max"] = st.number_input("피크월검색량 최대", value=int(p.get("피크월검색량_max",9999999)), min_value=0, key=f"pk_max_{i}")
+
+                st.markdown('<div class="section-label">검색 시기</div>', unsafe_allow_html=True)
                 p["작년최대검색월"] = st.multiselect("작년최대검색월 (다중선택)",
                     options=list(range(1,13)), format_func=lambda x: f"{x}월",
                     default=p.get("작년최대검색월",[]), key=f"month_{i}")
+
+                st.markdown('<div class="section-label">쿠팡 데이터</div>', unsafe_allow_html=True)
                 c7, c8 = st.columns(2)
                 with c7:
                     p["쿠팡리뷰수_min"] = st.number_input("쿠팡리뷰수 최소", value=int(p.get("쿠팡리뷰수_min",0)), min_value=0, key=f"rv_min_{i}")
                 with c8:
                     p["쿠팡리뷰수_max"] = st.number_input("쿠팡리뷰수 최대", value=int(p.get("쿠팡리뷰수_max",9999999)), min_value=0, key=f"rv_max_{i}")
+
                 c9, c10 = st.columns(2)
                 with c9:
                     p["쿠팡해외배송비율_min"] = st.number_input("해외배송비율 최소(%)", value=float(p.get("쿠팡해외배송비율_min",0.0)), min_value=0.0, max_value=100.0, key=f"os_min_{i}")
                 with c10:
                     p["쿠팡해외배송비율_max"] = st.number_input("해외배송비율 최대(%)", value=float(p.get("쿠팡해외배송비율_max",100.0)), min_value=0.0, max_value=100.0, key=f"os_max_{i}")
+
                 st.session_state.presets[i] = p
 
 # 5. 분석 실행
