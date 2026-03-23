@@ -139,29 +139,39 @@ div[role="tabpanel"] .stMultiSelect label {
     color: #6672a0 !important;
 }
 
-/* Number input styling */
+/* ★ Number input: 박스 너비 축소 + +/- 버튼 소형화 */
+div[role="tabpanel"] [data-testid="stNumberInput"] {
+    max-width: 200px !important;
+}
 div[role="tabpanel"] [data-testid="stNumberInput"] input {
     background: #ffffff !important;
     border: 1.5px solid #c0c8de !important;
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     font-size: 12px !important;
-    padding: 6px 10px !important;
+    padding: 5px 8px !important;
+    min-height: 32px !important;
 }
 div[role="tabpanel"] [data-testid="stNumberInput"] button {
-    background: #3b5bff !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 6px !important;
+    background: #e8ecf8 !important;
+    color: #3b5bff !important;
+    border: 1px solid #c0c8de !important;
+    border-radius: 5px !important;
     font-weight: 700 !important;
-    font-size: 14px !important;
-    min-width: 28px !important;
-    min-height: 28px !important;
+    font-size: 13px !important;
+    min-width: 22px !important;
+    max-width: 22px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    padding: 0 !important;
     cursor: pointer !important;
+    box-shadow: none !important;
 }
-div[role="tabpanel"] [data-testid="stNumberInput"] button:hover { background: #2a47e0 !important; }
+div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
+    background: #d0d8f0 !important;
+}
 div[role="tabpanel"] [data-testid="stNumberInput"] button:focus {
-    outline: 2px solid #3b5bff !important;
-    box-shadow: 0 0 0 3px rgba(59,91,255,0.18) !important;
+    outline: 1.5px solid #3b5bff !important;
+    box-shadow: 0 0 0 2px rgba(59,91,255,0.15) !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -249,7 +259,6 @@ def load_excel(file_bytes):
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    # 1) 불필요한 컬럼 먼저 삭제
     DROP_KEYWORDS = [
         "카테고리",
         "최근1개월", "최근 1개월",
@@ -262,7 +271,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     drop_cols = [c for c in df.columns if any(kw in str(c) for kw in DROP_KEYWORDS)]
     df = df.drop(columns=drop_cols, errors="ignore")
 
-    # 2) 중복 컬럼명 처리
     seen = {}
     new_cols = []
     for c in df.columns:
@@ -275,7 +283,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
             new_cols.append(s)
     df.columns = new_cols
 
-    # 3) 컬럼명 표준화 매핑
     rename = {}
     used = set()
 
@@ -355,17 +362,14 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns=rename)
     df = df.loc[:, ~df.columns.duplicated()]
 
-    # 4) 쿠팡해외배송비율 → % 변환
     if "쿠팡해외배송비율" in df.columns:
         df["쿠팡해외배송비율(%)"] = (
             pd.to_numeric(df["쿠팡해외배송비율"], errors="coerce") * 100
         ).round(1)
         df = df.drop(columns=["쿠팡해외배송비율"])
 
-    # 5) DISPLAY_COLUMNS 순서대로 존재하는 컬럼만 남김
     final_cols = [c for c in DISPLAY_COLUMNS if c in df.columns]
     df = df[final_cols]
-
     return df
 
 
@@ -414,11 +418,9 @@ def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
         col = safe_numeric(r["쿠팡해외배송비율(%)"])
         r = r[(col >= preset["coupang_overseas_min"]) & (col <= preset["coupang_overseas_max"])]
 
-    # ★ 중복 키워드 제거 (키워드 컬럼 기준 첫 번째만 유지)
     if "키워드" in r.columns:
         r = r.drop_duplicates(subset=["키워드"], keep="first")
 
-    # 쿠팡해외배송비율(%) 내림차순 정렬
     if "쿠팡해외배송비율(%)" in r.columns:
         r = r.sort_values("쿠팡해외배송비율(%)", ascending=False)
 
@@ -446,13 +448,12 @@ def format_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ────────────────────────────────────────────────────────────────
-# 설정 패널 렌더링 (★ 좌 1~5번 / 우 6~8번으로 재배치)
+# 설정 패널 렌더링
 # ────────────────────────────────────────────────────────────────
 def render_settings_panel(idx: int):
     p = st.session_state.presets[idx]
     col_a, col_b = st.columns(2)
 
-    # ── 왼쪽: 1~5번 ──
     with col_a:
         st.markdown('<p class="filter-section-title">(1) 브랜드 키워드</p>', unsafe_allow_html=True)
         brand = st.radio(
@@ -490,7 +491,6 @@ def render_settings_panel(idx: int):
         peak_min = st.number_input("최소", value=int(p["peak_vol_min"]), min_value=0, step=1000, key=f"pvmin_{idx}")
         peak_max = st.number_input("최대", value=int(p["peak_vol_max"]), min_value=0, step=1000, key=f"pvmax_{idx}")
 
-    # ── 오른쪽: 6~8번 ──
     with col_b:
         st.markdown('<p class="filter-section-title">(6) 쿠팡평균가</p>', unsafe_allow_html=True)
         cp_min = st.number_input("최소 (원)", value=int(p["coupang_price_min"]), min_value=0, step=1000, key=f"cpmin_{idx}")
@@ -522,7 +522,6 @@ def render_settings_panel(idx: int):
 # 메인 UI
 # ────────────────────────────────────────────────────────────────
 
-# 헤더
 with st.container(border=True):
     st.markdown(
         "<h2 style='margin:0;color:#1a2050;font-size:22px;font-weight:900;'>🚀 끝장캐리 키워드 분석</h2>"
@@ -530,7 +529,6 @@ with st.container(border=True):
         unsafe_allow_html=True
     )
 
-# 파일 업로더
 with st.container(border=True):
     st.markdown(
         "<p style='font-size:15px;font-weight:800;color:#1a2050;margin-bottom:8px;'>📂 엑셀 파일 업로드</p>",
@@ -548,7 +546,6 @@ with st.container(border=True):
     if st.session_state.uploaded_file_bytes:
         st.success(f"✅ 파일 로드됨: {st.session_state.uploaded_file_name}")
 
-# 키워드 필터 카드
 with st.container(border=True):
     col_label, col_sp, col_s, col_r = st.columns([3, 1, 2, 2])
 
