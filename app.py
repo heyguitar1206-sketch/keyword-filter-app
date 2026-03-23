@@ -172,8 +172,7 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button:focus {
 """, unsafe_allow_html=True)
 
 # ────────────────────────────────────────────────────────────────
-# 표시할 컬럼 순서 (이 목록에 없는 컬럼은 결과에서 제외)
-# 브랜드키워드·쇼핑성키워드 제거됨
+# 표시할 컬럼 순서
 # ────────────────────────────────────────────────────────────────
 DISPLAY_COLUMNS = [
     "키워드",
@@ -232,6 +231,8 @@ if "uploaded_file_bytes" not in st.session_state:
     st.session_state.uploaded_file_bytes = None
 if "uploaded_file_name" not in st.session_state:
     st.session_state.uploaded_file_name = None
+if "excel_bytes" not in st.session_state:
+    st.session_state.excel_bytes = None
 
 # ────────────────────────────────────────────────────────────────
 # 유틸리티 함수
@@ -352,7 +353,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns=rename)
     df = df.loc[:, ~df.columns.duplicated()]
 
-    # 4) 쿠팡해외배송비율 → 퍼센트(%) 변환 후 컬럼명 변경
+    # 4) 쿠팡해외배송비율 → % 변환 후 컬럼명 변경
     if "쿠팡해외배송비율" in df.columns:
         df["쿠팡해외배송비율(%)"] = (
             pd.to_numeric(df["쿠팡해외배송비율"], errors="coerce") * 100
@@ -373,7 +374,6 @@ def safe_numeric(series: pd.Series) -> pd.Series:
 def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
     r = df.copy()
 
-    # 브랜드키워드 필터 (컬럼이 없으면 스킵)
     if "브랜드키워드" in r.columns and preset["brand_keyword"] != "전체":
         want = preset["brand_keyword"] == "O"
         r = r[r["브랜드키워드"].astype(str).str.strip().isin(
@@ -408,13 +408,25 @@ def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
         col = safe_numeric(r["쿠팡총리뷰수"])
         r = r[(col >= preset["coupang_review_min"]) & (col <= preset["coupang_review_max"])]
 
-    # 쿠팡해외배송비율(%) - 이미 % 단위로 변환된 값과 비교
+    # 쿠팡해외배송비율(%) - 이미 % 단위 값과 직접 비교
     if "쿠팡해외배송비율(%)" in r.columns:
         col = safe_numeric(r["쿠팡해외배송비율(%)"])
         r = r[(col >= preset["coupang_overseas_min"]) & (col <= preset["coupang_overseas_max"])]
 
+    # ★ 쿠팡해외배송비율(%) 내림차순 정렬
+    if "쿠팡해외배송비율(%)" in r.columns:
+        r = r.sort_values("쿠팡해외배송비율(%)", ascending=False)
+
     r = r.reset_index(drop=True)
     return r
+
+
+def make_excel_bytes(df: pd.DataFrame) -> bytes:
+    """DataFrame을 엑셀 바이트로 변환"""
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="결과")
+    return buf.getvalue()
 
 
 # ────────────────────────────────────────────────────────────────
@@ -518,6 +530,12 @@ with st.container(border=True):
     if st.session_state.uploaded_file_bytes:
         st.success(f"✅ 파일 로드됨: {st.session_state.uploaded_file_name}")
 
+# ────────────────────────────────────────────────────────────────
+# 엑셀 다운로드 바이트 사전 생성 (버튼 렌더링 전에 준비)
+# ────────────────────────────────────────────────────────────────
+if st.session_state.df_result is not None and st.session_state.excel_bytes is None:
+    st.session_state.excel_bytes = make_excel_bytes(st.session_state.df_result)
+
 # 키워드 필터 카드
 with st.container(border=True):
     col_label, col_sp, col_s, col_r, col_d = st.columns([3, 1, 2, 2, 2])
@@ -540,13 +558,10 @@ with st.container(border=True):
 
     with col_d:
         st.markdown('<div class="btn-download">', unsafe_allow_html=True)
-        if st.session_state.df_result is not None:
-            buf = io.BytesIO()
-            with pd.ExcelWriter(buf, engine="openpyxl") as writer:
-                st.session_state.df_result.to_excel(writer, index=False, sheet_name="결과")
+        if st.session_state.excel_bytes is not None:
             st.download_button(
                 label="📥 엑셀다운로드",
-                data=buf.getvalue(),
+                data=st.session_state.excel_bytes,
                 file_name="키워드분석결과.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 key="btn_download_active"
@@ -576,6 +591,8 @@ if run_btn:
                 df_norm = normalize_columns(df_raw)
                 preset = st.session_state.presets[st.session_state.active_preset]
                 st.session_state.df_result = apply_preset(df_norm, preset)
+                # ★ 분석 완료 즉시 엑셀 바이트 생성
+                st.session_state.excel_bytes = make_excel_bytes(st.session_state.df_result)
         st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 필터링됨")
 
 # ────────────────────────────────────────────────────────────────
