@@ -21,6 +21,9 @@ st.markdown("""
     .field-label { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 4px; }
     .stButton > button { border-radius: 24px !important; font-weight: 700 !important; }
     .stTabs [aria-selected="true"] { color: #4361ee !important; }
+    /* 파일 업로드 영역 최소화 */
+    .stFileUploader { padding: 0 !important; }
+    .stFileUploader > div { padding: 8px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -112,25 +115,20 @@ def get_col_map(df):
 def apply_preset(df, col_map, preset):
     fdf = df.copy()
 
-    # 쇼핑성 항상 O 고정
     if col_map.get("쇼핑성"):
         fdf = fdf[fdf[col_map["쇼핑성"]].astype(str).str.strip() == "O"]
 
-    # 키워드 중복 제거
     if col_map.get("키워드"):
         fdf = fdf.drop_duplicates(subset=[col_map["키워드"]])
 
-    # 브랜드
     if preset["브랜드"] != "전체" and col_map.get("브랜드"):
         fdf = fdf[fdf[col_map["브랜드"]].astype(str).str.strip()
                   == preset["브랜드"]]
 
-    # 계절성
     if preset["시즌성"] != "전체" and col_map.get("계절성"):
         fdf = fdf[fdf[col_map["계절성"]].astype(str).str.strip()
                   == preset["시즌성"]]
 
-    # 작년 검색량
     if col_map.get("작년검색량"):
         fdf[col_map["작년검색량"]] = pd.to_numeric(
             fdf[col_map["작년검색량"]], errors="coerce")
@@ -139,14 +137,12 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["작년검색량"]] <= preset["작년검색량_max"])
         ]
 
-    # 작년 최대검색월 다중선택
     if preset["작년최대검색월"] and col_map.get("작년최대검색월"):
         selected_months = [int(m) for m in preset["작년최대검색월"]]
         fdf[col_map["작년최대검색월"]] = pd.to_numeric(
             fdf[col_map["작년최대검색월"]], errors="coerce")
         fdf = fdf[fdf[col_map["작년최대검색월"]].isin(selected_months)]
 
-    # 피크월 검색량
     if col_map.get("피크월검색량"):
         fdf[col_map["피크월검색량"]] = pd.to_numeric(
             fdf[col_map["피크월검색량"]], errors="coerce")
@@ -155,7 +151,6 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["피크월검색량"]] <= preset["피크월검색량_max"])
         ]
 
-    # 쿠팡 총리뷰수
     if col_map.get("쿠팡총리뷰수"):
         fdf[col_map["쿠팡총리뷰수"]] = pd.to_numeric(
             fdf[col_map["쿠팡총리뷰수"]], errors="coerce")
@@ -164,7 +159,6 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["쿠팡총리뷰수"]] <= preset["쿠팡총리뷰수_max"])
         ]
 
-    # 쿠팡 해외배송비율
     if col_map.get("쿠팡해외배송비율"):
         fdf[col_map["쿠팡해외배송비율"]] = pd.to_numeric(
             fdf[col_map["쿠팡해외배송비율"]], errors="coerce")
@@ -180,19 +174,21 @@ def apply_preset(df, col_map, preset):
     return fdf.reset_index(drop=True)
 
 def build_display_df(fdf, col_map):
-    # ✅ 최근1개월검색량, 예상1개월검색량 제거
+    # ✅ 컬럼 순서: 키워드 → 브랜드 → 경쟁률 → 작년검색량
+    #              → 작년최대검색월 → 피크월검색량 → 계절성
+    #              → 계절성월 → 경쟁강도 → 쿠팡총리뷰 → 쿠팡해외배송비율
     mapping = {
         "키워드":           "키워드",
         "브랜드":           "브랜드",
         "경쟁률":           "경쟁률",
-        "작년검색량":       "작년 검색량",
-        "작년최대검색월":   "작년최대검색월",
-        "피크월검색량":     "피크월 검색량",
+        "작년검색량":       "작년검색량",
+        "작년최대검색월":   "최대검색월",
+        "피크월검색량":     "피크월검색량",
         "계절성":           "계절성",
-        "계절성월":         "계절성 월",
+        "계절성월":         "계절성월",
         "네이버경쟁강도":   "경쟁강도",
-        "쿠팡총리뷰수":     "쿠팡 총리뷰",
-        "쿠팡해외배송비율": "쿠팡해외배송비율(%)",
+        "쿠팡총리뷰수":     "총리뷰수",
+        "쿠팡해외배송비율": "해외배송(%)",
     }
     display_cols = {}
     for key, label in mapping.items():
@@ -202,64 +198,58 @@ def build_display_df(fdf, col_map):
     result = fdf[list(display_cols.keys())].rename(columns=display_cols)
 
     # 소수 → % 변환
-    if "쿠팡해외배송비율(%)" in result.columns:
-        result["쿠팡해외배송비율(%)"] = (
-            pd.to_numeric(result["쿠팡해외배송비율(%)"], errors="coerce") * 100
+    if "해외배송(%)" in result.columns:
+        result["해외배송(%)"] = (
+            pd.to_numeric(result["해외배송(%)"], errors="coerce") * 100
         ).round(1)
 
     return result
 
-# ── AgGrid 한글 메뉴 설정 ──
+# ── AgGrid 한글 메뉴 ──
 LOCALE_TEXT = {
-    "sortAscending": "오름차순 정렬 ↑",
-    "sortDescending": "내림차순 정렬 ↓",
-    "pinColumn": "컬럼 고정",
-    "pinLeft": "왼쪽 고정",
-    "pinRight": "오른쪽 고정",
-    "noPin": "고정 해제",
-    "autosizeThiscolumn": "이 컬럼 너비 자동조정",
-    "autosizeAllColumns": "모든 컬럼 너비 자동조정",
-    "resetColumns": "컬럼 초기화",
-    "hideColumn": "컬럼 숨기기",
-    "unhide": "숨기기 해제",
-    "chooseCols": "컬럼 선택",
-    "filter": "필터",
-    "noRowsToShow": "데이터가 없습니다.",
-    "filterOoo": "필터...",
-    "equals": "같음",
-    "notEqual": "같지 않음",
-    "lessThan": "미만",
-    "greaterThan": "초과",
-    "lessThanOrEqual": "이하",
-    "greaterThanOrEqual": "이상",
-    "inRange": "범위",
-    "contains": "포함",
-    "notContains": "미포함",
-    "startsWith": "시작 문자",
-    "endsWith": "끝 문자",
-    "andCondition": "AND",
-    "orCondition": "OR",
-    "applyFilter": "적용",
-    "resetFilter": "초기화",
-    "clearFilter": "지우기",
-    "cancelFilter": "취소",
-    "copy": "복사",
-    "copyWithHeaders": "헤더 포함 복사",
-    "export": "내보내기",
-    "csvExport": "CSV 다운로드",
-    "excelExport": "엑셀 다운로드",
-    "columnsMenuItem": "컬럼 관리",
-    "sum": "합계",
-    "min": "최솟값",
-    "max": "최댓값",
-    "count": "개수",
-    "average": "평균",
-    "totalRows": "전체 행",
-    "page": "페이지",
-    "nextPage": "다음 페이지",
-    "lastPage": "마지막 페이지",
-    "firstPage": "첫 페이지",
-    "previousPage": "이전 페이지",
+    "sortAscending":        "오름차순 ↑",
+    "sortDescending":       "내림차순 ↓",
+    "pinColumn":            "컬럼 고정",
+    "pinLeft":              "왼쪽 고정",
+    "pinRight":             "오른쪽 고정",
+    "noPin":                "고정 해제",
+    "autosizeThiscolumn":   "너비 자동조정",
+    "autosizeAllColumns":   "전체 너비 자동조정",
+    "resetColumns":         "컬럼 초기화",
+    "hideColumn":           "컬럼 숨기기",
+    "unhide":               "숨기기 해제",
+    "chooseCols":           "컬럼 선택",
+    "filter":               "필터",
+    "noRowsToShow":         "데이터가 없습니다.",
+    "filterOoo":            "필터 입력...",
+    "equals":               "같음",
+    "notEqual":             "같지 않음",
+    "lessThan":             "미만",
+    "greaterThan":          "초과",
+    "lessThanOrEqual":      "이하",
+    "greaterThanOrEqual":   "이상",
+    "inRange":              "범위",
+    "contains":             "포함",
+    "notContains":          "미포함",
+    "startsWith":           "시작 문자",
+    "endsWith":             "끝 문자",
+    "andCondition":         "AND",
+    "orCondition":          "OR",
+    "applyFilter":          "적용",
+    "resetFilter":          "초기화",
+    "clearFilter":          "지우기",
+    "cancelFilter":         "취소",
+    "copy":                 "복사",
+    "copyWithHeaders":      "헤더 포함 복사",
+    "export":               "내보내기",
+    "csvExport":            "CSV 다운로드",
+    "excelExport":          "엑셀 다운로드",
+    "totalRows":            "전체 행",
+    "page":                 "페이지",
+    "nextPage":             "다음",
+    "lastPage":             "마지막",
+    "firstPage":            "처음",
+    "previousPage":         "이전",
 }
 
 def show_aggrid(result_df):
@@ -268,22 +258,24 @@ def show_aggrid(result_df):
         sortable=True,
         filter=True,
         resizable=True,
-        wrapHeaderText=True,
-        autoHeaderHeight=True,
+        # ✅ 헤더 줄바꿈 OFF → 한 줄로 표시
+        wrapHeaderText=False,
+        autoHeaderHeight=False,
+        suppressMenu=False,
     )
-    # 컬럼별 너비 설정
-    gb.configure_column("키워드",           minWidth=160)
-    gb.configure_column("브랜드",           maxWidth=80)
-    gb.configure_column("경쟁률",           maxWidth=90)
-    gb.configure_column("작년 검색량",      maxWidth=120)
-    gb.configure_column("작년최대검색월",   maxWidth=120)
-    gb.configure_column("피크월 검색량",    maxWidth=120)
-    gb.configure_column("계절성",           maxWidth=90)
-    gb.configure_column("계절성 월",        maxWidth=130)
-    gb.configure_column("경쟁강도",         maxWidth=90)
-    gb.configure_column("쿠팡 총리뷰",      maxWidth=110)
-    gb.configure_column("쿠팡해외배송비율(%)",
-                        maxWidth=150,
+
+    # ✅ 컬럼별 너비 최적화
+    gb.configure_column("키워드",       minWidth=140, maxWidth=200)
+    gb.configure_column("브랜드",       minWidth=60,  maxWidth=70)
+    gb.configure_column("경쟁률",       minWidth=75,  maxWidth=85)
+    gb.configure_column("작년검색량",   minWidth=95,  maxWidth=105)
+    gb.configure_column("최대검색월",   minWidth=90,  maxWidth=100)
+    gb.configure_column("피크월검색량", minWidth=100, maxWidth=110)
+    gb.configure_column("계절성",       minWidth=70,  maxWidth=80)
+    gb.configure_column("계절성월",     minWidth=90,  maxWidth=120)
+    gb.configure_column("경쟁강도",     minWidth=70,  maxWidth=80)
+    gb.configure_column("총리뷰수",     minWidth=75,  maxWidth=85)
+    gb.configure_column("해외배송(%)",  minWidth=90,  maxWidth=100,
                         valueFormatter="value + '%'")
 
     grid_options = gb.build()
@@ -293,7 +285,7 @@ def show_aggrid(result_df):
         result_df,
         gridOptions=grid_options,
         update_mode=GridUpdateMode.NO_UPDATE,
-        fit_columns_on_grid_load=False,
+        fit_columns_on_grid_load=True,
         height=600,
         theme="alpine",
     )
@@ -306,15 +298,24 @@ st.markdown("""
 <div class="sub-title">쇼핑성 키워드 선별 및 데이터 전략 분석 도구</div>
 """, unsafe_allow_html=True)
 
-# ── 파일 업로드 ──
+# ── 파일 업로드 (컴팩트) ──
 st.markdown('<div class="card">', unsafe_allow_html=True)
-uploaded = st.file_uploader(
-    "📂 분석할 파일을 업로드하세요 (.xlsx)", type=["xlsx"])
+col_up, col_info = st.columns([3, 1])
+with col_up:
+    uploaded = st.file_uploader(
+        "📂 엑셀 파일 업로드 (.xlsx)",
+        type=["xlsx"],
+        label_visibility="visible")
+with col_info:
+    if st.session_state.df is not None:
+        st.markdown(
+            f"<div style='padding-top:28px; color:#4361ee; font-weight:700;'>"
+            f"✅ {len(st.session_state.df):,}개 키워드 로드됨</div>",
+            unsafe_allow_html=True)
 if uploaded:
     file_bytes = uploaded.read()
     st.session_state.df = load_excel(file_bytes)
-    st.success(
-        f"✅ 파일 로드 완료! 총 **{len(st.session_state.df):,}개** 키워드")
+    st.success(f"✅ 파일 로드 완료! 총 **{len(st.session_state.df):,}개** 키워드")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ── 프리셋 선택 바 ──
@@ -507,7 +508,7 @@ if st.session_state.result_df is not None:
         st.markdown(
             f'<div class="result-count">📊 [{preset_name}] 결과: '
             f'<b>{count:,}개</b> 키워드 '
-            f'(쿠팡 해외배송비율 높은 순 정렬)</div>',
+            f'(해외배송비율 높은 순)</div>',
             unsafe_allow_html=True)
     with r2:
         buffer = io.BytesIO()
