@@ -151,14 +151,6 @@ footer { display: none !important; }
     margin: 0.7rem 0 0.2rem 0 !important;
 }
 
-/* 월 체크박스 레이아웃 */
-.month-checkbox-row {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 6px 14px !important;
-    margin-top: 4px !important;
-}
-
 div[role="tabpanel"] [data-testid="stNumberInput"] {
     max-width: 200px !important;
 }
@@ -203,9 +195,15 @@ div[role="tabpanel"] .stButton > button:hover {
     margin-bottom: 0.5rem !important;
 }
 
+/* 데이터프레임 툴바 항상 표시 */
 [data-testid="stDataFrame"] {
     border-radius: 10px !important;
-    overflow: hidden !important;
+    overflow: visible !important;
+}
+[data-testid="stDataFrame"] [data-testid="stDataFrameToolbar"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -406,20 +404,16 @@ def render_settings_panel(idx: int):
     col_a, col_b = st.columns(2)
 
     with col_a:
-        # (1) 브랜드 키워드
         st.markdown('<p class="filter-section-title">(1) 브랜드 키워드</p>', unsafe_allow_html=True)
         brand = st.radio(
             "브랜드키워드", ["전체","O","X"],
             index=["전체","O","X"].index(p["brand_keyword"]),
             horizontal=True, key=f"brand_{idx}", label_visibility="collapsed"
         )
-
-        # (2) 작년검색량
         st.markdown('<p class="filter-section-title">(2) 작년검색량</p>', unsafe_allow_html=True)
         s_min = st.number_input("최소", value=int(p["search_min"]), min_value=0, step=1000, key=f"smin_{idx}")
         s_max = st.number_input("최대", value=int(p["search_max"]), min_value=0, step=1000, key=f"smax_{idx}")
 
-        # (3) 계절성
         st.markdown('<p class="filter-section-title">(3) 계절성</p>', unsafe_allow_html=True)
         seasonality = st.radio(
             "계절성", ["전체","Y","N"],
@@ -427,10 +421,9 @@ def render_settings_panel(idx: int):
             horizontal=True, key=f"season_{idx}", label_visibility="collapsed"
         )
 
-        # ★ (4) 작년최대검색월 – 체크박스 방식으로 변경
+        # ★ (4) 작년최대검색월 – 체크박스 4열 배치
         st.markdown('<p class="filter-section-title">(4) 작년최대검색월</p>', unsafe_allow_html=True)
         sel_months = []
-        # 4열로 배치 (1~4월, 5~8월, 9~12월 순)
         cb_cols = st.columns(4)
         for i, m in enumerate(ALL_MONTHS):
             with cb_cols[i % 4]:
@@ -442,23 +435,19 @@ def render_settings_panel(idx: int):
                 if checked:
                     sel_months.append(m)
 
-        # (5) 피크월검색량
         st.markdown('<p class="filter-section-title">(5) 피크월검색량</p>', unsafe_allow_html=True)
         peak_min = st.number_input("최소", value=int(p["peak_vol_min"]), min_value=0, step=1000, key=f"pkmin_{idx}")
         peak_max = st.number_input("최대", value=int(p["peak_vol_max"]), min_value=0, step=1000, key=f"pkmax_{idx}")
 
     with col_b:
-        # (6) 쿠팡평균가
         st.markdown('<p class="filter-section-title">(6) 쿠팡평균가</p>', unsafe_allow_html=True)
         cp_min = st.number_input("최소 (원)", value=int(p["coupang_price_min"]), min_value=0, step=1000, key=f"cpmin_{idx}")
         cp_max = st.number_input("최대 (원)", value=int(p["coupang_price_max"]), min_value=0, step=1000, key=f"cpmax_{idx}")
 
-        # (7) 쿠팡총리뷰수
         st.markdown('<p class="filter-section-title">(7) 쿠팡총리뷰수</p>', unsafe_allow_html=True)
         cr_min = st.number_input("최소", value=int(p["coupang_review_min"]), min_value=0, step=100, key=f"crmin_{idx}")
         cr_max = st.number_input("최대", value=int(p["coupang_review_max"]), min_value=0, step=100, key=f"crmax_{idx}")
 
-        # (8) 쿠팡해외배송비율
         st.markdown('<p class="filter-section-title">(8) 쿠팡해외배송비율 (%)</p>', unsafe_allow_html=True)
         co_min = st.number_input("최소 (%)", value=float(p["coupang_overseas_min"]),
                                   min_value=0.0, max_value=100.0, step=1.0, key=f"comin_{idx}")
@@ -470,7 +459,7 @@ def render_settings_panel(idx: int):
             "brand_keyword": brand,
             "search_min": s_min, "search_max": s_max,
             "seasonality": seasonality,
-            "max_months": sel_months,          # ← 체크박스에서 수집된 리스트
+            "max_months": sel_months,
             "peak_vol_min": peak_min, "peak_vol_max": peak_max,
             "coupang_price_min": cp_min, "coupang_price_max": cp_max,
             "coupang_review_min": cr_min, "coupang_review_max": cr_max,
@@ -542,11 +531,16 @@ if run_btn:
         if st.session_state.df_result is not None:
             st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드")
 
-# 6) 결과 테이블
+# 6) 결과 테이블 – 툴바(최대화·검색) 항상 표시
 if st.session_state.df_result is not None:
     df      = st.session_state.df_result
     row_cnt = len(df)
     height  = min(1100, max(400, 38 + row_cnt * 35))
     with st.container(border=True):
         st.markdown(f'<p class="result-title">📊 분석 결과 ({row_cnt:,}개)</p>', unsafe_allow_html=True)
-        st.dataframe(format_dataframe(df), use_container_width=True, height=height)
+        st.dataframe(
+            format_dataframe(df),
+            use_container_width=True,
+            height=height,
+            hide_index=False,      # 인덱스 표시 유지
+        )
