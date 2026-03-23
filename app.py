@@ -185,7 +185,6 @@ DISPLAY_COLUMNS = [
     "쿠팡해외배송최대리뷰수",
 ]
 
-# 3자리 콤마 포맷 적용할 정수 컬럼
 FORMAT_INT_COLUMNS = [
     "작년검색량",
     "피크월검색량",
@@ -284,7 +283,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         c = str(col).strip()
         target = None
 
-        # 키워드: 실제 텍스트 값인 컬럼만 매핑
         if "키워드" not in used:
             sample = df[col].dropna().astype(str).head(20)
             unique_vals = sample.str.strip().str.upper().unique()
@@ -416,6 +414,10 @@ def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
         col = safe_numeric(r["쿠팡해외배송비율(%)"])
         r = r[(col >= preset["coupang_overseas_min"]) & (col <= preset["coupang_overseas_max"])]
 
+    # ★ 중복 키워드 제거 (키워드 컬럼 기준 첫 번째만 유지)
+    if "키워드" in r.columns:
+        r = r.drop_duplicates(subset=["키워드"], keep="first")
+
     # 쿠팡해외배송비율(%) 내림차순 정렬
     if "쿠팡해외배송비율(%)" in r.columns:
         r = r.sort_values("쿠팡해외배송비율(%)", ascending=False)
@@ -425,10 +427,7 @@ def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
 
 
 def format_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    """표시용 포맷 적용: 정수 컬럼 콤마, 배송비율 % 접미사"""
     df_display = df.copy()
-
-    # 정수 컬럼 3자리 콤마
     for col in FORMAT_INT_COLUMNS:
         if col in df_display.columns:
             df_display[col] = (
@@ -437,25 +436,23 @@ def format_dataframe(df: pd.DataFrame) -> pd.DataFrame:
                 .astype(int)
                 .apply(lambda x: f"{x:,}")
             )
-
-    # 쿠팡해외배송비율(%) → 숫자 뒤에 % 접미사
     if "쿠팡해외배송비율(%)" in df_display.columns:
         df_display["쿠팡해외배송비율(%)"] = (
             pd.to_numeric(df_display["쿠팡해외배송비율(%)"], errors="coerce")
             .fillna(0)
             .apply(lambda x: f"{x:.1f}%")
         )
-
     return df_display
 
 
 # ────────────────────────────────────────────────────────────────
-# 설정 패널 렌더링
+# 설정 패널 렌더링 (★ 좌 1~5번 / 우 6~8번으로 재배치)
 # ────────────────────────────────────────────────────────────────
 def render_settings_panel(idx: int):
     p = st.session_state.presets[idx]
     col_a, col_b = st.columns(2)
 
+    # ── 왼쪽: 1~5번 ──
     with col_a:
         st.markdown('<p class="filter-section-title">(1) 브랜드 키워드</p>', unsafe_allow_html=True)
         brand = st.radio(
@@ -489,11 +486,12 @@ def render_settings_panel(idx: int):
                     elif not checked and m in sel_months:
                         sel_months.remove(m)
 
-    with col_b:
         st.markdown('<p class="filter-section-title">(5) 피크월검색량</p>', unsafe_allow_html=True)
         peak_min = st.number_input("최소", value=int(p["peak_vol_min"]), min_value=0, step=1000, key=f"pvmin_{idx}")
         peak_max = st.number_input("최대", value=int(p["peak_vol_max"]), min_value=0, step=1000, key=f"pvmax_{idx}")
 
+    # ── 오른쪽: 6~8번 ──
+    with col_b:
         st.markdown('<p class="filter-section-title">(6) 쿠팡평균가</p>', unsafe_allow_html=True)
         cp_min = st.number_input("최소 (원)", value=int(p["coupang_price_min"]), min_value=0, step=1000, key=f"cpmin_{idx}")
         cp_max = st.number_input("최대 (원)", value=int(p["coupang_price_max"]), min_value=0, step=1000, key=f"cpmax_{idx}")
@@ -550,7 +548,7 @@ with st.container(border=True):
     if st.session_state.uploaded_file_bytes:
         st.success(f"✅ 파일 로드됨: {st.session_state.uploaded_file_name}")
 
-# 키워드 필터 카드 (버튼 2개만)
+# 키워드 필터 카드
 with st.container(border=True):
     col_label, col_sp, col_s, col_r = st.columns([3, 1, 2, 2])
 
@@ -570,7 +568,6 @@ with st.container(border=True):
         run_btn = st.button("🔍 분석실행", key="btn_run")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 설정 패널 토글
     if st.session_state.show_settings:
         st.markdown("<hr style='margin:16px 0;border-color:#e0e4f0;'>", unsafe_allow_html=True)
         tabs = st.tabs(["1", "2", "3", "4", "5"])
@@ -603,7 +600,6 @@ if st.session_state.df_result is not None:
             f"<span style='color:#3b5bff;font-size:13px;'>({len(st.session_state.df_result):,}개)</span></p>",
             unsafe_allow_html=True
         )
-        # 포맷 적용된 표시용 DataFrame 사용
         st.dataframe(
             format_dataframe(st.session_state.df_result),
             use_container_width=True,
