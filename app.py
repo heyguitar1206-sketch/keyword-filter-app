@@ -70,11 +70,13 @@ footer { display: none !important; }
     font-size: 13px !important;
     color: #6672a0 !important;
 }
+
+/* Browse files 버튼 - 레퍼런스처럼 사각형에 가까운 곡률 */
 [data-testid="stFileUploaderDropzone"] button {
     background: #3b5bff !important;
     color: #ffffff !important;
     border: none !important;
-    border-radius: 22px !important;
+    border-radius: 8px !important;        /* ← 22px → 8px 사각형에 가깝게 */
     font-size: 13px !important;
     font-weight: 700 !important;
     padding: 9px 24px !important;
@@ -85,6 +87,9 @@ footer { display: none !important; }
     transform: none !important;
     margin: 0 !important;
     white-space: nowrap !important;
+}
+[data-testid="stFileUploaderDropzone"] button:hover {
+    background: #2a47e0 !important;
 }
 
 /* ── 탭 숫자 1~5 ── */
@@ -110,10 +115,60 @@ div[data-testid="stTabs"] div[role="tabpanel"] {
     box-shadow: 0 2px 10px rgba(60,80,180,0.08) !important;
 }
 
-/* ── 숫자 입력 박스: 흰 배경 + 인디고 테두리 ── */
-div[role="tabpanel"] [data-testid="stNumberInput"] {
-    position: relative !important;
+/* ── 키워드필터 상단 버튼 3개: 버튼 없애고 글자만 ── */
+.btn-settings .stButton > button,
+.btn-run .stButton > button,
+.btn-download .stButton > button,
+.btn-download [data-testid="stDownloadButton"] > button {
+    all: unset !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #3a3f5c !important;
+    background: transparent !important;   /* ← 배경 없음 */
+    border: none !important;              /* ← 테두리 없음 */
+    border-radius: 0 !important;
+    padding: 4px 8px !important;
+    min-height: 36px !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    transition: color 0.15s ease !important;
 }
+.btn-settings .stButton > button:hover,
+.btn-run .stButton > button:hover {
+    color: #3b5bff !important;
+}
+
+/* 분석실행 - 글자색만 인디고로 강조 */
+.btn-run .stButton > button {
+    color: #3b5bff !important;
+}
+.btn-run .stButton > button:hover {
+    color: #1a3bcc !important;
+}
+
+/* 엑셀다운로드 */
+.btn-download .stButton > button,
+.btn-download [data-testid="stDownloadButton"] > button {
+    color: #3a3f5c !important;
+}
+.btn-download .stButton > button:hover,
+.btn-download [data-testid="stDownloadButton"] > button:hover {
+    color: #3b5bff !important;
+}
+
+/* disabled 상태 */
+.btn-download .stButton > button:disabled {
+    color: #b0b8d0 !important;
+    cursor: default !important;
+}
+
+/* ── 숫자 입력 박스: 흰 배경 + 인디고 +/- 버튼 ── */
 div[role="tabpanel"] [data-testid="stNumberInput"] > div {
     background: #ffffff !important;
     border: 1.5px solid #c0c8de !important;
@@ -127,8 +182,6 @@ div[role="tabpanel"] [data-testid="stNumberInput"] > div:focus-within {
     border-color: #3b5bff !important;
     box-shadow: 0 0 0 2px rgba(59,91,255,0.12) !important;
 }
-
-/* 입력 필드 자체 */
 div[role="tabpanel"] [data-testid="stNumberInput"] input {
     background: #ffffff !important;
     border: none !important;
@@ -140,8 +193,6 @@ div[role="tabpanel"] [data-testid="stNumberInput"] input {
     outline: none !important;
     box-shadow: none !important;
 }
-
-/* + - 버튼: 인디고 배경으로 확실히 분리 */
 div[role="tabpanel"] [data-testid="stNumberInput"] button {
     all: unset !important;
     background: #3b5bff !important;
@@ -163,56 +214,6 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button {
 div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
     background: #2a47e0 !important;
 }
-div[role="tabpanel"] [data-testid="stNumberInput"] button:first-of-type {
-    border-left: 1px solid rgba(255,255,255,0.15) !important;
-    border-right: none !important;
-}
-
-/* ── 키워드필터 상단 버튼 3개 ── */
-.btn-settings .stButton > button,
-.btn-run .stButton > button,
-.btn-download .stButton > button,
-.btn-download [data-testid="stDownloadButton"] > button {
-    all: unset !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
-    font-size: 14px !important;
-    font-weight: 800 !important;
-    border-radius: 22px !important;
-    padding: 8px 18px !important;
-    min-height: 40px !important;
-    width: 100% !important;
-    cursor: pointer !important;
-    box-sizing: border-box !important;
-    transition: background 0.15s ease !important;
-    white-space: nowrap !important;
-}
-.btn-settings .stButton > button {
-    background: #ffffff !important;
-    color: #3a3f5c !important;
-    border: 1.5px solid #3b5bff !important;
-}
-.btn-settings .stButton > button:hover { background: #f0f3ff !important; }
-
-.btn-run .stButton > button {
-    background: #3b5bff !important;
-    color: #ffffff !important;
-    border: none !important;
-}
-.btn-run .stButton > button:hover { background: #2a47e0 !important; }
-
-.btn-download .stButton > button,
-.btn-download [data-testid="stDownloadButton"] > button {
-    background: #ffffff !important;
-    color: #3a3f5c !important;
-    border: 1.5px solid #3b5bff !important;
-}
-.btn-download .stButton > button:hover,
-.btn-download [data-testid="stDownloadButton"] > button:hover {
-    background: #f0f3ff !important;
-}
 
 /* ── 필터 섹션 제목 ── */
 .filter-section-title {
@@ -227,17 +228,12 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button:first-of-type {
 /* ── 필터 라디오/체크박스 레이블 ── */
 div[role="tabpanel"] [data-testid="stRadio"] label,
 div[role="tabpanel"] [data-testid="stCheckbox"] label,
-div[role="tabpanel"] .stRadio span,
 div[role="tabpanel"] label {
     font-size: 11px !important;
     color: #4a5080 !important;
 }
-div[role="tabpanel"] .stCheckbox > label,
-div[role="tabpanel"] .stRadio > div > label {
-    font-size: 11px !important;
-}
 
-/* ── 저장 버튼 (탭 내부) ── */
+/* ── 저장 버튼 ── */
 div[role="tabpanel"] .stButton > button {
     all: unset !important;
     display: inline-flex !important;
@@ -251,7 +247,7 @@ div[role="tabpanel"] .stButton > button {
     background: #ffffff !important;
     color: #3b5bff !important;
     border: 1.5px solid #3b5bff !important;
-    border-radius: 22px !important;
+    border-radius: 8px !important;
     cursor: pointer !important;
     box-sizing: border-box !important;
 }
