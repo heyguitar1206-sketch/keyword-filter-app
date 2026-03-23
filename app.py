@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 st.set_page_config(
     page_title="키워드 분석 도구",
@@ -95,8 +95,6 @@ def get_col_map(df):
         "브랜드":           find_col(df, ["브랜드"]),
         "쇼핑성":           find_col(df, ["쇼핑성"]),
         "경쟁률":           find_col(df, ["경쟁률"]),
-        "최근1개월검색량":  find_col(df, ["최근", "1개월", "검색량"]),
-        "예상1개월검색량":  find_col(df, ["예상", "1개월", "검색량"]),
         "작년검색량":       find_col(df, ["작년", "검색량"]),
         "작년최대검색월":   (find_col(df, ["작년최대", "검색월"]) or
                             find_col(df, ["작년", "최대검색", "월"]) or
@@ -114,20 +112,25 @@ def get_col_map(df):
 def apply_preset(df, col_map, preset):
     fdf = df.copy()
 
+    # 쇼핑성 항상 O 고정
     if col_map.get("쇼핑성"):
         fdf = fdf[fdf[col_map["쇼핑성"]].astype(str).str.strip() == "O"]
 
+    # 키워드 중복 제거
     if col_map.get("키워드"):
         fdf = fdf.drop_duplicates(subset=[col_map["키워드"]])
 
+    # 브랜드
     if preset["브랜드"] != "전체" and col_map.get("브랜드"):
         fdf = fdf[fdf[col_map["브랜드"]].astype(str).str.strip()
                   == preset["브랜드"]]
 
+    # 계절성
     if preset["시즌성"] != "전체" and col_map.get("계절성"):
         fdf = fdf[fdf[col_map["계절성"]].astype(str).str.strip()
                   == preset["시즌성"]]
 
+    # 작년 검색량
     if col_map.get("작년검색량"):
         fdf[col_map["작년검색량"]] = pd.to_numeric(
             fdf[col_map["작년검색량"]], errors="coerce")
@@ -136,12 +139,14 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["작년검색량"]] <= preset["작년검색량_max"])
         ]
 
+    # 작년 최대검색월 다중선택
     if preset["작년최대검색월"] and col_map.get("작년최대검색월"):
         selected_months = [int(m) for m in preset["작년최대검색월"]]
         fdf[col_map["작년최대검색월"]] = pd.to_numeric(
             fdf[col_map["작년최대검색월"]], errors="coerce")
         fdf = fdf[fdf[col_map["작년최대검색월"]].isin(selected_months)]
 
+    # 피크월 검색량
     if col_map.get("피크월검색량"):
         fdf[col_map["피크월검색량"]] = pd.to_numeric(
             fdf[col_map["피크월검색량"]], errors="coerce")
@@ -150,6 +155,7 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["피크월검색량"]] <= preset["피크월검색량_max"])
         ]
 
+    # 쿠팡 총리뷰수
     if col_map.get("쿠팡총리뷰수"):
         fdf[col_map["쿠팡총리뷰수"]] = pd.to_numeric(
             fdf[col_map["쿠팡총리뷰수"]], errors="coerce")
@@ -158,6 +164,7 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["쿠팡총리뷰수"]] <= preset["쿠팡총리뷰수_max"])
         ]
 
+    # 쿠팡 해외배송비율
     if col_map.get("쿠팡해외배송비율"):
         fdf[col_map["쿠팡해외배송비율"]] = pd.to_numeric(
             fdf[col_map["쿠팡해외배송비율"]], errors="coerce")
@@ -173,12 +180,11 @@ def apply_preset(df, col_map, preset):
     return fdf.reset_index(drop=True)
 
 def build_display_df(fdf, col_map):
+    # ✅ 최근1개월검색량, 예상1개월검색량 제거
     mapping = {
         "키워드":           "키워드",
         "브랜드":           "브랜드",
         "경쟁률":           "경쟁률",
-        "최근1개월검색량":  "최근1개월 검색량",
-        "예상1개월검색량":  "예상1개월 검색량",
         "작년검색량":       "작년 검색량",
         "작년최대검색월":   "작년최대검색월",
         "피크월검색량":     "피크월 검색량",
@@ -218,7 +224,6 @@ LOCALE_TEXT = {
     "unhide": "숨기기 해제",
     "chooseCols": "컬럼 선택",
     "filter": "필터",
-    "columns": "컬럼",
     "noRowsToShow": "데이터가 없습니다.",
     "filterOoo": "필터...",
     "equals": "같음",
@@ -238,12 +243,8 @@ LOCALE_TEXT = {
     "resetFilter": "초기화",
     "clearFilter": "지우기",
     "cancelFilter": "취소",
-    "textFilter": "텍스트 필터",
-    "numberFilter": "숫자 필터",
-    "dateFilter": "날짜 필터",
     "copy": "복사",
     "copyWithHeaders": "헤더 포함 복사",
-    "paste": "붙여넣기",
     "export": "내보내기",
     "csvExport": "CSV 다운로드",
     "excelExport": "엑셀 다운로드",
@@ -251,16 +252,9 @@ LOCALE_TEXT = {
     "sum": "합계",
     "min": "최솟값",
     "max": "최댓값",
-    "none": "없음",
     "count": "개수",
     "average": "평균",
-    "filteredRows": "필터된 행",
-    "selectedRows": "선택된 행",
     "totalRows": "전체 행",
-    "totalAndFilteredRows": "전체/필터 행",
-    "more": "더보기",
-    "to": "~",
-    "of": "/",
     "page": "페이지",
     "nextPage": "다음 페이지",
     "lastPage": "마지막 페이지",
@@ -278,19 +272,18 @@ def show_aggrid(result_df):
         autoHeaderHeight=True,
     )
     # 컬럼별 너비 설정
-    gb.configure_column("키워드", minWidth=160)
-    gb.configure_column("브랜드", maxWidth=80)
-    gb.configure_column("경쟁률", maxWidth=90)
-    gb.configure_column("최근1개월 검색량", maxWidth=130)
-    gb.configure_column("예상1개월 검색량", maxWidth=130)
-    gb.configure_column("작년 검색량", maxWidth=110)
-    gb.configure_column("작년최대검색월", maxWidth=110)
-    gb.configure_column("피크월 검색량", maxWidth=110)
-    gb.configure_column("계절성", maxWidth=90)
-    gb.configure_column("계절성 월", maxWidth=120)
-    gb.configure_column("경쟁강도", maxWidth=90)
-    gb.configure_column("쿠팡 총리뷰", maxWidth=100)
-    gb.configure_column("쿠팡해외배송비율(%)", maxWidth=140,
+    gb.configure_column("키워드",           minWidth=160)
+    gb.configure_column("브랜드",           maxWidth=80)
+    gb.configure_column("경쟁률",           maxWidth=90)
+    gb.configure_column("작년 검색량",      maxWidth=120)
+    gb.configure_column("작년최대검색월",   maxWidth=120)
+    gb.configure_column("피크월 검색량",    maxWidth=120)
+    gb.configure_column("계절성",           maxWidth=90)
+    gb.configure_column("계절성 월",        maxWidth=130)
+    gb.configure_column("경쟁강도",         maxWidth=90)
+    gb.configure_column("쿠팡 총리뷰",      maxWidth=110)
+    gb.configure_column("쿠팡해외배송비율(%)",
+                        maxWidth=150,
                         valueFormatter="value + '%'")
 
     grid_options = gb.build()
@@ -528,7 +521,6 @@ if st.session_state.result_df is not None:
                  ".spreadsheetml.sheet",
             use_container_width=True)
 
-    # AgGrid 한글 테이블
     show_aggrid(result)
     st.markdown('</div>', unsafe_allow_html=True)
 
