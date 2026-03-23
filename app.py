@@ -173,18 +173,17 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button:focus {
 
 # ────────────────────────────────────────────────────────────────
 # 표시할 컬럼 순서 (이 목록에 없는 컬럼은 결과에서 제외)
+# 브랜드키워드·쇼핑성키워드 제거됨
 # ────────────────────────────────────────────────────────────────
 DISPLAY_COLUMNS = [
     "키워드",
-    "브랜드키워드",
-    "쇼핑성키워드",
     "경쟁률",
     "작년검색량",
     "작년최대검색월",
     "피크월검색량",
     "계절성",
     "계절성월",
-    "쿠팡해외배송비율",
+    "쿠팡해외배송비율(%)",
     "쿠팡평균가",
     "쿠팡총리뷰수",
     "쿠팡최대리뷰수",
@@ -246,7 +245,7 @@ def load_excel(file_bytes):
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    # 1) 삭제할 컬럼 먼저 제거 (필요없는 컬럼)
+    # 1) 불필요한 컬럼 먼저 삭제
     DROP_KEYWORDS = [
         "카테고리",
         "최근1개월", "최근 1개월",
@@ -280,7 +279,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         c = str(col).strip()
         target = None
 
-        # 키워드: 실제 텍스트 값인 컬럼만 매핑 (O/X·숫자 컬럼 제외)
+        # 키워드: 실제 텍스트 값인 컬럼만 매핑
         if "키워드" not in used:
             sample = df[col].dropna().astype(str).head(20)
             unique_vals = sample.str.strip().str.upper().unique()
@@ -298,14 +297,11 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
                 target = "키워드"
 
         if target is None:
-            if "브랜드" in c and "키워드" in c and "브랜드키워드" not in used:
-                target = "브랜드키워드"
-            elif "쇼핑성" in c and "쇼핑성키워드" not in used:
-                target = "쇼핑성키워드"
-            elif "경쟁률" in c and "경쟁률" not in used:
+            if "경쟁률" in c and "경쟁률" not in used:
                 target = "경쟁률"
             elif (
-                (("작년" in c or "연간" in c) and "검색량" in c and "최대" not in c and "피크" not in c)
+                ("작년" in c or "연간" in c) and "검색량" in c
+                and "최대" not in c and "피크" not in c
             ) and "작년검색량" not in used:
                 target = "작년검색량"
             elif (
@@ -321,11 +317,11 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
                 target = "피크월검색량"
             elif "계절성" in c and "월" not in c and "계절성" not in used:
                 target = "계절성"
-            elif ("계절성" in c and "월" in c) and "계절성월" not in used:
+            elif "계절성" in c and "월" in c and "계절성월" not in used:
                 target = "계절성월"
             elif (
-                "쿠팡" in c and "해외" in c and "배송" in c and
-                "리뷰" not in c and "최대" not in c
+                "쿠팡" in c and "해외" in c and "배송" in c
+                and "리뷰" not in c and "최대" not in c and "총" not in c
             ) and "쿠팡해외배송비율" not in used:
                 target = "쿠팡해외배송비율"
             elif (
@@ -356,7 +352,14 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns=rename)
     df = df.loc[:, ~df.columns.duplicated()]
 
-    # 4) DISPLAY_COLUMNS 순서대로 존재하는 컬럼만 남김
+    # 4) 쿠팡해외배송비율 → 퍼센트(%) 변환 후 컬럼명 변경
+    if "쿠팡해외배송비율" in df.columns:
+        df["쿠팡해외배송비율(%)"] = (
+            pd.to_numeric(df["쿠팡해외배송비율"], errors="coerce") * 100
+        ).round(1)
+        df = df.drop(columns=["쿠팡해외배송비율"])
+
+    # 5) DISPLAY_COLUMNS 순서대로 존재하는 컬럼만 남김
     final_cols = [c for c in DISPLAY_COLUMNS if c in df.columns]
     df = df[final_cols]
 
@@ -370,6 +373,7 @@ def safe_numeric(series: pd.Series) -> pd.Series:
 def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
     r = df.copy()
 
+    # 브랜드키워드 필터 (컬럼이 없으면 스킵)
     if "브랜드키워드" in r.columns and preset["brand_keyword"] != "전체":
         want = preset["brand_keyword"] == "O"
         r = r[r["브랜드키워드"].astype(str).str.strip().isin(
@@ -404,11 +408,10 @@ def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
         col = safe_numeric(r["쿠팡총리뷰수"])
         r = r[(col >= preset["coupang_review_min"]) & (col <= preset["coupang_review_max"])]
 
-    if "쿠팡해외배송비율" in r.columns:
-        col = safe_numeric(r["쿠팡해외배송비율"])
-        o_min = preset["coupang_overseas_min"] / 100.0
-        o_max = preset["coupang_overseas_max"] / 100.0
-        r = r[(col >= o_min) & (col <= o_max)]
+    # 쿠팡해외배송비율(%) - 이미 % 단위로 변환된 값과 비교
+    if "쿠팡해외배송비율(%)" in r.columns:
+        col = safe_numeric(r["쿠팡해외배송비율(%)"])
+        r = r[(col >= preset["coupang_overseas_min"]) & (col <= preset["coupang_overseas_max"])]
 
     r = r.reset_index(drop=True)
     return r
@@ -467,7 +470,7 @@ def render_settings_panel(idx: int):
         cr_min = st.number_input("최소", value=int(p["coupang_review_min"]), min_value=0, step=100, key=f"crmin_{idx}")
         cr_max = st.number_input("최대", value=int(p["coupang_review_max"]), min_value=0, step=100, key=f"crmax_{idx}")
 
-        st.markdown('<p class="filter-section-title">(8) 쿠팡해외배송비율</p>', unsafe_allow_html=True)
+        st.markdown('<p class="filter-section-title">(8) 쿠팡해외배송비율 (%)</p>', unsafe_allow_html=True)
         co_min = st.number_input("최소 (%)", value=int(p["coupang_overseas_min"]), min_value=0, max_value=100, step=1, key=f"comin_{idx}")
         co_max = st.number_input("최대 (%)", value=int(p["coupang_overseas_max"]), min_value=0, max_value=100, step=1, key=f"comax_{idx}")
 
