@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
 st.set_page_config(
     page_title="키워드 분석 도구",
@@ -35,8 +36,8 @@ DEFAULT_PRESET = {
     "피크월검색량_max": 9999999,
     "쿠팡총리뷰수_min": 0,
     "쿠팡총리뷰수_max": 9999999,
-    "쿠팡해외배송비율_min": 0,    # 퍼센트 단위 0~100
-    "쿠팡해외배송비율_max": 100,  # 퍼센트 단위 0~100
+    "쿠팡해외배송비율_min": 0,
+    "쿠팡해외배송비율_max": 100,
 }
 
 if "presets" not in st.session_state:
@@ -113,21 +114,20 @@ def get_col_map(df):
 def apply_preset(df, col_map, preset):
     fdf = df.copy()
 
-    # 쇼핑성 항상 O 고정
     if col_map.get("쇼핑성"):
         fdf = fdf[fdf[col_map["쇼핑성"]].astype(str).str.strip() == "O"]
 
-    # 브랜드
+    if col_map.get("키워드"):
+        fdf = fdf.drop_duplicates(subset=[col_map["키워드"]])
+
     if preset["브랜드"] != "전체" and col_map.get("브랜드"):
         fdf = fdf[fdf[col_map["브랜드"]].astype(str).str.strip()
                   == preset["브랜드"]]
 
-    # 계절성
     if preset["시즌성"] != "전체" and col_map.get("계절성"):
         fdf = fdf[fdf[col_map["계절성"]].astype(str).str.strip()
                   == preset["시즌성"]]
 
-    # 작년 검색량
     if col_map.get("작년검색량"):
         fdf[col_map["작년검색량"]] = pd.to_numeric(
             fdf[col_map["작년검색량"]], errors="coerce")
@@ -136,14 +136,12 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["작년검색량"]] <= preset["작년검색량_max"])
         ]
 
-    # 작년 최대검색월 다중선택
     if preset["작년최대검색월"] and col_map.get("작년최대검색월"):
         selected_months = [int(m) for m in preset["작년최대검색월"]]
         fdf[col_map["작년최대검색월"]] = pd.to_numeric(
             fdf[col_map["작년최대검색월"]], errors="coerce")
         fdf = fdf[fdf[col_map["작년최대검색월"]].isin(selected_months)]
 
-    # 피크월 검색량
     if col_map.get("피크월검색량"):
         fdf[col_map["피크월검색량"]] = pd.to_numeric(
             fdf[col_map["피크월검색량"]], errors="coerce")
@@ -152,7 +150,6 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["피크월검색량"]] <= preset["피크월검색량_max"])
         ]
 
-    # 쿠팡 총리뷰수
     if col_map.get("쿠팡총리뷰수"):
         fdf[col_map["쿠팡총리뷰수"]] = pd.to_numeric(
             fdf[col_map["쿠팡총리뷰수"]], errors="coerce")
@@ -161,18 +158,15 @@ def apply_preset(df, col_map, preset):
             (fdf[col_map["쿠팡총리뷰수"]] <= preset["쿠팡총리뷰수_max"])
         ]
 
-    # 쿠팡 해외배송비율 (UI는 % 단위, 데이터는 0~1 소수)
     if col_map.get("쿠팡해외배송비율"):
         fdf[col_map["쿠팡해외배송비율"]] = pd.to_numeric(
             fdf[col_map["쿠팡해외배송비율"]], errors="coerce")
-        # % → 소수 변환해서 비교
         min_val = preset["쿠팡해외배송비율_min"] / 100
         max_val = preset["쿠팡해외배송비율_max"] / 100
         fdf = fdf[
             (fdf[col_map["쿠팡해외배송비율"]] >= min_val) &
             (fdf[col_map["쿠팡해외배송비율"]] <= max_val)
         ]
-        # 해외배송비율 높은 순 정렬
         fdf = fdf.sort_values(
             by=col_map["쿠팡해외배송비율"], ascending=False)
 
@@ -192,13 +186,124 @@ def build_display_df(fdf, col_map):
         "계절성월":         "계절성 월",
         "네이버경쟁강도":   "경쟁강도",
         "쿠팡총리뷰수":     "쿠팡 총리뷰",
-        "쿠팡해외배송비율": "쿠팡 해외배송비율",
+        "쿠팡해외배송비율": "쿠팡해외배송비율(%)",
     }
     display_cols = {}
     for key, label in mapping.items():
         if col_map.get(key) and col_map[key] in fdf.columns:
             display_cols[col_map[key]] = label
-    return fdf[list(display_cols.keys())].rename(columns=display_cols)
+
+    result = fdf[list(display_cols.keys())].rename(columns=display_cols)
+
+    # 소수 → % 변환
+    if "쿠팡해외배송비율(%)" in result.columns:
+        result["쿠팡해외배송비율(%)"] = (
+            pd.to_numeric(result["쿠팡해외배송비율(%)"], errors="coerce") * 100
+        ).round(1)
+
+    return result
+
+# ── AgGrid 한글 메뉴 설정 ──
+LOCALE_TEXT = {
+    "sortAscending": "오름차순 정렬 ↑",
+    "sortDescending": "내림차순 정렬 ↓",
+    "pinColumn": "컬럼 고정",
+    "pinLeft": "왼쪽 고정",
+    "pinRight": "오른쪽 고정",
+    "noPin": "고정 해제",
+    "autosizeThiscolumn": "이 컬럼 너비 자동조정",
+    "autosizeAllColumns": "모든 컬럼 너비 자동조정",
+    "resetColumns": "컬럼 초기화",
+    "hideColumn": "컬럼 숨기기",
+    "unhide": "숨기기 해제",
+    "chooseCols": "컬럼 선택",
+    "filter": "필터",
+    "columns": "컬럼",
+    "noRowsToShow": "데이터가 없습니다.",
+    "filterOoo": "필터...",
+    "equals": "같음",
+    "notEqual": "같지 않음",
+    "lessThan": "미만",
+    "greaterThan": "초과",
+    "lessThanOrEqual": "이하",
+    "greaterThanOrEqual": "이상",
+    "inRange": "범위",
+    "contains": "포함",
+    "notContains": "미포함",
+    "startsWith": "시작 문자",
+    "endsWith": "끝 문자",
+    "andCondition": "AND",
+    "orCondition": "OR",
+    "applyFilter": "적용",
+    "resetFilter": "초기화",
+    "clearFilter": "지우기",
+    "cancelFilter": "취소",
+    "textFilter": "텍스트 필터",
+    "numberFilter": "숫자 필터",
+    "dateFilter": "날짜 필터",
+    "copy": "복사",
+    "copyWithHeaders": "헤더 포함 복사",
+    "paste": "붙여넣기",
+    "export": "내보내기",
+    "csvExport": "CSV 다운로드",
+    "excelExport": "엑셀 다운로드",
+    "columnsMenuItem": "컬럼 관리",
+    "sum": "합계",
+    "min": "최솟값",
+    "max": "최댓값",
+    "none": "없음",
+    "count": "개수",
+    "average": "평균",
+    "filteredRows": "필터된 행",
+    "selectedRows": "선택된 행",
+    "totalRows": "전체 행",
+    "totalAndFilteredRows": "전체/필터 행",
+    "more": "더보기",
+    "to": "~",
+    "of": "/",
+    "page": "페이지",
+    "nextPage": "다음 페이지",
+    "lastPage": "마지막 페이지",
+    "firstPage": "첫 페이지",
+    "previousPage": "이전 페이지",
+}
+
+def show_aggrid(result_df):
+    gb = GridOptionsBuilder.from_dataframe(result_df)
+    gb.configure_default_column(
+        sortable=True,
+        filter=True,
+        resizable=True,
+        wrapHeaderText=True,
+        autoHeaderHeight=True,
+    )
+    # 컬럼별 너비 설정
+    gb.configure_column("키워드", minWidth=160)
+    gb.configure_column("브랜드", maxWidth=80)
+    gb.configure_column("경쟁률", maxWidth=90)
+    gb.configure_column("최근1개월 검색량", maxWidth=130)
+    gb.configure_column("예상1개월 검색량", maxWidth=130)
+    gb.configure_column("작년 검색량", maxWidth=110)
+    gb.configure_column("작년최대검색월", maxWidth=110)
+    gb.configure_column("피크월 검색량", maxWidth=110)
+    gb.configure_column("계절성", maxWidth=90)
+    gb.configure_column("계절성 월", maxWidth=120)
+    gb.configure_column("경쟁강도", maxWidth=90)
+    gb.configure_column("쿠팡 총리뷰", maxWidth=100)
+    gb.configure_column("쿠팡해외배송비율(%)", maxWidth=140,
+                        valueFormatter="value + '%'")
+
+    grid_options = gb.build()
+    grid_options["localeText"] = LOCALE_TEXT
+
+    AgGrid(
+        result_df,
+        gridOptions=grid_options,
+        update_mode=GridUpdateMode.NO_UPDATE,
+        fit_columns_on_grid_load=False,
+        height=600,
+        theme="alpine",
+    )
 
 # ────────────────────────────────────────
 # 메인 UI
@@ -264,7 +369,6 @@ if st.session_state.show_preset_modal:
 
             col1, col2 = st.columns(2)
             with col1:
-                # 브랜드
                 st.markdown('<div class="field-label">브랜드키워드</div>',
                             unsafe_allow_html=True)
                 new_브랜드 = st.selectbox(
@@ -272,7 +376,6 @@ if st.session_state.show_preset_modal:
                     index=["전체", "O", "X"].index(p["브랜드"]),
                     key=f"브랜드_{i}", label_visibility="collapsed")
 
-                # 작년 검색량
                 st.markdown('<div class="field-label">작년 검색량 범위</div>',
                             unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
@@ -285,7 +388,6 @@ if st.session_state.show_preset_modal:
                         "최대", value=int(p["작년검색량_max"]),
                         min_value=0, key=f"작년max_{i}")
 
-                # 피크월 검색량
                 st.markdown('<div class="field-label">피크월검색량 범위</div>',
                             unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
@@ -298,7 +400,6 @@ if st.session_state.show_preset_modal:
                         "최대", value=int(p["피크월검색량_max"]),
                         min_value=0, key=f"피크max_{i}")
 
-                # 쿠팡 총리뷰수
                 st.markdown('<div class="field-label">쿠팡 총리뷰수 범위</div>',
                             unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
@@ -312,7 +413,6 @@ if st.session_state.show_preset_modal:
                         min_value=0, key=f"리뷰max_{i}")
 
             with col2:
-                # 계절성
                 st.markdown('<div class="field-label">계절성</div>',
                             unsafe_allow_html=True)
                 new_시즌 = st.selectbox(
@@ -320,7 +420,6 @@ if st.session_state.show_preset_modal:
                     index=["전체", "있음", "없음"].index(p["시즌성"]),
                     key=f"시즌_{i}", label_visibility="collapsed")
 
-                # 작년 최대검색월 체크박스
                 st.markdown(
                     '<div class="field-label">작년 최대검색월 (미선택시 전체)</div>',
                     unsafe_allow_html=True)
@@ -340,7 +439,6 @@ if st.session_state.show_preset_modal:
                             ):
                                 new_월.append(month_str)
 
-                # 쿠팡 해외배송비율 (% 단위)
                 st.markdown(
                     '<div class="field-label">쿠팡 해외배송비율 범위 (%)</div>',
                     unsafe_allow_html=True)
@@ -349,20 +447,14 @@ if st.session_state.show_preset_modal:
                     new_해외_min = st.number_input(
                         "최소 (%)",
                         value=int(p["쿠팡해외배송비율_min"]),
-                        min_value=0,
-                        max_value=100,
-                        step=1,
-                        key=f"해외min_{i}",
-                        help="0% ~ 100% 사이로 입력")
+                        min_value=0, max_value=100,
+                        step=1, key=f"해외min_{i}")
                 with c2:
                     new_해외_max = st.number_input(
                         "최대 (%)",
                         value=int(p["쿠팡해외배송비율_max"]),
-                        min_value=0,
-                        max_value=100,
-                        step=1,
-                        key=f"해외max_{i}",
-                        help="0% ~ 100% 사이로 입력")
+                        min_value=0, max_value=100,
+                        step=1, key=f"해외max_{i}")
 
             st.info("💡 쇼핑성 키워드는 항상 **O** 로 자동 고정됩니다.")
             st.markdown("<br>", unsafe_allow_html=True)
@@ -436,31 +528,8 @@ if st.session_state.result_df is not None:
                  ".spreadsheetml.sheet",
             use_container_width=True)
 
-    st.dataframe(
-        result,
-        use_container_width=True,
-        height=600,
-        column_config={
-            "키워드":             st.column_config.TextColumn(
-                                      "🔑 키워드", width="medium"),
-            "브랜드":             st.column_config.TextColumn(
-                                      "🏷️ 브랜드", width="small"),
-            "경쟁률":             st.column_config.NumberColumn(
-                                      "⚡ 경쟁률", format="%.2f"),
-            "최근1개월 검색량":   st.column_config.NumberColumn(
-                                      "📈 1개월 검색량", format="%d"),
-            "예상1개월 검색량":   st.column_config.NumberColumn(
-                                      "🔮 예상1개월", format="%d"),
-            "작년 검색량":        st.column_config.NumberColumn(
-                                      "📅 작년 검색량", format="%d"),
-            "피크월 검색량":      st.column_config.NumberColumn(
-                                      "🔝 피크월 검색량", format="%d"),
-            "쿠팡 총리뷰":        st.column_config.NumberColumn(
-                                      "⭐ 쿠팡 총리뷰", format="%d"),
-            "쿠팡 해외배송비율":  st.column_config.NumberColumn(
-                                      "🌏 해외배송비율(%)",
-                                      format="%.1f%%"),
-        })
+    # AgGrid 한글 테이블
+    show_aggrid(result)
     st.markdown('</div>', unsafe_allow_html=True)
 
 else:
