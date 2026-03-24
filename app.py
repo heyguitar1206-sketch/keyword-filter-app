@@ -226,23 +226,17 @@ for key, val in {
     "show_settings": False,
     "uploaded_file_bytes": None,
     "uploaded_file_name": None,
-    "df_normalized": None,
-    "upload_error": None,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
 # ───────────────── 유틸리티 ─────────────────
 def load_excel(file_bytes):
-    # openpyxl 먼저 시도, 실패 시 xlrd 시도
-    for engine in ["openpyxl", "xlrd"]:
-        try:
-            df = pd.read_excel(io.BytesIO(file_bytes), engine=engine)
-            if df is not None and len(df) > 0:
-                return df
-        except Exception:
-            continue
-    return None
+    try:
+        return pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
+    except Exception as e:
+        st.error(f"엑셀 로드 실패: {e}")
+        return None
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     DROP_KEYWORDS = [
@@ -470,42 +464,20 @@ with st.container(border=True):
     st.markdown('<p class="app-title">🚀 초코라떼 오토 키워드서칭 프로 ver. 1.1</p>', unsafe_allow_html=True)
     st.markdown('<p class="app-subtitle">쿠팡 시장분석 및 키워드 데이터 서칭 프로세스</p>', unsafe_allow_html=True)
 
-# 2) 파일 업로드 카드
+# 2) 파일 업로드 카드 ── 업로드 시 bytes만 저장, 처리 없음
 with st.container(border=True):
     st.markdown('<p class="section-header">📂 엑셀 파일 업로드</p>', unsafe_allow_html=True)
     uploaded_file = st.file_uploader(
         "엑셀 파일 업로드",
         type=["xlsx"], key="file_uploader", label_visibility="collapsed"
     )
-
     if uploaded_file is not None:
-        try:
-            raw_bytes = uploaded_file.read()
-            st.session_state.upload_error = None
+        st.session_state.uploaded_file_bytes = uploaded_file.read()
+        st.session_state.uploaded_file_name  = uploaded_file.name
 
-            with st.spinner("📊 파일 읽는 중..."):
-                df_raw = load_excel(raw_bytes)
-
-            if df_raw is None or len(df_raw) == 0:
-                st.session_state.upload_error = "파일을 읽을 수 없습니다. xlsx 형식인지 확인해주세요."
-            else:
-                with st.spinner("🔄 데이터 정규화 중..."):
-                    df_norm = normalize_columns(df_raw)
-
-                st.session_state.uploaded_file_bytes = raw_bytes
-                st.session_state.uploaded_file_name  = uploaded_file.name
-                st.session_state.df_normalized       = df_norm
-                st.session_state.df_result           = None  # 이전 결과 초기화
-
-        except Exception as e:
-            st.session_state.upload_error = f"파일 처리 오류: {str(e)}"
-
-    if st.session_state.upload_error:
-        st.error(f"⚠️ {st.session_state.upload_error}")
-    elif st.session_state.uploaded_file_name:
+    if st.session_state.uploaded_file_name:
         st.markdown(
-            f'<div class="file-success">✅ 파일 로드됨: {st.session_state.uploaded_file_name} '
-            f'({len(st.session_state.df_normalized):,}행)</div>',
+            f'<div class="file-success">✅ 파일 로드됨: {st.session_state.uploaded_file_name}</div>',
             unsafe_allow_html=True
         )
 
@@ -536,23 +508,22 @@ if st.session_state.show_settings:
                 st.session_state.active_preset = i
                 render_settings_panel(i)
 
-# 5) 분석 실행
+# 5) 분석실행 버튼 클릭 시에만 파일 읽고 처리
 if run_btn:
-    if st.session_state.df_normalized is None:
+    if not st.session_state.uploaded_file_bytes:
         st.warning("⚠️ 먼저 엑셀 파일을 업로드하세요.")
     else:
-        try:
-            with st.spinner("⏳ 분석 중..."):
-                preset = st.session_state.presets[st.session_state.active_preset]
-                st.session_state.df_result = apply_preset(
-                    st.session_state.df_normalized, preset
-                )
+        with st.spinner("⏳ 분석 중..."):
+            df_raw = load_excel(st.session_state.uploaded_file_bytes)
+            if df_raw is not None:
+                df_norm = normalize_columns(df_raw)
+                preset  = st.session_state.presets[st.session_state.active_preset]
+                st.session_state.df_result = apply_preset(df_norm, preset)
+        if st.session_state.df_result is not None:
             st.success(
                 f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 "
                 f"(프리셋 {st.session_state.active_preset + 1} 적용)"
             )
-        except Exception as e:
-            st.error(f"⚠️ 분석 중 오류 발생: {str(e)}")
 
 # 6) 결과 테이블
 if st.session_state.df_result is not None:
