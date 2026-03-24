@@ -245,6 +245,7 @@ for key, val in {
     "show_settings": False,
     "uploaded_file_bytes": None,
     "uploaded_file_name": None,
+    "df_normalized": None,   # ★ 정규화된 원본 보관
 }.items():
     if key not in st.session_state:
         st.session_state[key] = val
@@ -334,11 +335,24 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         df["쿠팡해외배송비율(%)"] = raw.round(1)
         df = df.drop(columns=["쿠팡해외배송비율"])
 
+    # ★ 숫자 컬럼 강제 변환 (문자열로 저장된 숫자 처리)
+    for col in ["작년검색량","피크월검색량","쿠팡평균가","쿠팡총리뷰수",
+                "쿠팡최대리뷰수","쿠팡해외배송총리뷰수","쿠팡해외배송최대리뷰수","경쟁률"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(
+                df[col].astype(str).str.replace(",", "").str.strip(),
+                errors="coerce"
+            ).fillna(0)
+
     final_cols = [c for c in DISPLAY_COLUMNS if c in df.columns]
     return df[final_cols]
 
 def safe_numeric(s: pd.Series) -> pd.Series:
-    return pd.to_numeric(s, errors="coerce").fillna(0)
+    # ★ 쉼표 포함 문자열도 안전하게 변환
+    return pd.to_numeric(
+        s.astype(str).str.replace(",", "").str.strip(),
+        errors="coerce"
+    ).fillna(0)
 
 def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
     r = df.copy()
@@ -349,6 +363,7 @@ def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
                    else ["False","0","X","x","아니오","N","n"])
         r = r[r["브랜드키워드"].astype(str).str.strip().isin(allowed)]
 
+    # ★ 각 필터마다 safe_numeric으로 명시적 변환 후 비교
     if "작년검색량" in r.columns:
         v = safe_numeric(r["작년검색량"])
         r = r[(v >= preset["search_min"]) & (v <= preset["search_max"])]
@@ -480,8 +495,13 @@ with st.container(border=True):
         type=["xlsx"], key="file_uploader", label_visibility="collapsed"
     )
     if uploaded_file:
-        st.session_state.uploaded_file_bytes = uploaded_file.read()
+        raw_bytes = uploaded_file.read()
+        st.session_state.uploaded_file_bytes = raw_bytes
         st.session_state.uploaded_file_name  = uploaded_file.name
+        # ★ 업로드 즉시 정규화해서 보관 (매번 재변환 방지)
+        df_raw = load_excel(raw_bytes)
+        if df_raw is not None:
+            st.session_state.df_normalized = normalize_columns(df_raw)
 
     if st.session_state.uploaded_file_name:
         st.markdown(
@@ -506,34 +526,31 @@ with st.container(border=True):
         run_btn = st.button("🔍 분석실행", key="run_analysis")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# 4) 설정 패널 ── ★ 탭 클릭 시 active_preset 업데이트
+# 4) 설정 패널
 if st.session_state.show_settings:
     with st.container(border=True):
         st.markdown('<p class="card-title">⚙️ 키워드 필터 설정</p>', unsafe_allow_html=True)
-
-        # ★ 핵심 수정: st.tabs 반환값으로 선택된 탭 인덱스를 추적
         tab_objects = st.tabs(["1","2","3","4","5"])
         for i, tab in enumerate(tab_objects):
             with tab:
-                # ★ 탭 안에 들어오면 해당 인덱스를 active_preset으로 설정
                 st.session_state.active_preset = i
                 render_settings_panel(i)
 
-# 5) 분석 실행
+# 5) 분석 실행 ── ★ df_normalized 사용
 if run_btn:
-    if not st.session_state.uploaded_file_bytes:
+    if st.session_state.df_normalized is None:
         st.warning("⚠️ 먼저 엑셀 파일을 업로드하세요.")
     else:
         with st.spinner("⏳ 분석 중..."):
-            df_raw = load_excel(st.session_state.uploaded_file_bytes)
-            if df_raw is not None:
-                df_norm = normalize_columns(df_raw)
-                # ★ active_preset에 저장된 인덱스로 프리셋 선택
-                preset = st.session_state.presets[st.session_state.active_preset]
-                st.session_state.df_result = apply_preset(df_norm, preset)
+            preset = st.session_state.presets[st.session_state.active_preset]
+            st.session_state.df_result = apply_preset(
+                st.session_state.df_normalized, preset
+            )
         if st.session_state.df_result is not None:
-            st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 "
-                       f"(프리셋 {st.session_state.active_preset + 1} 적용)")
+            st.success(
+                f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 "
+                f"(프리셋 {st.session_state.active_preset + 1} 적용)"
+            )
 
 # 6) 결과 테이블
 if st.session_state.df_result is not None:
