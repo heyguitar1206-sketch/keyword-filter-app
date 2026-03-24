@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import io
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 st.set_page_config(page_title="수동끝판왕 키워드서칭머신 ver. 1.0", layout="wide")
 
@@ -273,21 +275,19 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
             raw = raw * 100
         df["쿠팡해외배송비율(%)"] = raw.round(1)
         df = df.drop(columns=["쿠팡해외배송비율"])
-    # ② 숫자 컬럼 쉼표 제거 및 강제 형변환
     for col in ["작년검색량","피크월검색량","쿠팡평균가","쿠팡총리뷰수",
                 "쿠팡최대리뷰수","쿠팡해외배송총리뷰수","쿠팡해외배송최대리뷰수","경쟁률"]:
         if col in df.columns:
             df[col] = pd.to_numeric(
-                df[col].astype(str).str.replace(",","").str.strip(),
+                df[col].astype(str).str.replace(",", "").str.strip(),
                 errors="coerce"
             ).fillna(0)
     final_cols = [c for c in DISPLAY_COLUMNS if c in df.columns]
     return df[final_cols]
 
 def safe_numeric(s: pd.Series) -> pd.Series:
-    # ③ 쉼표 제거 포함
     return pd.to_numeric(
-        s.astype(str).str.replace(",","").str.strip(), errors="coerce"
+        s.astype(str).str.replace(",", "").str.strip(), errors="coerce"
     ).fillna(0)
 
 def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
@@ -333,6 +333,25 @@ def format_dataframe(df: pd.DataFrame) -> pd.DataFrame:
             pd.to_numeric(d["쿠팡해외배송비율(%)"], errors="coerce")
             .fillna(0).apply(lambda x: f"{x:.1f}%"))
     return d
+
+def to_excel_bytes(df: pd.DataFrame) -> bytes:
+    """숫자 컬럼은 숫자 그대로, 문자 컬럼은 문자로 엑셀 저장"""
+    out = io.BytesIO()
+    with pd.ExcelWriter(out, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="분석결과")
+        ws = writer.sheets["분석결과"]
+        # 숫자 컬럼 서식 지정
+        for col_idx, col_name in enumerate(df.columns, start=1):
+            if col_name in FORMAT_INT_COLUMNS:
+                for row in ws.iter_rows(min_row=2, min_col=col_idx, max_col=col_idx):
+                    for cell in row:
+                        cell.number_format = "#,##0"
+            elif col_name == "쿠팡해외배송비율(%)":
+                for row in ws.iter_rows(min_row=2, min_col=col_idx, max_col=col_idx):
+                    for cell in row:
+                        cell.number_format = "0.0"
+    out.seek(0)
+    return out.read()
 
 # ──────────────────── Settings Panel ─────────────────────
 def render_settings_panel(idx: int):
@@ -381,4 +400,81 @@ def render_settings_panel(idx: int):
             "max_months": sel_months,
             "peak_vol_min": peak_min, "peak_vol_max": peak_max,
             "coupang_price_min": cp_min, "coupang_price_max": cp_max,
-            "coupang_review_min": cr_min, "coupang_review_max": cr<span class="cursor">█</span>
+            "coupang_review_min": cr_min, "coupang_review_max": cr_max,
+            "coupang_overseas_min": co_min, "coupang_overseas_max": co_max,
+        })
+        st.success(f"✅ 프리셋 {idx+1} 저장 완료!")
+
+# ───────────────────────── Main UI ───────────────────────
+# 1. Title
+with st.container(border=True):
+    st.markdown('<p class="app-title">🚀 수동끝판왕 키워드서칭머신 ver. 1.0</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-subtitle">쿠팡 시장분석 및 키워드 데이터 서칭 프로세스</p>', unsafe_allow_html=True)
+
+# 2. File upload
+with st.container(border=True):
+    st.markdown('<p class="section-header">📂 엑셀 파일 업로드</p>', unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("엑셀 파일 업로드", type=["xlsx"],
+                                     key="file_uploader", label_visibility="collapsed")
+    if uploaded_file is not None:
+        st.session_state.uploaded_file_bytes = uploaded_file.read()
+        st.session_state.uploaded_file_name = uploaded_file.name
+    if st.session_state.uploaded_file_name:
+        st.markdown(f'<div class="file-success">✅ 파일 로드됨: {st.session_state.uploaded_file_name}</div>',
+                    unsafe_allow_html=True)
+
+# 3. Filter card with buttons
+with st.container(border=True):
+    st.markdown('<p class="card-title">🔑 키워드 필터</p>', unsafe_allow_html=True)
+    _, col_set, col_run, _ = st.columns([3, 2, 2, 3])
+    with col_set:
+        st.markdown('<div class="btn-settings">', unsafe_allow_html=True)
+        if st.button("⚙️ 키워드설정", key="toggle_settings"):
+            st.session_state.show_settings = not st.session_state.show_settings
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col_run:
+        st.markdown('<div class="btn-run">', unsafe_allow_html=True)
+        run_btn = st.button("🔍 분석실행", key="run_analysis")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# 4. Settings panel
+if st.session_state.show_settings:
+    with st.container(border=True):
+        st.markdown('<p class="card-title">⚙️ 키워드 필터 설정</p>', unsafe_allow_html=True)
+        tabs = st.tabs(["1","2","3","4","5"])
+        for i, tab in enumerate(tabs):
+            with tab:
+                st.session_state.active_preset = i
+                render_settings_panel(i)
+
+# 5. Run analysis
+if run_btn:
+    if not st.session_state.uploaded_file_bytes:
+        st.warning("⚠️ 먼저 엑셀 파일을 업로드하세요.")
+    else:
+        with st.spinner("⏳ 분석 중..."):
+            df_raw = load_excel(st.session_state.uploaded_file_bytes)
+            if df_raw is not None:
+                df_norm = normalize_columns(df_raw)
+                preset = st.session_state.presets[st.session_state.active_preset]
+                st.session_state.df_result = apply_preset(df_norm, preset)
+        if st.session_state.df_result is not None:
+            st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 (프리셋 {st.session_state.active_preset + 1} 적용)")
+
+# 6. Result table + 다운로드 버튼
+if st.session_state.df_result is not None:
+    df = st.session_state.df_result
+    row_cnt = len(df)
+    height = min(1100, max(400, 38 + row_cnt * 35))
+    with st.container(border=True):
+        st.markdown(f'<p class="result-title">📊 분석 결과 ({row_cnt:,}개)</p>', unsafe_allow_html=True)
+        # ── 다운로드 버튼 ──────────────────────────────────────
+        excel_bytes = to_excel_bytes(df)
+        st.download_button(
+            label="📥 분석결과 다운로드",
+            data=excel_bytes,
+            file_name="키워드_분석결과.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        # ──────────────────────────────────────────────────────
+        st.dataframe(format_dataframe(df), use_container_width=True, height=height, hide_index=False)
