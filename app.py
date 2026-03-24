@@ -12,21 +12,15 @@ st.markdown("""
 html, body, [class*="css"] {
     font-family: 'Noto Sans KR', sans-serif !important;
 }
-
-.stApp {
-    background: #dde2ef !important;
-}
-
+.stApp { background: #dde2ef !important; }
 header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
 #MainMenu { display: none !important; }
-
 .block-container {
     padding-top: 1.5rem !important;
     padding-bottom: 1rem !important;
     max-width: 1400px !important;
 }
-
 [data-testid="stVerticalBlockBorderWrapper"] > div {
     background: #ffffff !important;
     border-radius: 14px !important;
@@ -34,7 +28,6 @@ footer { display: none !important; }
     box-shadow: 0 2px 12px rgba(60,80,180,0.07) !important;
     padding: 1.2rem 1.5rem !important;
 }
-
 .app-title {
     font-size: 26px !important;
     font-weight: 900 !important;
@@ -48,14 +41,12 @@ footer { display: none !important; }
     margin-top: 0 !important;
     margin-bottom: 0 !important;
 }
-
 .section-header {
     font-size: 15px !important;
     font-weight: 700 !important;
     color: #1a2050 !important;
     margin-bottom: 0.6rem !important;
 }
-
 [data-testid="stFileUploader"] {
     background: #f4f6fb !important;
     border-radius: 10px !important;
@@ -72,7 +63,6 @@ footer { display: none !important; }
     font-size: 14px !important;
     padding: 6px 20px !important;
 }
-
 .file-success {
     background: #eafaf1 !important;
     border: 1px solid #b2dfdb !important;
@@ -83,14 +73,12 @@ footer { display: none !important; }
     font-weight: 600 !important;
     margin-top: 0.5rem !important;
 }
-
 .card-title {
     font-size: 15px !important;
     font-weight: 700 !important;
     color: #1a2050 !important;
     margin-bottom: 0.5rem !important;
 }
-
 .btn-settings .stButton > button,
 .btn-run     .stButton > button {
     background: #f4f6fb !important;
@@ -122,7 +110,6 @@ footer { display: none !important; }
     box-shadow: none !important;
     outline: none !important;
 }
-
 [data-testid="stTabs"] [role="tablist"] {
     gap: 6px !important;
     border-bottom: 2px solid #dde2ef !important;
@@ -143,21 +130,18 @@ footer { display: none !important; }
     background: #eaedfc !important;
     border-bottom: 2px solid #3b5bff !important;
 }
-
 .filter-section-title {
     font-size: 13px !important;
     font-weight: 700 !important;
     color: #3b5bff !important;
     margin: 0.7rem 0 0.2rem 0 !important;
 }
-
 div[role="tabpanel"] [data-testid="stNumberInput"] {
     max-width: 200px !important;
 }
 div[role="tabpanel"] [data-testid="stNumberInput"] > div {
     max-width: 200px !important;
 }
-
 div[role="tabpanel"] [data-testid="stNumberInput"] button {
     background: #e8ecf8 !important;
     color: #3b5bff !important;
@@ -173,7 +157,6 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button {
 div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
     background: #d0d8f0 !important;
 }
-
 div[role="tabpanel"] .stButton > button {
     background: #3b5bff !important;
     color: #fff !important;
@@ -187,14 +170,12 @@ div[role="tabpanel"] .stButton > button {
 div[role="tabpanel"] .stButton > button:hover {
     background: #2244dd !important;
 }
-
 .result-title {
     font-size: 15px !important;
     font-weight: 700 !important;
     color: #1a2050 !important;
     margin-bottom: 0.5rem !important;
 }
-
 [data-testid="stDataFrame"] {
     border-radius: 10px !important;
     overflow: visible !important;
@@ -245,18 +226,23 @@ for key, val in {
     "show_settings": False,
     "uploaded_file_bytes": None,
     "uploaded_file_name": None,
-    "df_normalized": None,   # ★ 정규화된 원본 보관
+    "df_normalized": None,
+    "upload_error": None,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
 # ───────────────── 유틸리티 ─────────────────
 def load_excel(file_bytes):
-    try:
-        return pd.read_excel(io.BytesIO(file_bytes), engine="openpyxl")
-    except Exception as e:
-        st.error(f"엑셀 로드 실패: {e}")
-        return None
+    # openpyxl 먼저 시도, 실패 시 xlrd 시도
+    for engine in ["openpyxl", "xlrd"]:
+        try:
+            df = pd.read_excel(io.BytesIO(file_bytes), engine=engine)
+            if df is not None and len(df) > 0:
+                return df
+        except Exception:
+            continue
+    return None
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     DROP_KEYWORDS = [
@@ -335,7 +321,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         df["쿠팡해외배송비율(%)"] = raw.round(1)
         df = df.drop(columns=["쿠팡해외배송비율"])
 
-    # ★ 숫자 컬럼 강제 변환 (문자열로 저장된 숫자 처리)
     for col in ["작년검색량","피크월검색량","쿠팡평균가","쿠팡총리뷰수",
                 "쿠팡최대리뷰수","쿠팡해외배송총리뷰수","쿠팡해외배송최대리뷰수","경쟁률"]:
         if col in df.columns:
@@ -348,7 +333,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df[final_cols]
 
 def safe_numeric(s: pd.Series) -> pd.Series:
-    # ★ 쉼표 포함 문자열도 안전하게 변환
     return pd.to_numeric(
         s.astype(str).str.replace(",", "").str.strip(),
         errors="coerce"
@@ -363,7 +347,6 @@ def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
                    else ["False","0","X","x","아니오","N","n"])
         r = r[r["브랜드키워드"].astype(str).str.strip().isin(allowed)]
 
-    # ★ 각 필터마다 safe_numeric으로 명시적 변환 후 비교
     if "작년검색량" in r.columns:
         v = safe_numeric(r["작년검색량"])
         r = r[(v >= preset["search_min"]) & (v <= preset["search_max"])]
@@ -494,18 +477,35 @@ with st.container(border=True):
         "엑셀 파일 업로드",
         type=["xlsx"], key="file_uploader", label_visibility="collapsed"
     )
-    if uploaded_file:
-        raw_bytes = uploaded_file.read()
-        st.session_state.uploaded_file_bytes = raw_bytes
-        st.session_state.uploaded_file_name  = uploaded_file.name
-        # ★ 업로드 즉시 정규화해서 보관 (매번 재변환 방지)
-        df_raw = load_excel(raw_bytes)
-        if df_raw is not None:
-            st.session_state.df_normalized = normalize_columns(df_raw)
 
-    if st.session_state.uploaded_file_name:
+    if uploaded_file is not None:
+        try:
+            raw_bytes = uploaded_file.read()
+            st.session_state.upload_error = None
+
+            with st.spinner("📊 파일 읽는 중..."):
+                df_raw = load_excel(raw_bytes)
+
+            if df_raw is None or len(df_raw) == 0:
+                st.session_state.upload_error = "파일을 읽을 수 없습니다. xlsx 형식인지 확인해주세요."
+            else:
+                with st.spinner("🔄 데이터 정규화 중..."):
+                    df_norm = normalize_columns(df_raw)
+
+                st.session_state.uploaded_file_bytes = raw_bytes
+                st.session_state.uploaded_file_name  = uploaded_file.name
+                st.session_state.df_normalized       = df_norm
+                st.session_state.df_result           = None  # 이전 결과 초기화
+
+        except Exception as e:
+            st.session_state.upload_error = f"파일 처리 오류: {str(e)}"
+
+    if st.session_state.upload_error:
+        st.error(f"⚠️ {st.session_state.upload_error}")
+    elif st.session_state.uploaded_file_name:
         st.markdown(
-            f'<div class="file-success">✅ 파일 로드됨: {st.session_state.uploaded_file_name}</div>',
+            f'<div class="file-success">✅ 파일 로드됨: {st.session_state.uploaded_file_name} '
+            f'({len(st.session_state.df_normalized):,}행)</div>',
             unsafe_allow_html=True
         )
 
@@ -536,21 +536,23 @@ if st.session_state.show_settings:
                 st.session_state.active_preset = i
                 render_settings_panel(i)
 
-# 5) 분석 실행 ── ★ df_normalized 사용
+# 5) 분석 실행
 if run_btn:
     if st.session_state.df_normalized is None:
         st.warning("⚠️ 먼저 엑셀 파일을 업로드하세요.")
     else:
-        with st.spinner("⏳ 분석 중..."):
-            preset = st.session_state.presets[st.session_state.active_preset]
-            st.session_state.df_result = apply_preset(
-                st.session_state.df_normalized, preset
-            )
-        if st.session_state.df_result is not None:
+        try:
+            with st.spinner("⏳ 분석 중..."):
+                preset = st.session_state.presets[st.session_state.active_preset]
+                st.session_state.df_result = apply_preset(
+                    st.session_state.df_normalized, preset
+                )
             st.success(
                 f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 "
                 f"(프리셋 {st.session_state.active_preset + 1} 적용)"
             )
+        except Exception as e:
+            st.error(f"⚠️ 분석 중 오류 발생: {str(e)}")
 
 # 6) 결과 테이블
 if st.session_state.df_result is not None:
