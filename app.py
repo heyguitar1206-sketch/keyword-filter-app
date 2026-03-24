@@ -22,7 +22,7 @@ st.markdown("""
     .main .block-container {
         padding-top: 1.5rem;
         padding-bottom: 2rem;
-        max-width: 900px !important;
+        max-width: 1200px !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
     }
@@ -66,6 +66,12 @@ st.markdown("""
         margin-bottom: 0.6rem;
         padding-bottom: 0.3rem;
         border-bottom: 2px solid #4361ee;
+    }
+    /* 프리셋 버튼 줄바꿈 방지 */
+    .stButton > button {
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
