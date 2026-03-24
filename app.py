@@ -467,7 +467,7 @@ def render_settings_panel(idx: int):
 
 # ───────────────── 메인 UI ─────────────────
 
-# 1) 타이틀 카드 ← 텍스트만 변경
+# 1) 타이틀 카드
 with st.container(border=True):
     st.markdown('<p class="app-title">🚀 초코라떼 오토 키워드서칭 프로 ver. 1.1</p>', unsafe_allow_html=True)
     st.markdown('<p class="app-subtitle">쿠팡 시장분석 및 키워드 데이터 서칭 프로세스</p>', unsafe_allow_html=True)
@@ -506,13 +506,17 @@ with st.container(border=True):
         run_btn = st.button("🔍 분석실행", key="run_analysis")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# 4) 설정 패널
+# 4) 설정 패널 ── ★ 탭 클릭 시 active_preset 업데이트
 if st.session_state.show_settings:
     with st.container(border=True):
         st.markdown('<p class="card-title">⚙️ 키워드 필터 설정</p>', unsafe_allow_html=True)
-        tabs = st.tabs(["1","2","3","4","5"])
-        for i, tab in enumerate(tabs):
+
+        # ★ 핵심 수정: st.tabs 반환값으로 선택된 탭 인덱스를 추적
+        tab_objects = st.tabs(["1","2","3","4","5"])
+        for i, tab in enumerate(tab_objects):
             with tab:
+                # ★ 탭 안에 들어오면 해당 인덱스를 active_preset으로 설정
+                st.session_state.active_preset = i
                 render_settings_panel(i)
 
 # 5) 분석 실행
@@ -524,10 +528,12 @@ if run_btn:
             df_raw = load_excel(st.session_state.uploaded_file_bytes)
             if df_raw is not None:
                 df_norm = normalize_columns(df_raw)
-                preset  = st.session_state.presets[st.session_state.active_preset]
+                # ★ active_preset에 저장된 인덱스로 프리셋 선택
+                preset = st.session_state.presets[st.session_state.active_preset]
                 st.session_state.df_result = apply_preset(df_norm, preset)
         if st.session_state.df_result is not None:
-            st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드")
+            st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 "
+                       f"(프리셋 {st.session_state.active_preset + 1} 적용)")
 
 # 6) 결과 테이블
 if st.session_state.df_result is not None:
