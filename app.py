@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
+st.set_page_config(page_title="초코라떼 오토 키워드서칭 프로 ver. 1.1", layout="wide")
 
 # ───────────────────────── CSS ─────────────────────────
 st.markdown("""
@@ -195,7 +195,6 @@ div[role="tabpanel"] .stButton > button:hover {
     margin-bottom: 0.5rem !important;
 }
 
-/* 데이터프레임 툴바 항상 표시 */
 [data-testid="stDataFrame"] {
     border-radius: 10px !important;
     overflow: visible !important;
@@ -421,7 +420,6 @@ def render_settings_panel(idx: int):
             horizontal=True, key=f"season_{idx}", label_visibility="collapsed"
         )
 
-        # ★ (4) 작년최대검색월 – 체크박스 4열 배치
         st.markdown('<p class="filter-section-title">(4) 작년최대검색월</p>', unsafe_allow_html=True)
         sel_months = []
         cb_cols = st.columns(4)
@@ -469,10 +467,10 @@ def render_settings_panel(idx: int):
 
 # ───────────────── 메인 UI ─────────────────
 
-# 1) 타이틀 카드
+# 1) 타이틀 카드 ← 텍스트만 변경
 with st.container(border=True):
-    st.markdown('<p class="app-title">🚀 끝장캐리 키워드 분석</p>', unsafe_allow_html=True)
-    st.markdown('<p class="app-subtitle">네이버 쇼핑 키워드 데이터를 분석합니다.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-title">🚀 초코라떼 오토 키워드서칭 프로 ver. 1.1</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-subtitle">쿠팡 시장분석 및 키워드 데이터 서칭 프로세스</p>', unsafe_allow_html=True)
 
 # 2) 파일 업로드 카드
 with st.container(border=True):
@@ -531,7 +529,7 @@ if run_btn:
         if st.session_state.df_result is not None:
             st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드")
 
-# 6) 결과 테이블 – 툴바(최대화·검색) 항상 표시
+# 6) 결과 테이블
 if st.session_state.df_result is not None:
     df      = st.session_state.df_result
     row_cnt = len(df)
@@ -542,5 +540,5 @@ if st.session_state.df_result is not None:
             format_dataframe(df),
             use_container_width=True,
             height=height,
-            hide_index=False,      # 인덱스 표시 유지
+            hide_index=False,
         )
