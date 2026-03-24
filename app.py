@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="초코라떼 오토 키워드서칭 프로 ver. 1.1", layout="wide")
+st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
 
 # ───────────────────────── CSS ─────────────────────────
 st.markdown("""
@@ -12,15 +12,21 @@ st.markdown("""
 html, body, [class*="css"] {
     font-family: 'Noto Sans KR', sans-serif !important;
 }
-.stApp { background: #dde2ef !important; }
+
+.stApp {
+    background: #dde2ef !important;
+}
+
 header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
 #MainMenu { display: none !important; }
+
 .block-container {
     padding-top: 1.5rem !important;
     padding-bottom: 1rem !important;
     max-width: 1400px !important;
 }
+
 [data-testid="stVerticalBlockBorderWrapper"] > div {
     background: #ffffff !important;
     border-radius: 14px !important;
@@ -28,6 +34,7 @@ footer { display: none !important; }
     box-shadow: 0 2px 12px rgba(60,80,180,0.07) !important;
     padding: 1.2rem 1.5rem !important;
 }
+
 .app-title {
     font-size: 26px !important;
     font-weight: 900 !important;
@@ -41,12 +48,14 @@ footer { display: none !important; }
     margin-top: 0 !important;
     margin-bottom: 0 !important;
 }
+
 .section-header {
     font-size: 15px !important;
     font-weight: 700 !important;
     color: #1a2050 !important;
     margin-bottom: 0.6rem !important;
 }
+
 [data-testid="stFileUploader"] {
     background: #f4f6fb !important;
     border-radius: 10px !important;
@@ -63,6 +72,7 @@ footer { display: none !important; }
     font-size: 14px !important;
     padding: 6px 20px !important;
 }
+
 .file-success {
     background: #eafaf1 !important;
     border: 1px solid #b2dfdb !important;
@@ -73,12 +83,14 @@ footer { display: none !important; }
     font-weight: 600 !important;
     margin-top: 0.5rem !important;
 }
+
 .card-title {
     font-size: 15px !important;
     font-weight: 700 !important;
     color: #1a2050 !important;
     margin-bottom: 0.5rem !important;
 }
+
 .btn-settings .stButton > button,
 .btn-run     .stButton > button {
     background: #f4f6fb !important;
@@ -110,6 +122,7 @@ footer { display: none !important; }
     box-shadow: none !important;
     outline: none !important;
 }
+
 [data-testid="stTabs"] [role="tablist"] {
     gap: 6px !important;
     border-bottom: 2px solid #dde2ef !important;
@@ -130,18 +143,21 @@ footer { display: none !important; }
     background: #eaedfc !important;
     border-bottom: 2px solid #3b5bff !important;
 }
+
 .filter-section-title {
     font-size: 13px !important;
     font-weight: 700 !important;
     color: #3b5bff !important;
     margin: 0.7rem 0 0.2rem 0 !important;
 }
+
 div[role="tabpanel"] [data-testid="stNumberInput"] {
     max-width: 200px !important;
 }
 div[role="tabpanel"] [data-testid="stNumberInput"] > div {
     max-width: 200px !important;
 }
+
 div[role="tabpanel"] [data-testid="stNumberInput"] button {
     background: #e8ecf8 !important;
     color: #3b5bff !important;
@@ -157,6 +173,7 @@ div[role="tabpanel"] [data-testid="stNumberInput"] button {
 div[role="tabpanel"] [data-testid="stNumberInput"] button:hover {
     background: #d0d8f0 !important;
 }
+
 div[role="tabpanel"] .stButton > button {
     background: #3b5bff !important;
     color: #fff !important;
@@ -170,12 +187,14 @@ div[role="tabpanel"] .stButton > button {
 div[role="tabpanel"] .stButton > button:hover {
     background: #2244dd !important;
 }
+
 .result-title {
     font-size: 15px !important;
     font-weight: 700 !important;
     color: #1a2050 !important;
     margin-bottom: 0.5rem !important;
 }
+
 [data-testid="stDataFrame"] {
     border-radius: 10px !important;
     overflow: visible !important;
@@ -461,10 +480,10 @@ def render_settings_panel(idx: int):
 
 # 1) 타이틀 카드
 with st.container(border=True):
-    st.markdown('<p class="app-title">🚀 초코라떼 오토 키워드서칭 프로 ver. 1.1</p>', unsafe_allow_html=True)
-    st.markdown('<p class="app-subtitle">쿠팡 시장분석 및 키워드 데이터 서칭 프로세스</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-title">🚀 끝장캐리 키워드 분석</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-subtitle">네이버 쇼핑 키워드 데이터를 분석합니다.</p>', unsafe_allow_html=True)
 
-# 2) 파일 업로드 카드 ── 업로드 시 bytes만 저장, 처리 없음
+# 2) 파일 업로드 카드
 with st.container(border=True):
     st.markdown('<p class="section-header">📂 엑셀 파일 업로드</p>', unsafe_allow_html=True)
     uploaded_file = st.file_uploader(
@@ -508,7 +527,7 @@ if st.session_state.show_settings:
                 st.session_state.active_preset = i
                 render_settings_panel(i)
 
-# 5) 분석실행 버튼 클릭 시에만 파일 읽고 처리
+# 5) 분석 실행
 if run_btn:
     if not st.session_state.uploaded_file_bytes:
         st.warning("⚠️ 먼저 엑셀 파일을 업로드하세요.")
