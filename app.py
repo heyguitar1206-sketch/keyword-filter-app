@@ -5,12 +5,12 @@ import io
 import os
 
 # ─────────────────────────────────────────────
-# 페이지 설정 — centered 레이아웃
+# 페이지 설정 — wide 레이아웃 (CSS로 70vw 제한)
 # ─────────────────────────────────────────────
 st.set_page_config(
     page_title="끝장캐리 키워드 분석",
     page_icon="📊",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
@@ -19,10 +19,14 @@ st.set_page_config(
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
-    .main .block-container {
+    /* 전체 컨테이너 70vw 중앙 고정 */
+    section.main > div.block-container {
+        max-width: 70vw !important;
+        width: 70vw !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
         padding-top: 1.5rem;
         padding-bottom: 2rem;
-        max-width: 70vw !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
     }
@@ -67,7 +71,7 @@ st.markdown("""
         padding-bottom: 0.3rem;
         border-bottom: 2px solid #4361ee;
     }
-    /* 프리셋 버튼 줄바꿈 방지 + 폰트 통일 */
+    /* 버튼 줄바꿈 방지 + 폰트 통일 */
     .stButton > button {
         white-space: nowrap !important;
         overflow: hidden;
@@ -319,8 +323,6 @@ if 'col_map' not in st.session_state:
     st.session_state.col_map = {}
 if 'show_settings' not in st.session_state:
     st.session_state.show_settings = False
-if 'fullscreen' not in st.session_state:
-    st.session_state.fullscreen = False
 
 # ─────────────────────────────────────────────
 # 헤더
@@ -374,10 +376,10 @@ if st.session_state.df is not None:
         st.rerun()
 
 # ─────────────────────────────────────────────
-# 프리셋 바
+# 프리셋 바 — 톱니바퀴·분석실행 겹침 해소
 # ─────────────────────────────────────────────
 st.markdown("")
-pc = st.columns([1, 1, 1, 1, 1, 1, 0.4, 1.3])
+pc = st.columns([0.8, 1, 1, 1, 1, 1, 0.5, 0.2, 1.3])
 
 with pc[0]:
     st.markdown('<p class="preset-label">분석 프리셋</p>', unsafe_allow_html=True)
@@ -397,7 +399,11 @@ with pc[6]:
         st.session_state.show_settings = not st.session_state.show_settings
         st.rerun()
 
+# 빈 칸으로 간격 확보
 with pc[7]:
+    st.write("")
+
+with pc[8]:
     run_clicked = st.button("🔍 분석 실행", type="primary", use_container_width=True)
 
 # ─────────────────────────────────────────────
@@ -540,7 +546,7 @@ if run_clicked:
             )
 
 # ─────────────────────────────────────────────
-# 결과 출력
+# 결과 출력 — st.dataframe 기본 툴바 활용
 # ─────────────────────────────────────────────
 st.markdown("---")
 
@@ -552,50 +558,16 @@ if st.session_state.filtered_df is not None:
         st.session_state.active_preset, {}
     ).get("name", st.session_state.active_preset)
 
-    rc1, rc2, rc3, rc4 = st.columns([2.5, 3, 1, 1.2])
-    with rc1:
-        st.markdown(f"**📋 분석 결과** — `{active_nm}`")
-        st.caption(f"총 **{len(display):,}**개 키워드 검출")
-    with rc2:
-        search = st.text_input(
-            "🔎", value="", placeholder="결과 내 키워드 검색…",
-            label_visibility="collapsed", key="tbl_search",
-        )
-    with rc3:
-        if st.button("🔲 전체화면", use_container_width=True, key="fs"):
-            st.session_state.fullscreen = not st.session_state.fullscreen
-            st.rerun()
-    with rc4:
-        @st.cache_data
-        def to_excel(dataframe):
-            buf = io.BytesIO()
-            with pd.ExcelWriter(buf, engine='openpyxl') as w:
-                dataframe.to_excel(w, index=False, sheet_name='분석결과')
-            return buf.getvalue()
+    st.markdown(f"**📋 분석 결과** — `{active_nm}`")
+    st.caption(f"총 **{len(display):,}**개 키워드 검출  ·  테이블 위에 마우스를 올리면 🔍검색 / 📥다운로드 / 🔲전체화면 아이콘이 표시됩니다.")
 
-        st.download_button(
-            "📥 엑셀 다운로드",
-            data=to_excel(display),
-            file_name=f"분석결과_{active_nm}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-        )
-
-    view = display.copy()
-    if search:
-        mask = view.astype(str).apply(
-            lambda x: x.str.contains(search, case=False, na=False)
-        ).any(axis=1)
-        view = view[mask]
-        st.caption(f"🔎 검색 결과: **{len(view):,}**개")
-
-    height = 800 if st.session_state.fullscreen else 500
-    if st.session_state.fullscreen:
-        if st.button("✕ 전체화면 닫기", key="fs_close"):
-            st.session_state.fullscreen = False
-            st.rerun()
-
-    st.dataframe(view, use_container_width=True, height=height, hide_index=True)
+    # st.dataframe 자체 툴바: 검색, 다운로드(CSV), 전체화면
+    st.dataframe(
+        display,
+        use_container_width=True,
+        height=600,
+        hide_index=True,
+    )
 
     with st.expander("📌 현재 적용된 필터 조건", expanded=False):
         flt = st.session_state.presets.get(
