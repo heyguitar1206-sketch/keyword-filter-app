@@ -5,28 +5,27 @@ import io
 import os
 
 # ─────────────────────────────────────────────
-# 페이지 설정
+# 페이지 설정 — centered 레이아웃
 # ─────────────────────────────────────────────
 st.set_page_config(
     page_title="끝장캐리 키워드 분석",
     page_icon="📊",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="collapsed"
 )
 
 # ─────────────────────────────────────────────
-# CSS — 가로폭 60% 제한 + O/X 버튼 스타일
+# CSS
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
-    /* ── 전체 컨테이너 가로폭 60% ── */
     .main .block-container {
         padding-top: 1.5rem;
         padding-bottom: 2rem;
-        max-width: 60%;
-        margin: 0 auto;
+        max-width: 900px !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
     }
-
     .app-title {
         font-size: 1.8rem;
         font-weight: 800;
@@ -68,34 +67,6 @@ st.markdown("""
         padding-bottom: 0.3rem;
         border-bottom: 2px solid #4361ee;
     }
-
-    /* ── O/X 토글 버튼 스타일 ── */
-    .ox-group { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
-    .ox-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 52px; height: 36px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.15s;
-        border: 2px solid #ddd;
-        background: white;
-        color: #888;
-    }
-    .ox-btn.active-o {
-        border-color: #4361ee;
-        background: #eef1ff;
-        color: #4361ee;
-    }
-    .ox-btn.active-x {
-        border-color: #e74c3c;
-        background: #fef0ef;
-        color: #e74c3c;
-    }
-
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -108,7 +79,7 @@ st.markdown("""
 PRESET_FILE = "presets.json"
 
 EMPTY_FILTERS = {
-    "브랜드_키워드": "전체",      # 전체 / O / X
+    "브랜드_키워드": "전체",
     "쇼핑성_키워드": "전체",
     "계절성": "전체",
     "작년_검색량_min": None,
@@ -125,13 +96,13 @@ EMPTY_FILTERS = {
 }
 
 DEFAULT_PRESETS = {
-    f"프리셋 {i}": {
-        "name": n,
-        "filters": EMPTY_FILTERS.copy(),
-    }
-    for i, n in [(1, "시즌소싱 26년 봄"), (2, "비시즌 가구"),
-                 (3, "프리셋 3"), (4, "프리셋 4"), (5, "프리셋 5")]
+    "프리셋 1": {"name": "시즌소싱 26년 봄", "filters": EMPTY_FILTERS.copy()},
+    "프리셋 2": {"name": "비시즌 가구", "filters": EMPTY_FILTERS.copy()},
+    "프리셋 3": {"name": "프리셋 3", "filters": EMPTY_FILTERS.copy()},
+    "프리셋 4": {"name": "프리셋 4", "filters": EMPTY_FILTERS.copy()},
+    "프리셋 5": {"name": "프리셋 5", "filters": EMPTY_FILTERS.copy()},
 }
+
 
 def load_presets():
     if os.path.exists(PRESET_FILE):
@@ -146,9 +117,11 @@ def load_presets():
             pass
     return {k: {"name": v["name"], "filters": v["filters"].copy()} for k, v in DEFAULT_PRESETS.items()}
 
+
 def save_presets(presets):
     with open(PRESET_FILE, 'w', encoding='utf-8') as f:
         json.dump(presets, f, ensure_ascii=False, indent=2)
+
 
 # ─────────────────────────────────────────────
 # 엑셀 로딩 (3행 헤더)
@@ -169,15 +142,23 @@ def load_excel(file_bytes, file_name):
         merged.append('_'.join(parts) if parts else f'col_{i}')
     df.columns = merged
     df = df.iloc[3:].reset_index(drop=True)
-    seen = {}; new_c = []
+    seen = {}
+    new_c = []
     for c in df.columns:
-        if c in seen: seen[c] += 1; new_c.append(f"{c}_{seen[c]}")
-        else: seen[c] = 0; new_c.append(c)
+        if c in seen:
+            seen[c] += 1
+            new_c.append(f"{c}_{seen[c]}")
+        else:
+            seen[c] = 0
+            new_c.append(c)
     df.columns = new_c
     for c in df.columns:
-        try: df[c] = pd.to_numeric(df[c], errors='ignore')
-        except: pass
+        try:
+            df[c] = pd.to_numeric(df[c], errors='ignore')
+        except Exception:
+            pass
     return df
+
 
 # ─────────────────────────────────────────────
 # 컬럼 자동 매핑
@@ -186,20 +167,22 @@ def build_col_map(df):
     cols = df.columns.tolist()
     mapping = {}
     rules = {
-        '신규진입': ['신규진입_키워드','신규진입'],
-        '키워드': ['키워드'], '카테고리': ['카테고리'],
-        '브랜드': ['브랜드_키워드','브랜드'],
-        '쇼핑성': ['쇼핑성_키워드','쇼핑성'],
+        '신규진입': ['신규진입_키워드', '신규진입'],
+        '키워드': ['키워드'],
+        '카테고리': ['카테고리'],
+        '브랜드': ['브랜드_키워드', '브랜드'],
+        '쇼핑성': ['쇼핑성_키워드', '쇼핑성'],
         '경쟁률': ['경쟁률'],
-        '최근1개월검색량': ['최근_1개월_검색량','최근_검색량'],
-        '예상1개월검색량': ['예상_1개월_검색량','예상_검색량'],
+        '최근1개월검색량': ['최근_1개월_검색량', '최근_검색량'],
+        '예상1개월검색량': ['예상_1개월_검색량', '예상_검색량'],
         '예상1개월상승률': ['예상1개월_검색량_상승률'],
         '작년검색량': ['작년_검색량'],
-        '작년최대검색월': ['작년_최대검색_월','작년_최대검색'],
+        '작년최대검색월': ['작년_최대검색_월', '작년_최대검색'],
         '작년최대검색량': ['작년최대_검색량'],
-        '계절성': ['계절성'], '계절성월': ['계절성_월'],
+        '계절성': ['계절성'],
+        '계절성월': ['계절성_월'],
         '네이버상품수': ['네이버_상품수'],
-        '경쟁강도': ['네이버_경쟁강도','경쟁강도'],
+        '경쟁강도': ['네이버_경쟁강도', '경쟁강도'],
         '쿠팡평균가': ['쿠팡_평균가'],
         '쿠팡총리뷰수': ['쿠팡_총리뷰수'],
         '쿠팡최대리뷰수': ['쿠팡_최대리뷰수'],
@@ -208,18 +191,21 @@ def build_col_map(df):
         '쿠팡판매자로켓': ['쿠팡_판매자로켓'],
         '쿠팡일반배송': ['쿠팡_일반배송비율'],
         '쿠팡해외배송비율': ['쿠팡_해외배송비율'],
-        '쿠팡해외총리뷰': ['쿠팡_해외배송_총리뷰수','해외배송_총리뷰수'],
-        '쿠팡해외최대리뷰': ['쿠팡_해외배송_최대리뷰수','해외배송_최대리뷰수'],
-        '쿠팡해외평균리뷰': ['쿠팡_해외배송_평균리뷰수','해외배송_평균리뷰수'],
+        '쿠팡해외총리뷰': ['쿠팡_해외배송_총리뷰수', '해외배송_총리뷰수'],
+        '쿠팡해외최대리뷰': ['쿠팡_해외배송_최대리뷰수', '해외배송_최대리뷰수'],
+        '쿠팡해외평균리뷰': ['쿠팡_해외배송_평균리뷰수', '해외배송_평균리뷰수'],
     }
     for std, pats in rules.items():
         for col in cols:
-            cc = col.replace(' ','')
+            cc = col.replace(' ', '')
             for p in pats:
-                if p.replace(' ','') in cc:
-                    mapping[std] = col; break
-            if std in mapping: break
+                if p.replace(' ', '') in cc:
+                    mapping[std] = col
+                    break
+            if std in mapping:
+                break
     return mapping
+
 
 # ─────────────────────────────────────────────
 # 필터 적용
@@ -234,6 +220,7 @@ def apply_filters(df, filters, cmap):
         v = filters.get(fkey)
         if v and v != "전체" and mkey in cmap:
             out = out[out[cmap[mkey]].astype(str).str.strip() == v]
+
     ox('브랜드_키워드', '브랜드')
     ox('쇼핑성_키워드', '쇼핑성')
 
@@ -244,16 +231,21 @@ def apply_filters(df, filters, cmap):
 
     def rng(fmin, fmax, mkey):
         nonlocal out
-        if mkey not in cmap: return
+        if mkey not in cmap:
+            return
         s = pd.to_numeric(out[cmap[mkey]], errors='coerce')
         lo = filters.get(fmin)
         hi = filters.get(fmax)
         if lo not in (None, '', 0):
-            try: out = out[s >= float(lo)]
-            except: pass
+            try:
+                out = out[s >= float(lo)]
+            except Exception:
+                pass
         if hi not in (None, '', 0):
-            try: out = out[s <= float(hi)]
-            except: pass
+            try:
+                out = out[s <= float(hi)]
+            except Exception:
+                pass
 
     rng('작년_검색량_min', '작년_검색량_max', '작년검색량')
     rng('피크월검색량_min', '피크월검색량_max', '작년최대검색량')
@@ -273,38 +265,28 @@ def apply_filters(df, filters, cmap):
 
     return out.reset_index(drop=True)
 
+
 def rename_display(df, cmap):
     r = {}
     if '작년최대검색량' in cmap:
         r[cmap['작년최대검색량']] = '피크월검색량'
     return df.rename(columns=r) if r else df
 
+
 # ─────────────────────────────────────────────
-# O/X 체크박스 렌더 함수
+# O/X 체크박스 함수
 # ─────────────────────────────────────────────
 def ox_checkbox(label, current_value, key_prefix):
-    """
-    O / X 를 두 개의 체크박스로 표시.
-    current_value: "전체" | "O" | "X"
-    반환값: "전체" | "O" | "X"
-    """
     st.markdown(f"**{label}**")
     c1, c2, c3 = st.columns([1, 1, 2])
     o_checked = current_value == "O"
     x_checked = current_value == "X"
-
     with c1:
         o_val = st.checkbox("O", value=o_checked, key=f"{key_prefix}_o")
     with c2:
         x_val = st.checkbox("X", value=x_checked, key=f"{key_prefix}_x")
-
-    # 둘 다 선택 → 마지막 변경 우선 (실질적으로 하나만 선택되도록)
     if o_val and x_val:
-        # 이전에 O였으면 X로, 이전에 X였으면 O로
-        if current_value == "O":
-            return "X"
-        else:
-            return "O"
+        return "X" if current_value == "O" else "O"
     elif o_val:
         return "O"
     elif x_val:
@@ -312,23 +294,24 @@ def ox_checkbox(label, current_value, key_prefix):
     else:
         return "전체"
 
+
 # ─────────────────────────────────────────────
 # 세션 초기화
 # ─────────────────────────────────────────────
-for k, d in [
-    ('presets', None), ('active_preset', '프리셋 1'),
-    ('df', None), ('filtered_df', None), ('col_map', {}),
-    ('show_settings', False), ('fullscreen', False),
-]:
-    if k not in st.session_state:
-        st.session_state[k] = load_presets() if k == 'presets' else d if d is not None else (
-            {} if k == 'col_map' else None if k in ('df','filtered_df') else d
-        )
-# 재초기화 보정
-if st.session_state.presets is None:
+if 'presets' not in st.session_state:
     st.session_state.presets = load_presets()
-if st.session_state.col_map is None:
+if 'active_preset' not in st.session_state:
+    st.session_state.active_preset = '프리셋 1'
+if 'df' not in st.session_state:
+    st.session_state.df = None
+if 'filtered_df' not in st.session_state:
+    st.session_state.filtered_df = None
+if 'col_map' not in st.session_state:
     st.session_state.col_map = {}
+if 'show_settings' not in st.session_state:
+    st.session_state.show_settings = False
+if 'fullscreen' not in st.session_state:
+    st.session_state.fullscreen = False
 
 # ─────────────────────────────────────────────
 # 헤더
@@ -423,7 +406,7 @@ if st.session_state.show_settings:
 
     c1, c2, c3 = st.columns(3)
 
-    # ── 좌측: 기본 조건 (O/X 체크박스) ──
+    # ── 좌측: 기본 조건 ──
     with c1:
         st.markdown('<div class="filter-section-title">기본 조건</div>', unsafe_allow_html=True)
 
@@ -446,40 +429,60 @@ if st.session_state.show_settings:
         st.markdown('<div class="filter-section-title">검색량 · 검색월</div>', unsafe_allow_html=True)
 
         st.markdown("**작년 검색량**")
-        yr_min = st.number_input("최소", min_value=0, value=int(cf.get("작년_검색량_min") or 0),
-                                  step=10000, key="f_yr_min", format="%d")
-        yr_max = st.number_input("최대 (0 = 무제한)", min_value=0, value=int(cf.get("작년_검색량_max") or 0),
-                                  step=10000, key="f_yr_max", format="%d")
+        yr_min = st.number_input(
+            "최소", min_value=0, value=int(cf.get("작년_검색량_min") or 0),
+            step=10000, key="f_yr_min", format="%d",
+        )
+        yr_max = st.number_input(
+            "최대 (0 = 무제한)", min_value=0, value=int(cf.get("작년_검색량_max") or 0),
+            step=10000, key="f_yr_max", format="%d",
+        )
 
         st.markdown("**피크월 검색량** (작년최대검색월 검색량)")
-        pk_min = st.number_input("최소", min_value=0, value=int(cf.get("피크월검색량_min") or 0),
-                                  step=5000, key="f_pk_min", format="%d")
-        pk_max = st.number_input("최대 (0 = 무제한)", min_value=0, value=int(cf.get("피크월검색량_max") or 0),
-                                  step=5000, key="f_pk_max", format="%d")
+        pk_min = st.number_input(
+            "최소", min_value=0, value=int(cf.get("피크월검색량_min") or 0),
+            step=5000, key="f_pk_min", format="%d",
+        )
+        pk_max = st.number_input(
+            "최대 (0 = 무제한)", min_value=0, value=int(cf.get("피크월검색량_max") or 0),
+            step=5000, key="f_pk_max", format="%d",
+        )
 
     # ── 우측: 쿠팡 ──
     with c3:
         st.markdown('<div class="filter-section-title">쿠팡 데이터</div>', unsafe_allow_html=True)
 
         st.markdown("**쿠팡 해외배송비율** (결과 기본정렬 기준)")
-        co_min = st.number_input("최소", min_value=0.0, max_value=1.0,
-                                  value=float(cf.get("쿠팡_해외배송비율_min") or 0),
-                                  step=0.05, format="%.2f", key="f_co_min")
-        co_max = st.number_input("최대 (0 = 무제한)", min_value=0.0, max_value=1.0,
-                                  value=float(cf.get("쿠팡_해외배송비율_max") or 0),
-                                  step=0.05, format="%.2f", key="f_co_max")
+        co_min = st.number_input(
+            "최소", min_value=0.0, max_value=1.0,
+            value=float(cf.get("쿠팡_해외배송비율_min") or 0),
+            step=0.05, format="%.2f", key="f_co_min",
+        )
+        co_max = st.number_input(
+            "최대 (0 = 무제한)", min_value=0.0, max_value=1.0,
+            value=float(cf.get("쿠팡_해외배송비율_max") or 0),
+            step=0.05, format="%.2f", key="f_co_max",
+        )
 
         st.markdown("**쿠팡 평균가**")
-        cp_min = st.number_input("최소", min_value=0, value=int(cf.get("쿠팡_평균가_min") or 0),
-                                  step=5000, key="f_cp_min", format="%d")
-        cp_max = st.number_input("최대 (0 = 무제한)", min_value=0, value=int(cf.get("쿠팡_평균가_max") or 0),
-                                  step=5000, key="f_cp_max", format="%d")
+        cp_min = st.number_input(
+            "최소", min_value=0, value=int(cf.get("쿠팡_평균가_min") or 0),
+            step=5000, key="f_cp_min", format="%d",
+        )
+        cp_max = st.number_input(
+            "최대 (0 = 무제한)", min_value=0, value=int(cf.get("쿠팡_평균가_max") or 0),
+            step=5000, key="f_cp_max", format="%d",
+        )
 
         st.markdown("**쿠팡 총리뷰수**")
-        cr_min = st.number_input("최소", min_value=0, value=int(cf.get("쿠팡_총리뷰수_min") or 0),
-                                  step=10000, key="f_cr_min", format="%d")
-        cr_max = st.number_input("최대 (0 = 무제한)", min_value=0, value=int(cf.get("쿠팡_총리뷰수_max") or 0),
-                                  step=10000, key="f_cr_max", format="%d")
+        cr_min = st.number_input(
+            "최소", min_value=0, value=int(cf.get("쿠팡_총리뷰수_min") or 0),
+            step=10000, key="f_cr_min", format="%d",
+        )
+        cr_max = st.number_input(
+            "최대 (0 = 무제한)", min_value=0, value=int(cf.get("쿠팡_총리뷰수_max") or 0),
+            step=10000, key="f_cr_max", format="%d",
+        )
 
     # 저장 / 닫기
     st.markdown("")
@@ -545,8 +548,10 @@ if st.session_state.filtered_df is not None:
         st.markdown(f"**📋 분석 결과** — `{active_nm}`")
         st.caption(f"총 **{len(display):,}**개 키워드 검출")
     with rc2:
-        search = st.text_input("🔎", value="", placeholder="결과 내 키워드 검색…",
-                                label_visibility="collapsed", key="tbl_search")
+        search = st.text_input(
+            "🔎", value="", placeholder="결과 내 키워드 검색…",
+            label_visibility="collapsed", key="tbl_search",
+        )
     with rc3:
         if st.button("🔲 전체화면", use_container_width=True, key="fs"):
             st.session_state.fullscreen = not st.session_state.fullscreen
@@ -558,8 +563,10 @@ if st.session_state.filtered_df is not None:
             with pd.ExcelWriter(buf, engine='openpyxl') as w:
                 dataframe.to_excel(w, index=False, sheet_name='분석결과')
             return buf.getvalue()
+
         st.download_button(
-            "📥 엑셀 다운로드", data=to_excel(display),
+            "📥 엑셀 다운로드",
+            data=to_excel(display),
             file_name=f"분석결과_{active_nm}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True,
