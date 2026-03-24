@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import io
-from openpyxl import Workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
 
 st.set_page_config(page_title="수동끝판왕 키워드서칭머신 ver. 1.0", layout="wide")
 
@@ -335,12 +333,10 @@ def format_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return d
 
 def to_excel_bytes(df: pd.DataFrame) -> bytes:
-    """숫자 컬럼은 숫자 그대로, 문자 컬럼은 문자로 엑셀 저장"""
     out = io.BytesIO()
     with pd.ExcelWriter(out, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name="분석결과")
         ws = writer.sheets["분석결과"]
-        # 숫자 컬럼 서식 지정
         for col_idx, col_name in enumerate(df.columns, start=1):
             if col_name in FORMAT_INT_COLUMNS:
                 for row in ws.iter_rows(min_row=2, min_col=col_idx, max_col=col_idx):
@@ -468,7 +464,6 @@ if st.session_state.df_result is not None:
     height = min(1100, max(400, 38 + row_cnt * 35))
     with st.container(border=True):
         st.markdown(f'<p class="result-title">📊 분석 결과 ({row_cnt:,}개)</p>', unsafe_allow_html=True)
-        # ── 다운로드 버튼 ──────────────────────────────────────
         excel_bytes = to_excel_bytes(df)
         st.download_button(
             label="📥 분석결과 다운로드",
@@ -476,5 +471,4 @@ if st.session_state.df_result is not None:
             file_name="키워드_분석결과.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        # ──────────────────────────────────────────────────────
         st.dataframe(format_dataframe(df), use_container_width=True, height=height, hide_index=False)
