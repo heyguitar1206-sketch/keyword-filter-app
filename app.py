@@ -334,4 +334,4 @@ if st.session_state.df_result is not None:
     height = min(1100, max(400, 38 + row_cnt * 35))
     with st.container(border=True):
         st.markdown(f'<p class="result-title">📊 분석 결과 ({row_cnt:,}개)</p>', unsafe_allow_html=True)
-        st.dataframe(format_dataframe(df), use_container_width=True, height=height, hide_index=False)
+        st.dataframe(format_dataframe(df), width="stretch", height=height, hide_index=False)
