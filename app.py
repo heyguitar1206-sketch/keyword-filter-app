@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="수동끝판왕 키워드서칭머신 ver. 1.0", layout="wide")
+st.set_page_config(page_title="끝장캐리 키워드 분석", layout="wide")
 
 # ─────────────────────────── CSS ───────────────────────────
 st.markdown("""
@@ -332,23 +332,6 @@ def format_dataframe(df: pd.DataFrame) -> pd.DataFrame:
             .fillna(0).apply(lambda x: f"{x:.1f}%"))
     return d
 
-def to_excel_bytes(df: pd.DataFrame) -> bytes:
-    out = io.BytesIO()
-    with pd.ExcelWriter(out, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="분석결과")
-        ws = writer.sheets["분석결과"]
-        for col_idx, col_name in enumerate(df.columns, start=1):
-            if col_name in FORMAT_INT_COLUMNS:
-                for row in ws.iter_rows(min_row=2, min_col=col_idx, max_col=col_idx):
-                    for cell in row:
-                        cell.number_format = "#,##0"
-            elif col_name == "쿠팡해외배송비율(%)":
-                for row in ws.iter_rows(min_row=2, min_col=col_idx, max_col=col_idx):
-                    for cell in row:
-                        cell.number_format = "0.0"
-    out.seek(0)
-    return out.read()
-
 # ──────────────────── Settings Panel ─────────────────────
 def render_settings_panel(idx: int):
     p = st.session_state.presets[idx]
@@ -404,8 +387,8 @@ def render_settings_panel(idx: int):
 # ───────────────────────── Main UI ───────────────────────
 # 1. Title
 with st.container(border=True):
-    st.markdown('<p class="app-title">🚀 수동끝판왕 키워드서칭머신 ver. 1.0</p>', unsafe_allow_html=True)
-    st.markdown('<p class="app-subtitle">쿠팡 시장분석 및 키워드 데이터 서칭 프로세스</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-title">🚀 끝장캐리 키워드 분석</p>', unsafe_allow_html=True)
+    st.markdown('<p class="app-subtitle">네이버 쇼핑 키워드 데이터를 분석합니다.</p>', unsafe_allow_html=True)
 
 # 2. File upload
 with st.container(border=True):
@@ -457,18 +440,11 @@ if run_btn:
         if st.session_state.df_result is not None:
             st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 (프리셋 {st.session_state.active_preset + 1} 적용)")
 
-# 6. Result table + 다운로드 버튼
+# 6. Result table
 if st.session_state.df_result is not None:
     df = st.session_state.df_result
     row_cnt = len(df)
     height = min(1100, max(400, 38 + row_cnt * 35))
     with st.container(border=True):
         st.markdown(f'<p class="result-title">📊 분석 결과 ({row_cnt:,}개)</p>', unsafe_allow_html=True)
-        excel_bytes = to_excel_bytes(df)
-        st.download_button(
-            label="📥 분석결과 다운로드",
-            data=excel_bytes,
-            file_name="키워드_분석결과.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
         st.dataframe(format_dataframe(df), use_container_width=True, height=height, hide_index=False)
