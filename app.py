@@ -195,6 +195,7 @@ div[role="tabpanel"] .stButton > button:hover {
     margin-bottom: 0.5rem !important;
 }
 
+/* 데이터프레임 툴바 항상 표시 */
 [data-testid="stDataFrame"] {
     border-radius: 10px !important;
     overflow: visible !important;
@@ -334,22 +335,11 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         df["쿠팡해외배송비율(%)"] = raw.round(1)
         df = df.drop(columns=["쿠팡해외배송비율"])
 
-    for col in ["작년검색량","피크월검색량","쿠팡평균가","쿠팡총리뷰수",
-                "쿠팡최대리뷰수","쿠팡해외배송총리뷰수","쿠팡해외배송최대리뷰수","경쟁률"]:
-        if col in df.columns:
-            df[col] = pd.to_numeric(
-                df[col].astype(str).str.replace(",", "").str.strip(),
-                errors="coerce"
-            ).fillna(0)
-
     final_cols = [c for c in DISPLAY_COLUMNS if c in df.columns]
     return df[final_cols]
 
 def safe_numeric(s: pd.Series) -> pd.Series:
-    return pd.to_numeric(
-        s.astype(str).str.replace(",", "").str.strip(),
-        errors="coerce"
-    ).fillna(0)
+    return pd.to_numeric(s, errors="coerce").fillna(0)
 
 def apply_preset(df: pd.DataFrame, preset: dict) -> pd.DataFrame:
     r = df.copy()
@@ -431,6 +421,7 @@ def render_settings_panel(idx: int):
             horizontal=True, key=f"season_{idx}", label_visibility="collapsed"
         )
 
+        # ★ (4) 작년최대검색월 – 체크박스 4열 배치
         st.markdown('<p class="filter-section-title">(4) 작년최대검색월</p>', unsafe_allow_html=True)
         sel_months = []
         cb_cols = st.columns(4)
@@ -490,7 +481,7 @@ with st.container(border=True):
         "엑셀 파일 업로드",
         type=["xlsx"], key="file_uploader", label_visibility="collapsed"
     )
-    if uploaded_file is not None:
+    if uploaded_file:
         st.session_state.uploaded_file_bytes = uploaded_file.read()
         st.session_state.uploaded_file_name  = uploaded_file.name
 
@@ -521,10 +512,9 @@ with st.container(border=True):
 if st.session_state.show_settings:
     with st.container(border=True):
         st.markdown('<p class="card-title">⚙️ 키워드 필터 설정</p>', unsafe_allow_html=True)
-        tab_objects = st.tabs(["1","2","3","4","5"])
-        for i, tab in enumerate(tab_objects):
+        tabs = st.tabs(["1","2","3","4","5"])
+        for i, tab in enumerate(tabs):
             with tab:
-                st.session_state.active_preset = i
                 render_settings_panel(i)
 
 # 5) 분석 실행
@@ -539,12 +529,9 @@ if run_btn:
                 preset  = st.session_state.presets[st.session_state.active_preset]
                 st.session_state.df_result = apply_preset(df_norm, preset)
         if st.session_state.df_result is not None:
-            st.success(
-                f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드 "
-                f"(프리셋 {st.session_state.active_preset + 1} 적용)"
-            )
+            st.success(f"✅ 분석 완료: {len(st.session_state.df_result):,}개 키워드")
 
-# 6) 결과 테이블
+# 6) 결과 테이블 – 툴바(최대화·검색) 항상 표시
 if st.session_state.df_result is not None:
     df      = st.session_state.df_result
     row_cnt = len(df)
@@ -555,5 +542,5 @@ if st.session_state.df_result is not None:
             format_dataframe(df),
             use_container_width=True,
             height=height,
-            hide_index=False,
+            hide_index=False,      # 인덱스 표시 유지
         )
