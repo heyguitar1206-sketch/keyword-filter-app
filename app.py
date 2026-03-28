@@ -102,7 +102,7 @@ def get_preset_filters(idx):
 
 
 # ──────────────────────────────────────────────
-# 엑셀 로딩 (자동 헤더 감지)
+# 엑셀 로딩 (1회 읽기로 최적화)
 # ──────────────────────────────────────────────
 def is_header_text(val):
     if val is None or (isinstance(val, float) and pd.isna(val)):
@@ -118,8 +118,11 @@ def is_header_text(val):
 
 
 def load_excel(uploaded):
-    raw = pd.read_excel(uploaded, header=None, nrows=10)
+    # ── 파일 전체를 1회만 읽음 ──
+    raw = pd.read_excel(uploaded, header=None)
     n_rows, n_cols = raw.shape
+
+    # 헤더 행 수 감지 (최대 5행까지만 확인)
     header_row_count = 1
     for r in range(min(n_rows, 5)):
         row_vals = raw.iloc[r]
@@ -127,15 +130,12 @@ def load_excel(uploaded):
         if header_like >= max(1, n_cols * 0.3):
             header_row_count = r + 1
 
-    header_parts = []
-    for r in range(header_row_count):
-        header_parts.append(raw.iloc[r])
-
+    # 헤더 이름 조합
     col_names = []
     for c in range(n_cols):
         parts = []
         for r in range(header_row_count):
-            v = header_parts[r].iloc[c]
+            v = raw.iloc[r, c]
             if is_header_text(v):
                 parts.append(str(v).strip())
         name = "_".join(parts) if parts else f"col_{c}"
@@ -152,9 +152,11 @@ def load_excel(uploaded):
             seen[nm] = 0
             unique_names.append(nm)
 
-    df = pd.read_excel(uploaded, header=None, skiprows=header_row_count)
+    # 헤더 행 제거 → 데이터만 남김
+    df = raw.iloc[header_row_count:].reset_index(drop=True)
     df.columns = unique_names[: len(df.columns)]
 
+    # 숫자 변환
     for col in df.columns:
         converted = pd.to_numeric(df[col], errors="coerce")
         if converted.notna().sum() > len(df) * 0.3:
@@ -323,35 +325,6 @@ def apply_filters(df, filters, cmap):
             applied.append(f"계절성={val}")
 
     # 숫자 범위 필터
-    def numeric_range(key, lo_key, hi_key, divisor=1):
-        lo = safe_float(filters.get(lo_key, 0))
-        hi = safe_float(filters.get(hi_key, 0))
-        if (lo > 0 or hi > 0) and key in cmap:
-            col = cmap[key]
-            if col in out.columns:
-                series = pd.to_numeric(out[col], errors="coerce")
-                if divisor != 1:
-                    lo_real = lo / divisor
-                    hi_real = hi / divisor if hi > 0 else None
-                else:
-                    lo_real = lo
-                    hi_real = hi if hi > 0 else None
-                mask = pd.Series(True, index=out.index)
-                if lo_real > 0:
-                    mask = mask & (series >= lo_real)
-                if hi_real is not None and hi_real > 0:
-                    mask = mask & (series <= hi_real)
-                nonlocal applied
-                out_before = len(out)
-                filtered = out[mask.reindex(out.index, fill_value=False)]
-                label = key
-                if divisor != 1:
-                    applied.append(f"{label} {lo}%~{hi}%")
-                else:
-                    applied.append(f"{label} {lo:,}~{hi:,}")
-                return filtered
-        return out
-
     nonlocal_hack = {"out": out, "applied": applied}
 
     def nr(key, lo_key, hi_key, divisor=1):
