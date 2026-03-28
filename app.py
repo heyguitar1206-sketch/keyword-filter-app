@@ -423,29 +423,150 @@ if st.session_state.show_settings:
     st.markdown("**브랜드 여부**")
     brand_val = cf.get("브랜드_키워드", "전체")
     bc1, bc2 = st.columns(2)
-    with bc1: brand_o = st.checkbox("O", value=(brand_val == "O"), key="brand_o")
-    with bc2: brand_x = st.checkbox("X", value=(brand_val == "X"), key="brand_x")
+    with bc1:
+        brand_o = st.checkbox("O", value=(brand_val == "O"), key="brand_o")
+    with bc2:
+        brand_x = st.checkbox("X", value=(brand_val == "X"), key="brand_x")
     new_brand = "O" if (brand_o and not brand_x) else ("X" if (brand_x and not brand_o) else "전체")
 
     st.markdown("**쇼핑성 여부**")
     shop_val = cf.get("쇼핑성_키워드", "전체")
     sc1, sc2 = st.columns(2)
-    with sc1: shop_o = st.checkbox("O", value=(shop_val == "O"), key="shop_o")
-    with sc2: shop_x = st.checkbox("X", value=(shop_val == "X"), key="shop_x")
+    with sc1:
+        shop_o = st.checkbox("O", value=(shop_val == "O"), key="shop_o")
+    with sc2:
+        shop_x = st.checkbox("X", value=(shop_val == "X"), key="shop_x")
     new_shop = "O" if (shop_o and not shop_x) else ("X" if (shop_x and not shop_o) else "전체")
 
     st.markdown("**계절성 여부**")
     season_val = cf.get("계절성", "전체")
     sec1, sec2 = st.columns(2)
-    with sec1: season_o = st.checkbox("O (있음)", value=(season_val == "O"), key="season_o")
-    with sec2: season_x = st.checkbox("X (없음)", value=(season_val == "X"), key="season_x")
+    with sec1:
+        season_o = st.checkbox("O (있음)", value=(season_val == "O"), key="season_o")
+    with sec2:
+        season_x = st.checkbox("X (없음)", value=(season_val == "X"), key="season_x")
     new_season = "O" if (season_o and not season_x) else ("X" if (season_x and not season_o) else "전체")
 
     st.markdown("---")
 
     st.markdown("**작년 검색량**")
     r1, r2 = st.columns(2)
-    with r1: v_search_min = st.number_input("최소", min_value=0, value=safe_int(cf.get("작년_검색량_min")), step=1000, key="search_min")
-    with r2: v_search_max = st.number_input("최대 (0=무제한)", min_value=0, value=safe_int(cf.get("작년_검색량_max")), step=1000, key="search_max")
+    with r1:
+        v_search_min = st.number_input("최소", min_value=0, value=safe_int(cf.get("작년_검색량_min")), step=1000, key="search_min")
+    with r2:
+        v_search_max = st.number_input("최대 (0=무제한)", min_value=0, value=safe_int(cf.get("작년_검색량_max")), step=1000, key="search_max")
 
     st.markdown("**작년최대검색월**")
+    saved_months = cf.get("작년최대검색월", [])
+    if not isinstance(saved_months, list):
+        saved_months = []
+    month_cols = st.columns(12)
+    selected_months = []
+    for mi in range(12):
+        with month_cols[mi]:
+            if st.checkbox(f"{mi+1}월", value=(mi+1 in saved_months or str(mi+1) in [str(x) for x in saved_months]), key=f"month_{mi+1}"):
+                selected_months.append(mi + 1)
+
+    st.markdown("**피크월검색량**")
+    p1, p2 = st.columns(2)
+    with p1:
+        v_peak_min = st.number_input("최소", min_value=0, value=safe_int(cf.get("피크월검색량_min")), step=1000, key="peak_min")
+    with p2:
+        v_peak_max = st.number_input("최대 (0=무제한)", min_value=0, value=safe_int(cf.get("피크월검색량_max")), step=1000, key="peak_max")
+
+    st.markdown("**쿠팡 해외배송비율 (%)**")
+    c1, c2 = st.columns(2)
+    with c1:
+        v_overseas_min = st.number_input("최소 %", min_value=0, max_value=100, value=safe_int(cf.get("쿠팡_해외배송비율_min_pct")), step=5, key="overseas_min")
+    with c2:
+        v_overseas_max = st.number_input("최대 % (0=무제한)", min_value=0, max_value=100, value=safe_int(cf.get("쿠팡_해외배송비율_max_pct")), step=5, key="overseas_max")
+
+    st.markdown("**쿠팡 평균가**")
+    a1, a2 = st.columns(2)
+    with a1:
+        v_price_min = st.number_input("최소", min_value=0, value=safe_int(cf.get("쿠팡_평균가_min")), step=1000, key="price_min")
+    with a2:
+        v_price_max = st.number_input("최대 (0=무제한)", min_value=0, value=safe_int(cf.get("쿠팡_평균가_max")), step=1000, key="price_max")
+
+    st.markdown("**쿠팡 총리뷰수**")
+    rv1, rv2 = st.columns(2)
+    with rv1:
+        v_review_min = st.number_input("최소", min_value=0, value=safe_int(cf.get("쿠팡_총리뷰수_min")), step=10, key="review_min")
+    with rv2:
+        v_review_max = st.number_input("최대 (0=무제한)", min_value=0, value=safe_int(cf.get("쿠팡_총리뷰수_max")), step=10, key="review_max")
+
+    st.markdown("---")
+    sv1, sv2 = st.columns(2)
+    with sv1:
+        if st.button("💾 저장", use_container_width=True):
+            new_filters = {
+                "브랜드_키워드": new_brand, "쇼핑성_키워드": new_shop, "계절성": new_season,
+                "작년_검색량_min": v_search_min, "작년_검색량_max": v_search_max,
+                "작년최대검색월": selected_months,
+                "피크월검색량_min": v_peak_min, "피크월검색량_max": v_peak_max,
+                "쿠팡_해외배송비율_min_pct": v_overseas_min, "쿠팡_해외배송비율_max_pct": v_overseas_max,
+                "쿠팡_평균가_min": v_price_min, "쿠팡_평균가_max": v_price_max,
+                "쿠팡_총리뷰수_min": v_review_min, "쿠팡_총리뷰수_max": v_review_max,
+            }
+            st.session_state.presets[pkey] = {"name": new_name, "filters": new_filters}
+            save_presets(st.session_state.presets)
+            st.success("저장 완료!")
+            st.session_state.filtered_df = None
+            st.session_state.display_df = None
+    with sv2:
+        if st.button("닫기", use_container_width=True):
+            st.session_state.show_settings = False
+            st.rerun()
+
+# ── 분석 실행 ──
+if run_clicked:
+    if st.session_state.df is None:
+        st.warning("먼저 파일을 업로드하세요.")
+    else:
+        pkey = st.session_state.active_preset
+        filters = get_preset_filters(st.session_state.presets, pkey)
+        cmap = st.session_state.col_map
+        with st.spinner("필터링 중…"):
+            result, info = apply_filters(st.session_state.df, filters, cmap)
+            st.session_state.filtered_df = result
+            st.session_state.applied_info = info
+            st.session_state.display_df = build_display_df(result, cmap)
+
+# ── 결과 표시 ──
+if st.session_state.display_df is not None:
+    ddf = st.session_state.display_df
+    st.markdown(f"### 분석 결과: {len(ddf):,}건")
+    st.dataframe(ddf, use_container_width=True, height=600)
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        ddf.to_excel(writer, index=False)
+    st.download_button(label="📥 엑셀 다운로드", data=buffer.getvalue(), file_name="분석결과.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    with st.expander("적용된 필터 상세"):
+        if st.session_state.applied_info:
+            for info_line in st.session_state.applied_info:
+                st.write(f"• {info_line}")
+        else:
+            st.write("적용된 필터 없음 (모든 데이터 표시)")
+
+# ── 디버그 ──
+with st.expander("🔧 컬럼 매핑 확인 (디버그)"):
+    if st.session_state.col_map:
+        st.write("**매핑 결과:**")
+        for std_key, real_col in st.session_state.col_map.items():
+            st.write(f"**{std_key}** → `{real_col}`")
+        st.markdown("---")
+        all_std_keys = list(COLUMN_PATTERNS.keys()) + ["키워드"]
+        unmapped = [k for k in all_std_keys if k not in st.session_state.col_map]
+        if unmapped:
+            st.write("**매핑되지 않은 키:**")
+            for k in unmapped:
+                st.write(f"❌ {k}")
+        else:
+            st.write("✅ 모든 키 매핑 완료")
+    else:
+        st.write("파일을 먼저 업로드하세요.")
+    if st.session_state.df is not None:
+        st.markdown("---")
+        st.write("**실제 컬럼명 목록:**")
+        for i, c in enumerate(st.session_state.df.columns):
+            st.write(f"{i}: `{c}`")
