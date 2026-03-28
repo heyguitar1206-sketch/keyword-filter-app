@@ -5,7 +5,7 @@ import io
 import os
 
 # ─────────────────────────────────────────────
-# 페이지 설정 — wide 레이아웃 (CSS로 70vw 제한)
+# 페이지 설정
 # ─────────────────────────────────────────────
 st.set_page_config(
     page_title="끝장캐리 키워드 분석",
@@ -19,7 +19,6 @@ st.set_page_config(
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
-    /* 전체 컨테이너 70vw 중앙 고정 */
     section.main > div.block-container {
         max-width: 70vw !important;
         width: 70vw !important;
@@ -71,7 +70,6 @@ st.markdown("""
         padding-bottom: 0.3rem;
         border-bottom: 2px solid #4361ee;
     }
-    /* 버튼 줄바꿈 방지 + 폰트 통일 */
     .stButton > button {
         white-space: nowrap !important;
         overflow: hidden;
@@ -117,23 +115,64 @@ DEFAULT_PRESETS = {
 }
 
 
+def get_default_presets():
+    """항상 새로운 복사본 반환"""
+    return {k: {"name": v["name"], "filters": v["filters"].copy()} for k, v in DEFAULT_PRESETS.items()}
+
+
 def load_presets():
     if os.path.exists(PRESET_FILE):
         try:
             with open(PRESET_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            for v in data.values():
-                for fk, fv in EMPTY_FILTERS.items():
-                    v.setdefault("filters", {}).setdefault(fk, fv)
-            return data
+            if isinstance(data, dict) and len(data) > 0:
+                for v in data.values():
+                    if not isinstance(v, dict):
+                        return get_default_presets()
+                    if "filters" not in v:
+                        v["filters"] = EMPTY_FILTERS.copy()
+                    if "name" not in v:
+                        v["name"] = "프리셋"
+                    for fk, fv in EMPTY_FILTERS.items():
+                        v["filters"].setdefault(fk, fv)
+                return data
         except Exception:
             pass
-    return {k: {"name": v["name"], "filters": v["filters"].copy()} for k, v in DEFAULT_PRESETS.items()}
+    return get_default_presets()
 
 
 def save_presets(presets):
-    with open(PRESET_FILE, 'w', encoding='utf-8') as f:
-        json.dump(presets, f, ensure_ascii=False, indent=2)
+    try:
+        with open(PRESET_FILE, 'w', encoding='utf-8') as f:
+            json.dump(presets, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def get_preset_name(presets, key):
+    """프리셋 이름을 안전하게 가져오기"""
+    try:
+        if isinstance(presets, dict):
+            preset = presets.get(key, {})
+            if isinstance(preset, dict):
+                return preset.get("name", key)
+    except Exception:
+        pass
+    return key
+
+
+def get_preset_filters(presets, key):
+    """프리셋 필터를 안전하게 가져오기"""
+    try:
+        if isinstance(presets, dict):
+            preset = presets.get(key, {})
+            if isinstance(preset, dict):
+                filters = preset.get("filters", {})
+                if isinstance(filters, dict):
+                    return filters
+    except Exception:
+        pass
+    return EMPTY_FILTERS.copy()
 
 
 # ─────────────────────────────────────────────
@@ -309,9 +348,9 @@ def ox_checkbox(label, current_value, key_prefix):
 
 
 # ─────────────────────────────────────────────
-# 세션 초기화
+# 세션 초기화 (견고하게)
 # ─────────────────────────────────────────────
-if 'presets' not in st.session_state:
+if 'presets' not in st.session_state or not isinstance(st.session_state.presets, dict):
     st.session_state.presets = load_presets()
 if 'active_preset' not in st.session_state:
     st.session_state.active_preset = '프리셋 1'
@@ -319,10 +358,14 @@ if 'df' not in st.session_state:
     st.session_state.df = None
 if 'filtered_df' not in st.session_state:
     st.session_state.filtered_df = None
-if 'col_map' not in st.session_state:
+if 'col_map' not in st.session_state or not isinstance(st.session_state.col_map, dict):
     st.session_state.col_map = {}
 if 'show_settings' not in st.session_state:
     st.session_state.show_settings = False
+
+# 프리셋 유효성 재확인
+if not isinstance(st.session_state.presets, dict) or len(st.session_state.presets) == 0:
+    st.session_state.presets = get_default_presets()
 
 # ─────────────────────────────────────────────
 # 헤더
@@ -376,7 +419,7 @@ if st.session_state.df is not None:
         st.rerun()
 
 # ─────────────────────────────────────────────
-# 프리셋 바 — 톱니바퀴·분석실행 겹침 해소
+# 프리셋 바
 # ─────────────────────────────────────────────
 st.markdown("")
 pc = st.columns([0.8, 1, 1, 1, 1, 1, 0.5, 0.2, 1.3])
@@ -387,7 +430,7 @@ with pc[0]:
 PKEYS = [f"프리셋 {i}" for i in range(1, 6)]
 for i, pk in enumerate(PKEYS):
     with pc[i + 1]:
-        nm = st.session_state.presets.get(pk, {}).get("name", pk)
+        nm = get_preset_name(st.session_state.presets, pk)
         bt = "primary" if st.session_state.active_preset == pk else "secondary"
         if st.button(nm, key=f"pb_{i}", type=bt, use_container_width=True):
             st.session_state.active_preset = pk
@@ -399,7 +442,6 @@ with pc[6]:
         st.session_state.show_settings = not st.session_state.show_settings
         st.rerun()
 
-# 빈 칸으로 간격 확보
 with pc[7]:
     st.write("")
 
@@ -412,16 +454,15 @@ with pc[8]:
 if st.session_state.show_settings:
     st.markdown("---")
     ak = st.session_state.active_preset
-    ap = st.session_state.presets.get(ak, {"name": ak, "filters": EMPTY_FILTERS.copy()})
-    cf = ap.get("filters", EMPTY_FILTERS.copy())
+    ak_name = get_preset_name(st.session_state.presets, ak)
+    cf = get_preset_filters(st.session_state.presets, ak)
 
     st.markdown(f"### ⚙️ 프리셋 설정 — `{ak}`")
-    new_name = st.text_input("프리셋 이름", value=ap.get("name", ak), key="pname")
+    new_name = st.text_input("프리셋 이름", value=ak_name, key="pname")
     st.markdown("")
 
     c1, c2, c3 = st.columns(3)
 
-    # ── 좌측: 기본 조건 ──
     with c1:
         st.markdown('<div class="filter-section-title">기본 조건</div>', unsafe_allow_html=True)
 
@@ -431,6 +472,8 @@ if st.session_state.show_settings:
 
         st.markdown("**작년최대검색월** (복수 선택)")
         saved_m = cf.get("작년최대검색월", [])
+        if not isinstance(saved_m, list):
+            saved_m = []
         sel_m = []
         mc = st.columns(4)
         for idx in range(12):
@@ -439,7 +482,6 @@ if st.session_state.show_settings:
                 if st.checkbox(f"{m}월", value=(m in saved_m), key=f"m_{m}"):
                     sel_m.append(m)
 
-    # ── 중앙: 검색량 ──
     with c2:
         st.markdown('<div class="filter-section-title">검색량 · 검색월</div>', unsafe_allow_html=True)
 
@@ -463,7 +505,6 @@ if st.session_state.show_settings:
             step=5000, key="f_pk_max", format="%d",
         )
 
-    # ── 우측: 쿠팡 ──
     with c3:
         st.markdown('<div class="filter-section-title">쿠팡 데이터</div>', unsafe_allow_html=True)
 
@@ -499,7 +540,6 @@ if st.session_state.show_settings:
             step=10000, key="f_cr_max", format="%d",
         )
 
-    # 저장 / 닫기
     st.markdown("")
     sb1, sb2, _ = st.columns([1, 1, 5])
     with sb1:
@@ -539,14 +579,14 @@ if run_clicked:
         st.warning("⚠️ 먼저 파일을 업로드해주세요.")
     else:
         ak = st.session_state.active_preset
-        flt = st.session_state.presets.get(ak, {}).get("filters", {})
+        flt = get_preset_filters(st.session_state.presets, ak)
         with st.spinner("🔍 분석 중…"):
             st.session_state.filtered_df = apply_filters(
                 st.session_state.df, flt, st.session_state.col_map
             )
 
 # ─────────────────────────────────────────────
-# 결과 출력 — st.dataframe 기본 툴바 활용
+# 결과 출력
 # ─────────────────────────────────────────────
 st.markdown("---")
 
@@ -554,14 +594,11 @@ if st.session_state.filtered_df is not None:
     result = st.session_state.filtered_df
     display = rename_display(result, st.session_state.col_map)
 
-    active_nm = st.session_state.presets.get(
-        st.session_state.active_preset, {}
-    ).get("name", st.session_state.active_preset)
+    active_nm = get_preset_name(st.session_state.presets, st.session_state.active_preset)
 
     st.markdown(f"**📋 분석 결과** — `{active_nm}`")
     st.caption(f"총 **{len(display):,}**개 키워드 검출  ·  테이블 위에 마우스를 올리면 🔍검색 / 📥다운로드 / 🔲전체화면 아이콘이 표시됩니다.")
 
-    # st.dataframe 자체 툴바: 검색, 다운로드(CSV), 전체화면
     st.dataframe(
         display,
         use_container_width=True,
@@ -570,9 +607,7 @@ if st.session_state.filtered_df is not None:
     )
 
     with st.expander("📌 현재 적용된 필터 조건", expanded=False):
-        flt = st.session_state.presets.get(
-            st.session_state.active_preset, {}
-        ).get("filters", {})
+        flt = get_preset_filters(st.session_state.presets, st.session_state.active_preset)
         for k, v in flt.items():
             if v not in (None, "전체", [], "", 0):
                 st.text(f"  • {k}: {v}")
