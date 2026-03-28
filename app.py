@@ -328,14 +328,14 @@ def load_excel(uploaded):
 
 
 # ──────────────────────────────────────────────
-# 컬럼 매핑
+# 컬럼 매핑 (키워드 많은 패턴 우선 매칭)
 # ──────────────────────────────────────────────
 COLUMN_PATTERNS = {
     "브랜드키워드": ["브랜드", "brand"],
     "쇼핑성키워드": ["쇼핑성", "shopping"],
     "작년검색량": ["작년", "검색량"],
-    "작년최대검색월": ["작년", "최대", "검색월"],
     "작년최대검색월검색량": ["작년", "최대", "검색월", "검색량"],
+    "작년최대검색월": ["작년", "최대", "검색월"],
     "계절성": ["계절"],
     "쿠팡평균가": ["쿠팡", "평균가"],
     "쿠팡총리뷰수": ["쿠팡", "총리뷰"],
@@ -360,7 +360,10 @@ def build_col_map(columns):
 
     used = set(cmap.values())
 
-    for std_key, keywords in COLUMN_PATTERNS.items():
+    # 키워드 수가 많은 패턴부터 매칭 (더 구체적인 것 우선)
+    sorted_patterns = sorted(COLUMN_PATTERNS.items(), key=lambda x: len(x[1]), reverse=True)
+
+    for std_key, keywords in sorted_patterns:
         best = None
         best_score = 0
         for real_col in col_list:
@@ -434,12 +437,13 @@ def build_display_df(df, cmap):
                     mapped.append(sv if pd.notna(v) else "")
             rows[label] = mapped
         elif fmt == "int":
-            rows[label] = pd.to_numeric(src, errors="coerce").fillna(0).astype(int).tolist()
+            nums = pd.to_numeric(src, errors="coerce").fillna(0).astype(int)
+            rows[label] = [f"{v:,}" for v in nums]
         elif fmt == "pct":
             numeric_vals = pd.to_numeric(src, errors="coerce").fillna(0)
             if numeric_vals.max() <= 1.0:
                 numeric_vals = numeric_vals * 100
-            rows[label] = numeric_vals.round(1).tolist()
+            rows[label] = [f"{v:.1f}%" for v in numeric_vals]
         else:
             rows[label] = src.tolist()
 
@@ -738,44 +742,15 @@ if st.session_state["df_filtered"] is not None:
         unsafe_allow_html=True,
     )
 
-    # ── pandas Styler로 천 단위 쉼표 + % 포맷 적용 ──
-    fmt_dict = {}
-    for spec in DISPLAY_COLUMNS:
-        label = spec.get("label", spec["key"])
-        fmt = spec.get("format")
-        if label not in display_df.columns:
-            continue
-        if fmt == "int":
-            fmt_dict[label] = lambda x: f"{int(x):,}" if pd.notna(x) and x != "" else ""
-        elif fmt == "pct":
-            fmt_dict[label] = lambda x: f"{x:.1f}%" if pd.notna(x) and x != "" else ""
-
-    styled_df = display_df.style.format(fmt_dict)
-
     st.dataframe(
-        styled_df,
+        display_df,
         hide_index=True,
         use_container_width=True,
     )
 
-    # ── 다운로드 ──
-    download_df = display_df.copy()
-    for spec in DISPLAY_COLUMNS:
-        label = spec.get("label", spec["key"])
-        fmt = spec.get("format")
-        if label not in download_df.columns:
-            continue
-        if fmt == "int":
-            download_df[label] = download_df[label].apply(
-                lambda x: f"{int(x):,}" if pd.notna(x) else ""
-            )
-        elif fmt == "pct":
-            download_df[label] = download_df[label].apply(
-                lambda x: f"{x:.1f}%" if pd.notna(x) else ""
-            )
-
+    # ── 다운로드 (display_df가 이미 포맷팅됨) ──
     buf = io.BytesIO()
-    download_df.to_excel(buf, index=False, engine="openpyxl")
+    display_df.to_excel(buf, index=False, engine="openpyxl")
     st.download_button(
         "📥 결과 다운로드 (Excel)",
         buf.getvalue(),
