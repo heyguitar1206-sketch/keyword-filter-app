@@ -55,32 +55,17 @@ section.main .block-container {
     white-space: nowrap;
 }
 
-/* ── 파일 업로드 카드 ── */
-.upload-card {
+/* ── 파일 업로드 영역 스타일 ── */
+div[data-testid="stFileUploader"] {
     border: 2.5px dashed #a5b4fc;
     border-radius: 16px;
-    padding: 40px 20px;
-    text-align: center;
+    padding: 20px;
     background: #fafaff;
     margin-bottom: 24px;
     transition: border-color 0.2s;
 }
-.upload-card:hover {
+div[data-testid="stFileUploader"]:hover {
     border-color: #4f6df5;
-}
-.upload-card .upload-icon {
-    font-size: 40px;
-    margin-bottom: 8px;
-}
-.upload-card .upload-title {
-    font-size: 17px;
-    font-weight: 700;
-    color: #1a1a2e;
-    margin-bottom: 4px;
-}
-.upload-card .upload-sub {
-    font-size: 13px;
-    color: #9ca3af;
 }
 
 /* ── 파일 로드 완료 배지 ── */
@@ -583,15 +568,10 @@ st.markdown("""
 # ──────────────────────────────────────────────
 # UI: 파일 업로드
 # ──────────────────────────────────────────────
-st.markdown("""
-<div class="upload-card">
-    <div class="upload-icon">📂</div>
-    <div class="upload-title">분석할 파일을 이곳에 올려주세요</div>
-    <div class="upload-sub">엑셀(.xlsx) 또는 CSV 파일을 드래그하거나 클릭하여 선택</div>
-</div>
-""", unsafe_allow_html=True)
-
-uploaded = st.file_uploader("파일 선택", type=["xlsx", "xls", "csv"], label_visibility="collapsed")
+uploaded = st.file_uploader(
+    "📂 분석할 파일을 이곳에 올려주세요 (엑셀 .xlsx 또는 CSV)",
+    type=["xlsx", "xls", "csv"],
+)
 
 if uploaded:
     if st.session_state["df_raw"] is None or st.session_state.get("_fname") != uploaded.name:
