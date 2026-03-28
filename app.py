@@ -9,13 +9,200 @@ import io
 # 페이지 설정
 # ──────────────────────────────────────────────
 st.set_page_config(page_title="키워드 분석 도구", page_icon="🔍", layout="wide")
-st.markdown(
-    "<style>"
-    "section.main .block-container{max-width:95%;padding-top:1rem;}"
-    "#MainMenu,footer,header{visibility:hidden;}"
-    "</style>",
-    unsafe_allow_html=True,
-)
+
+# ──────────────────────────────────────────────
+# 커스텀 CSS
+# ──────────────────────────────────────────────
+st.markdown("""
+<style>
+/* ── 전역 ── */
+#MainMenu, footer, header {visibility: hidden;}
+section.main .block-container {
+    max-width: 1100px;
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+/* ── 헤더 카드 ── */
+.header-card {
+    background: linear-gradient(135deg, #e8eeff 0%, #f4f1ff 100%);
+    border-radius: 16px;
+    padding: 28px 36px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.header-card .title-area h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a2e;
+}
+.header-card .title-area p {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    color: #6b7280;
+}
+.header-card .version-badge {
+    background: #fff;
+    border: 1.5px solid #4f6df5;
+    color: #4f6df5;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+/* ── 파일 업로드 카드 ── */
+.upload-card {
+    border: 2.5px dashed #a5b4fc;
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #fafaff;
+    margin-bottom: 24px;
+    transition: border-color 0.2s;
+}
+.upload-card:hover {
+    border-color: #4f6df5;
+}
+.upload-card .upload-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+}
+.upload-card .upload-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+}
+.upload-card .upload-sub {
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+/* ── 파일 로드 완료 배지 ── */
+.file-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #166534;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+/* ── 프리셋 바 카드 ── */
+.preset-bar-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.preset-bar-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-right: 4px;
+    white-space: nowrap;
+}
+
+/* ── 프리셋 버튼 스타일 ── */
+div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    padding: 6px 20px !important;
+    border: 1.5px solid #d1d5db !important;
+    background: #fff !important;
+    color: #374151 !important;
+    transition: all 0.15s !important;
+}
+div[data-testid="stHorizontalBlock"] button[kind="secondary"]:hover {
+    border-color: #4f6df5 !important;
+    color: #4f6df5 !important;
+    background: #eef2ff !important;
+}
+
+/* ── 분석실행 버튼 ── */
+div.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #4f6df5 0%, #6366f1 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    padding: 12px 0 !important;
+    box-shadow: 0 4px 14px rgba(79,109,245,0.3) !important;
+    transition: transform 0.1s, box-shadow 0.1s !important;
+}
+div.stButton > button[kind="primary"]:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(79,109,245,0.4) !important;
+}
+
+/* ── 결과 카드 ── */
+.result-header {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+}
+.result-count {
+    color: #4f6df5;
+}
+
+/* ── 데이터프레임 ── */
+div[data-testid="stDataFrame"] {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ── 다운로드 버튼 ── */
+div.stDownloadButton > button {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    border: 1.5px solid #4f6df5 !important;
+    color: #4f6df5 !important;
+    background: #fff !important;
+}
+div.stDownloadButton > button:hover {
+    background: #eef2ff !important;
+}
+
+/* ── 설정 expander ── */
+div[data-testid="stExpander"] {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ── 메시지 영역 ── */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    color: #9ca3af;
+    font-size: 15px;
+    margin-top: 8px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ──────────────────────────────────────────────
 # 프리셋 파일 관리
@@ -46,6 +233,8 @@ DEFAULT_PRESETS = {
         {"name": "프리셋 1", "filters": dict(EMPTY_FILTERS)},
         {"name": "프리셋 2", "filters": dict(EMPTY_FILTERS)},
         {"name": "프리셋 3", "filters": dict(EMPTY_FILTERS)},
+        {"name": "프리셋 4", "filters": dict(EMPTY_FILTERS)},
+        {"name": "프리셋 5", "filters": dict(EMPTY_FILTERS)},
     ],
 }
 
@@ -118,11 +307,9 @@ def is_header_text(val):
 
 
 def load_excel(uploaded):
-    # ── 파일 전체를 1회만 읽음 ──
     raw = pd.read_excel(uploaded, header=None)
     n_rows, n_cols = raw.shape
 
-    # 헤더 행 수 감지 (최대 5행까지만 확인)
     header_row_count = 1
     for r in range(min(n_rows, 5)):
         row_vals = raw.iloc[r]
@@ -130,7 +317,6 @@ def load_excel(uploaded):
         if header_like >= max(1, n_cols * 0.3):
             header_row_count = r + 1
 
-    # 헤더 이름 조합
     col_names = []
     for c in range(n_cols):
         parts = []
@@ -141,7 +327,6 @@ def load_excel(uploaded):
         name = "_".join(parts) if parts else f"col_{c}"
         col_names.append(name)
 
-    # 유니크 보장
     seen = {}
     unique_names = []
     for nm in col_names:
@@ -152,11 +337,9 @@ def load_excel(uploaded):
             seen[nm] = 0
             unique_names.append(nm)
 
-    # 헤더 행 제거 → 데이터만 남김
     df = raw.iloc[header_row_count:].reset_index(drop=True)
     df.columns = unique_names[: len(df.columns)]
 
-    # 숫자 변환
     for col in df.columns:
         converted = pd.to_numeric(df[col], errors="coerce")
         if converted.notna().sum() > len(df) * 0.3:
@@ -189,7 +372,6 @@ def build_col_map(columns):
     col_list = list(columns)
     cmap = {}
 
-    # ① 키워드 컬럼: 인덱스 1번 우선, 정확한 이름 있으면 덮어씀
     if len(col_list) > 1:
         cmap["키워드"] = col_list[1]
     for real_col in col_list:
@@ -199,7 +381,6 @@ def build_col_map(columns):
 
     used = set(cmap.values())
 
-    # ② 패턴 매칭
     for std_key, keywords in COLUMN_PATTERNS.items():
         best = None
         best_score = 0
@@ -240,7 +421,6 @@ DISPLAY_COLUMNS = [
 
 
 def build_display_df(df, cmap):
-    """표시용 DataFrame – 숫자는 숫자 타입 그대로 유지 (정렬 지원)"""
     rows = {}
     for spec in DISPLAY_COLUMNS:
         key = spec["key"]
@@ -295,7 +475,6 @@ def apply_filters(df, filters, cmap):
     out = df.copy()
     applied = []
 
-    # 브랜드키워드
     val = filters.get("브랜드키워드", "전체")
     if val != "전체" and "브랜드키워드" in cmap:
         col = cmap["브랜드키워드"]
@@ -304,7 +483,6 @@ def apply_filters(df, filters, cmap):
             out = out[out[col].astype(str).str.strip().str.upper() == target]
             applied.append(f"브랜드키워드={target}")
 
-    # 쇼핑성키워드
     val = filters.get("쇼핑성키워드", "전체")
     if val != "전체" and "쇼핑성키워드" in cmap:
         col = cmap["쇼핑성키워드"]
@@ -313,7 +491,6 @@ def apply_filters(df, filters, cmap):
             out = out[out[col].astype(str).str.strip().str.upper() == target]
             applied.append(f"쇼핑성키워드={target}")
 
-    # 계절성
     val = filters.get("계절성", "전체")
     if val != "전체" and "계절성" in cmap:
         col = cmap["계절성"]
@@ -324,7 +501,6 @@ def apply_filters(df, filters, cmap):
                 out = out[out[col].astype(str).str.strip().isin(["없음", "X", "FALSE", "0"])]
             applied.append(f"계절성={val}")
 
-    # 숫자 범위 필터
     nonlocal_hack = {"out": out, "applied": applied}
 
     def nr(key, lo_key, hi_key, divisor=1):
@@ -362,7 +538,6 @@ def apply_filters(df, filters, cmap):
     out = nonlocal_hack["out"]
     applied = nonlocal_hack["applied"]
 
-    # 작년최대검색월
     months = filters.get("작년최대검색월", [])
     if months and "작년최대검색월" in cmap:
         col = cmap["작년최대검색월"]
@@ -372,14 +547,12 @@ def apply_filters(df, filters, cmap):
             out = out[series.isin(month_ints)]
             applied.append(f"작년최대검색월={months}")
 
-    # 쿠팡해외배송비율 기준 내림차순 정렬
     if "쿠팡해외배송비율" in cmap:
         col = cmap["쿠팡해외배송비율"]
         if col in out.columns:
             sort_series = pd.to_numeric(out[col], errors="coerce")
             out = out.iloc[sort_series.fillna(-1).values.argsort()[::-1]]
 
-    # 키워드 중복 제거
     if "키워드" in cmap:
         col = cmap["키워드"]
         if col in out.columns:
@@ -413,10 +586,30 @@ if "applied_info" not in st.session_state:
     st.session_state["applied_info"] = []
 
 # ──────────────────────────────────────────────
+# UI: 헤더
+# ──────────────────────────────────────────────
+st.markdown("""
+<div class="header-card">
+    <div class="title-area">
+        <h1>🔍 키워드 분석 도구</h1>
+        <p>쇼핑성 키워드 선별 및 데이터 전략 분석 도구</p>
+    </div>
+    <div class="version-badge">Version v1.0</div>
+</div>
+""", unsafe_allow_html=True)
+
+# ──────────────────────────────────────────────
 # UI: 파일 업로드
 # ──────────────────────────────────────────────
-st.title("🔍 키워드 분석 도구")
-uploaded = st.file_uploader("엑셀/CSV 파일 업로드", type=["xlsx", "xls", "csv"])
+st.markdown("""
+<div class="upload-card">
+    <div class="upload-icon">📂</div>
+    <div class="upload-title">분석할 파일을 이곳에 올려주세요</div>
+    <div class="upload-sub">엑셀(.xlsx) 또는 CSV 파일을 드래그하거나 클릭하여 선택</div>
+</div>
+""", unsafe_allow_html=True)
+
+uploaded = st.file_uploader("파일 선택", type=["xlsx", "xls", "csv"], label_visibility="collapsed")
 
 if uploaded:
     if st.session_state["df_raw"] is None or st.session_state.get("_fname") != uploaded.name:
@@ -428,27 +621,33 @@ if uploaded:
             st.session_state["df_raw"] = df
             st.session_state["cmap"] = build_col_map(df.columns)
             st.session_state["_fname"] = uploaded.name
-        st.success(f"✅ {uploaded.name} 로드 완료 ({len(df):,}행, {len(df.columns)}열)")
+    st.markdown(
+        f'<div class="file-badge">✅ {uploaded.name} 로드 완료 ({len(st.session_state["df_raw"]):,}행, {len(st.session_state["df_raw"].columns)}열)</div>',
+        unsafe_allow_html=True,
+    )
 
 # ──────────────────────────────────────────────
-# UI: 프리셋 선택 바
+# UI: 프리셋 바 + 분석 실행
 # ──────────────────────────────────────────────
-cols = st.columns([1, 1, 1, 0.5])
-for i in range(3):
-    with cols[i]:
-        c1, c2 = st.columns([4, 1])
-        with c1:
-            label = get_preset_name(i)
-            if st.button(label, key=f"btn_preset_{i}", use_container_width=True):
-                st.session_state["active_preset"] = i
-                st.session_state["show_settings"] = False
-        with c2:
-            if st.button("⚙️", key=f"btn_gear_{i}"):
-                st.session_state["active_preset"] = i
-                st.session_state["show_settings"] = not st.session_state["show_settings"]
+num_presets = len(st.session_state["presets"]["presets"])
+preset_cols = st.columns([1] * num_presets + [0.4, 1.2])
+
+for i in range(num_presets):
+    with preset_cols[i]:
+        label = get_preset_name(i)
+        btn_type = "primary" if i == st.session_state["active_preset"] else "secondary"
+        if st.button(label, key=f"btn_preset_{i}", use_container_width=True, type=btn_type):
+            st.session_state["active_preset"] = i
+            st.session_state["show_settings"] = False
+
+with preset_cols[num_presets]:
+    if st.button("⚙️", key="btn_gear"):
+        st.session_state["show_settings"] = not st.session_state["show_settings"]
+
+with preset_cols[num_presets + 1]:
+    run_clicked = st.button("▶  분석 실행", key="btn_run", use_container_width=True, type="primary")
 
 active = st.session_state["active_preset"]
-st.caption(f"현재 선택: **{get_preset_name(active)}**")
 
 # ──────────────────────────────────────────────
 # UI: 프리셋 설정
@@ -537,7 +736,7 @@ if st.session_state["show_settings"]:
 # ──────────────────────────────────────────────
 # UI: 분석 실행
 # ──────────────────────────────────────────────
-if st.button("▶ 분석 실행", use_container_width=True, type="primary"):
+if run_clicked:
     if st.session_state["df_raw"] is None:
         st.warning("파일을 먼저 업로드하세요.")
     else:
@@ -555,9 +754,11 @@ if st.session_state["df_filtered"] is not None:
     df_f = st.session_state["df_filtered"]
     display_df = build_display_df(df_f, cmap)
 
-    st.subheader(f"📊 분석 결과 ({len(display_df):,}건)")
+    st.markdown(
+        f'<div class="result-header">📊 분석 결과 (<span class="result-count">{len(display_df):,}건</span>)</div>',
+        unsafe_allow_html=True,
+    )
 
-    # ── column_config 생성 (숫자 타입 유지 → 헤더 클릭 정렬 정상 동작) ──
     col_config = {}
     for spec in DISPLAY_COLUMNS:
         label = spec.get("label", spec["key"])
@@ -565,13 +766,9 @@ if st.session_state["df_filtered"] is not None:
         if label not in display_df.columns:
             continue
         if fmt == "int":
-            col_config[label] = st.column_config.NumberColumn(
-                label, format="%d"
-            )
+            col_config[label] = st.column_config.NumberColumn(label, format="%d")
         elif fmt == "pct":
-            col_config[label] = st.column_config.NumberColumn(
-                label, format="%.1f%%"
-            )
+            col_config[label] = st.column_config.NumberColumn(label, format="%.1f%%")
 
     st.dataframe(
         display_df,
@@ -580,7 +777,6 @@ if st.session_state["df_filtered"] is not None:
         use_container_width=True,
     )
 
-    # ── 다운로드 (Excel에는 사람이 보기 좋은 포맷 적용) ──
     download_df = display_df.copy()
     for spec in DISPLAY_COLUMNS:
         label = spec.get("label", spec["key"])
@@ -605,13 +801,17 @@ if st.session_state["df_filtered"] is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
-    # 적용된 필터
     with st.expander("🔎 적용된 필터 상세"):
         if st.session_state["applied_info"]:
             for a in st.session_state["applied_info"]:
                 st.write(f"• {a}")
         else:
             st.write("적용된 필터 없음")
+else:
+    st.markdown(
+        '<div class="empty-state">파일을 업로드하고 분석 버튼을 눌러주세요.</div>',
+        unsafe_allow_html=True,
+    )
 
 # ──────────────────────────────────────────────
 # 디버그
