@@ -559,7 +559,7 @@ st.markdown("""
 <div class="header-card">
     <div class="title-area">
         <h1>☕ 초코라떼 키워드서칭프로</h1>
-        <p>쇼핑성 키워드 선별 및 데이터 전략 분석 도구</p>
+        <p>쿠팡시장분석 & 키워드데이터 분석도구</p>
     </div>
     <div class="version-badge">ver. 2.20</div>
 </div>
