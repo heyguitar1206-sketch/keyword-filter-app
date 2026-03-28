@@ -9,10 +9,12 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap');
 html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif !important; }
 .stApp { background: #dde2ef !important; }
+[data-testid="stAppViewContainer"] { background: #dde2ef !important; }
+[data-testid="stMain"] { background: #dde2ef !important; }
 header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
 #MainMenu { display: none !important; }
-.block-container { padding-top: 1.5rem !important; padding-bottom: 1rem !important; max-width: 1400px !important; }
+.block-container { padding-top: 1.5rem !important; padding-bottom: 1rem !important; max-width: 1200px !important; margin: 0 auto !important; }
 [data-testid="stVerticalBlockBorderWrapper"] > div { background: #ffffff !important; border-radius: 14px !important; border: none !important; box-shadow: 0 2px 12px rgba(60,80,180,0.07) !important; padding: 1.2rem 1.5rem !important; }
 .app-title { font-size: 26px !important; font-weight: 900 !important; color: #1a2050 !important; margin-bottom: 0.1rem !important; }
 .app-subtitle { font-size: 13px !important; color: #7a84b3 !important; margin: 0 !important; }
