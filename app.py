@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import json, io, os
+import json, io, os, re
 
 # ──────────────────────────────────────────────
 # 페이지 설정
@@ -135,25 +135,66 @@ def get_preset_filters(presets, key):
         pass
     return EMPTY_FILTERS.copy()
 
+def is_header_text(val):
+    """헤더로 사용할 수 있는 한글/영문 텍스트인지 판별 (순수 숫자·소수는 제외)"""
+    if pd.isna(val):
+        return False
+    s = str(val).strip()
+    if not s:
+        return False
+    # 순수 숫자(정수, 소수, 음수) 또는 O/X 같은 데이터값은 제외
+    # 단, O/X는 1글자이므로 별도 처리
+    if re.match(r'^-?[\d,]+\.?\d*$', s):
+        return False
+    # 한글이 하나라도 포함되면 헤더
+    if re.search(r'[가-힣]', s):
+        return True
+    # 영문이 포함되고 2글자 이상이면 헤더
+    if re.search(r'[a-zA-Z]', s) and len(s) >= 2:
+        return True
+    return False
+
 # ──────────────────────────────────────────────
-# 엑셀 로딩 (3행 헤더 병합)
+# 엑셀 로딩 (자동 헤더 행 감지)
 # ──────────────────────────────────────────────
 def load_excel(uploaded_file):
-    header_df = pd.read_excel(uploaded_file, sheet_name=0, header=None, nrows=3)
+    # 상위 10행을 읽어서 헤더 행 수를 자동 감지
+    preview = pd.read_excel(uploaded_file, sheet_name=0, header=None, nrows=10)
     uploaded_file.seek(0)
-    data_df = pd.read_excel(uploaded_file, sheet_name=0, header=None, skiprows=3)
 
+    # 각 행이 "헤더 행"인지 판별: 한글 텍스트 셀이 전체의 30% 이상이면 헤더 행
+    header_row_count = 0
+    for r in range(min(5, len(preview))):  # 최대 5행까지 확인
+        total = preview.shape[1]
+        text_count = sum(1 for c in range(total) if is_header_text(preview.iloc[r, c]))
+        if text_count / total >= 0.3:
+            header_row_count = r + 1
+        else:
+            break
+
+    if header_row_count == 0:
+        header_row_count = 1  # 최소 1행은 헤더
+
+    # 헤더 행 읽기
+    header_df = pd.read_excel(uploaded_file, sheet_name=0, header=None, nrows=header_row_count)
+    uploaded_file.seek(0)
+
+    # 데이터 본체 읽기
+    data_df = pd.read_excel(uploaded_file, sheet_name=0, header=None, skiprows=header_row_count)
+
+    # 헤더 행들을 합쳐 컬럼명 생성 (한글 텍스트만 사용)
     col_names = []
     for c in range(header_df.shape[1]):
         parts = []
-        for r in range(3):
+        for r in range(header_row_count):
             val = header_df.iloc[r, c]
-            if pd.notna(val):
+            if is_header_text(val):
                 s = str(val).strip()
-                if s and s not in parts:
+                if s not in parts:
                     parts.append(s)
         col_names.append("_".join(parts) if parts else f"col_{c}")
 
+    # 중복 컬럼명 처리
     seen = {}
     unique_names = []
     for name in col_names:
@@ -166,6 +207,7 @@ def load_excel(uploaded_file):
 
     data_df.columns = unique_names[:data_df.shape[1]]
 
+    # 숫자 변환
     for col in data_df.columns:
         try:
             data_df[col] = pd.to_numeric(data_df[col])
@@ -178,13 +220,13 @@ def load_excel(uploaded_file):
 # 컬럼 매핑
 # ──────────────────────────────────────────────
 COLUMN_PATTERNS = {
-    "키워드": ["키워드"],
-    "브랜드": ["브랜드_키워드", "브랜드"],
-    "쇼핑성": ["쇼핑성_키워드", "쇼핑성"],
+    "브랜드": ["브랜드_키워드"],
+    "쇼핑성": ["쇼핑성_키워드"],
     "작년검색량": ["작년_검색량"],
-    "작년최대검색월": ["작년_최대검색_월", "작년_최대검색월", "작년최대검색월"],
-    "피크월검색량": ["작년최대_검색월_검색량", "작년최대_검색량", "작년최대검색월_검색량"],
+    "작년최대검색월": ["작년_최대검색_월", "작년_최대검색월"],
+    "피크월검색량": ["작년최대_검색월_검색량", "작년최대_검색량"],
     "계절성": ["계절성"],
+    "계절성월": ["계절성_월"],
     "쿠팡평균가": ["쿠팡_평균가"],
     "쿠팡총리뷰수": ["쿠팡_총리뷰수"],
     "쿠팡최대리뷰수": ["쿠팡_최대리뷰수"],
@@ -198,11 +240,20 @@ def build_col_map(columns):
     col_list = list(columns)
     cmap = {}
 
-    # ★ 키워드 전용: 정확히 "키워드"인 컬럼 우선 매핑
+    # ★ 키워드: "키워드"만 단독인 컬럼을 찾음
     for real_col in col_list:
         if real_col.strip() == "키워드":
             cmap["키워드"] = real_col
             break
+
+    # 키워드를 못 찾았으면, "키워드"를 포함하되 다른 수식어가 없는 컬럼
+    if "키워드" not in cmap:
+        for real_col in col_list:
+            cn = real_col.replace("_", "").replace(" ", "")
+            # "키워드"와 정확히 같거나, 앞뒤에 한글이 없는 경우
+            if cn == "키워드":
+                cmap["키워드"] = real_col
+                break
 
     for std_key, patterns in COLUMN_PATTERNS.items():
         if std_key in cmap:
@@ -239,9 +290,10 @@ def build_col_map(columns):
             "브랜드": lambda c, cn: "브랜드" in cn and "키워드" in cn,
             "쇼핑성": lambda c, cn: "쇼핑성" in cn and "키워드" in cn,
             "작년검색량": lambda c, cn: "작년" in cn and "검색량" in cn and "최대" not in cn and "월" not in cn,
-            "작년최대검색월": lambda c, cn: "작년" in cn and "최대" in cn and "월" in cn and cn.endswith("월"),
-            "피크월검색량": lambda c, cn: "작년" in cn and "최대" in cn and "검색량" in cn and not cn.endswith("월"),
+            "작년최대검색월": lambda c, cn: "작년" in cn and "최대" in cn and ("검색월" in cn or cn.endswith("월")),
+            "피크월검색량": lambda c, cn: "작년" in cn and "최대" in cn and "검색량" in cn and "검색월" not in cn,
             "계절성": lambda c, cn: cn == "계절성" or (cn.startswith("계절성") and "월" not in cn),
+            "계절성월": lambda c, cn: "계절성" in cn and "월" in cn,
             "쿠팡평균가": lambda c, cn: "쿠팡" in cn and "평균가" in cn and "해외" not in cn,
             "쿠팡총리뷰수": lambda c, cn: "쿠팡" in cn and "총리뷰수" in cn and "해외" not in cn,
             "쿠팡최대리뷰수": lambda c, cn: "쿠팡" in cn and "최대리뷰수" in cn and "해외" not in cn,
@@ -627,18 +679,24 @@ if st.session_state.display_df is not None:
 # ──────────────────────────────────────────────
 with st.expander("🔧 컬럼 매핑 확인 (디버그)"):
     if st.session_state.col_map:
+        st.write("**매핑 결과:**")
         for std_key, real_col in st.session_state.col_map.items():
             st.write(f"**{std_key}** → `{real_col}`")
         st.markdown("---")
-        st.write("**매핑되지 않은 표준 키:**")
-        for std_key in COLUMN_PATTERNS:
-            if std_key not in st.session_state.col_map:
-                st.write(f"❌ {std_key}")
+        all_std_keys = list(COLUMN_PATTERNS.keys()) + ["키워드"]
+        unmapped = [k for k in all_std_keys if k not in st.session_state.col_map]
+        if unmapped:
+            st.write("**매핑되지 않은 키:**")
+            for k in unmapped:
+                st.write(f"❌ {k}")
+        else:
+            st.write("✅ 모든 키 매핑 완료")
     else:
         st.write("파일을 먼저 업로드하세요.")
 
     if st.session_state.df is not None:
         st.markdown("---")
+        st.write(f"**감지된 헤더 행 수:** 자동 감지")
         st.write("**실제 컬럼명 목록:**")
         for i, c in enumerate(st.session_state.df.columns):
             st.write(f"{i}: `{c}`")
