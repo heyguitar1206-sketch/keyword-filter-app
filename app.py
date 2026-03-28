@@ -98,8 +98,8 @@ EMPTY_FILTERS = {
     "작년최대검색월": [],
     "피크월검색량_min": None,
     "피크월검색량_max": None,
-    "쿠팡_해외배송비율_min": None,
-    "쿠팡_해외배송비율_max": None,
+    "쿠팡_해외배송비율_min": None,  # 0~100 정수(%)로 저장
+    "쿠팡_해외배송비율_max": None,  # 0~100 정수(%)로 저장
     "쿠팡_평균가_min": None,
     "쿠팡_평균가_max": None,
     "쿠팡_총리뷰수_min": None,
@@ -116,7 +116,6 @@ DEFAULT_PRESETS = {
 
 
 def get_default_presets():
-    """항상 새로운 복사본 반환"""
     return {k: {"name": v["name"], "filters": v["filters"].copy()} for k, v in DEFAULT_PRESETS.items()}
 
 
@@ -135,6 +134,11 @@ def load_presets():
                         v["name"] = "프리셋"
                     for fk, fv in EMPTY_FILTERS.items():
                         v["filters"].setdefault(fk, fv)
+                    # 기존 소수점(0~1) 형식을 퍼센트(0~100)로 마이그레이션
+                    for pct_key in ["쿠팡_해외배송비율_min", "쿠팡_해외배송비율_max"]:
+                        val = v["filters"].get(pct_key)
+                        if val is not None and isinstance(val, (int, float)) and 0 < val < 1:
+                            v["filters"][pct_key] = int(round(val * 100))
                 return data
         except Exception:
             pass
@@ -150,7 +154,6 @@ def save_presets(presets):
 
 
 def get_preset_name(presets, key):
-    """프리셋 이름을 안전하게 가져오기"""
     try:
         if isinstance(presets, dict):
             preset = presets.get(key, {})
@@ -162,7 +165,6 @@ def get_preset_name(presets, key):
 
 
 def get_preset_filters(presets, key):
-    """프리셋 필터를 안전하게 가져오기"""
     try:
         if isinstance(presets, dict):
             preset = presets.get(key, {})
@@ -260,18 +262,20 @@ def build_col_map(df):
 
 
 # ─────────────────────────────────────────────
-# 필터 적용
+# 필터 적용 (인덱스 안전하게 처리)
 # ─────────────────────────────────────────────
 def apply_filters(df, filters, cmap):
     if not filters:
         return df
     out = df.copy()
 
+    # O/X 필터
     def ox(fkey, mkey):
         nonlocal out
         v = filters.get(fkey)
         if v and v != "전체" and mkey in cmap:
-            out = out[out[cmap[mkey]].astype(str).str.strip() == v]
+            col = cmap[mkey]
+            out = out[out[col].astype(str).str.strip() == v]
 
     ox('브랜드_키워드', '브랜드')
     ox('쇼핑성_키워드', '쇼핑성')
@@ -279,37 +283,49 @@ def apply_filters(df, filters, cmap):
     v = filters.get('계절성')
     if v and v != "전체" and '계절성' in cmap:
         target = '있음' if v == 'O' else '없음'
-        out = out[out[cmap['계절성']].astype(str).str.strip() == target]
+        col = cmap['계절성']
+        out = out[out[col].astype(str).str.strip() == target]
 
-    def rng(fmin, fmax, mkey):
+    # 숫자 범위 필터 (매번 out 기준으로 시리즈 재생성)
+    def rng(fmin_key, fmax_key, map_key):
         nonlocal out
-        if mkey not in cmap:
+        if map_key not in cmap:
             return
-        s = pd.to_numeric(out[cmap[mkey]], errors='coerce')
-        lo = filters.get(fmin)
-        hi = filters.get(fmax)
-        if lo not in (None, '', 0):
-            try:
-                out = out[s >= float(lo)]
-            except Exception:
-                pass
-        if hi not in (None, '', 0):
-            try:
-                out = out[s <= float(hi)]
-            except Exception:
-                pass
+        col = cmap[map_key]
+        lo = filters.get(fmin_key)
+        hi = filters.get(fmax_key)
+        if lo is not None and lo != '' and lo != 0:
+            s = pd.to_numeric(out[col], errors='coerce')
+            out = out[s >= float(lo)]
+        if hi is not None and hi != '' and hi != 0:
+            s = pd.to_numeric(out[col], errors='coerce')
+            out = out[s <= float(hi)]
 
     rng('작년_검색량_min', '작년_검색량_max', '작년검색량')
     rng('피크월검색량_min', '피크월검색량_max', '작년최대검색량')
-    rng('쿠팡_해외배송비율_min', '쿠팡_해외배송비율_max', '쿠팡해외배송비율')
     rng('쿠팡_평균가_min', '쿠팡_평균가_max', '쿠팡평균가')
     rng('쿠팡_총리뷰수_min', '쿠팡_총리뷰수_max', '쿠팡총리뷰수')
 
+    # 쿠팡 해외배송비율 (저장값: 0~100 퍼센트 → 실제 데이터: 0~1 소수)
+    if '쿠팡해외배송비율' in cmap:
+        col = cmap['쿠팡해외배송비율']
+        lo_pct = filters.get('쿠팡_해외배송비율_min')
+        hi_pct = filters.get('쿠팡_해외배송비율_max')
+        if lo_pct is not None and lo_pct != '' and lo_pct != 0:
+            s = pd.to_numeric(out[col], errors='coerce')
+            out = out[s >= float(lo_pct) / 100.0]
+        if hi_pct is not None and hi_pct != '' and hi_pct != 0:
+            s = pd.to_numeric(out[col], errors='coerce')
+            out = out[s <= float(hi_pct) / 100.0]
+
+    # 작년최대검색월 (복수 선택)
     months = filters.get('작년최대검색월', [])
     if months and '작년최대검색월' in cmap:
-        s = pd.to_numeric(out[cmap['작년최대검색월']], errors='coerce')
+        col = cmap['작년최대검색월']
+        s = pd.to_numeric(out[col], errors='coerce')
         out = out[s.isin([int(m) for m in months])]
 
+    # 기본 정렬: 쿠팡 해외배송비율 내림차순
     if '쿠팡해외배송비율' in cmap:
         sc = cmap['쿠팡해외배송비율']
         out[sc] = pd.to_numeric(out[sc], errors='coerce')
@@ -348,7 +364,7 @@ def ox_checkbox(label, current_value, key_prefix):
 
 
 # ─────────────────────────────────────────────
-# 세션 초기화 (견고하게)
+# 세션 초기화
 # ─────────────────────────────────────────────
 if 'presets' not in st.session_state or not isinstance(st.session_state.presets, dict):
     st.session_state.presets = load_presets()
@@ -363,7 +379,6 @@ if 'col_map' not in st.session_state or not isinstance(st.session_state.col_map,
 if 'show_settings' not in st.session_state:
     st.session_state.show_settings = False
 
-# 프리셋 유효성 재확인
 if not isinstance(st.session_state.presets, dict) or len(st.session_state.presets) == 0:
     st.session_state.presets = get_default_presets()
 
@@ -508,16 +523,16 @@ if st.session_state.show_settings:
     with c3:
         st.markdown('<div class="filter-section-title">쿠팡 데이터</div>', unsafe_allow_html=True)
 
-        st.markdown("**쿠팡 해외배송비율** (결과 기본정렬 기준)")
+        st.markdown("**쿠팡 해외배송비율 %** (결과 기본정렬 기준)")
         co_min = st.number_input(
-            "최소", min_value=0.0, max_value=1.0,
-            value=float(cf.get("쿠팡_해외배송비율_min") or 0),
-            step=0.05, format="%.2f", key="f_co_min",
+            "최소 %", min_value=0, max_value=100,
+            value=int(cf.get("쿠팡_해외배송비율_min") or 0),
+            step=5, key="f_co_min", format="%d",
         )
         co_max = st.number_input(
-            "최대 (0 = 무제한)", min_value=0.0, max_value=1.0,
-            value=float(cf.get("쿠팡_해외배송비율_max") or 0),
-            step=0.05, format="%.2f", key="f_co_max",
+            "최대 % (0 = 무제한)", min_value=0, max_value=100,
+            value=int(cf.get("쿠팡_해외배송비율_max") or 0),
+            step=5, key="f_co_max", format="%d",
         )
 
         st.markdown("**쿠팡 평균가**")
@@ -610,7 +625,11 @@ if st.session_state.filtered_df is not None:
         flt = get_preset_filters(st.session_state.presets, st.session_state.active_preset)
         for k, v in flt.items():
             if v not in (None, "전체", [], "", 0):
-                st.text(f"  • {k}: {v}")
+                label = k
+                display_v = v
+                if '해외배송비율' in k and isinstance(v, (int, float)):
+                    display_v = f"{v}%"
+                st.text(f"  • {label}: {display_v}")
 
 elif st.session_state.df is not None:
     st.markdown(
