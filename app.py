@@ -746,9 +746,9 @@ if st.session_state["df_filtered"] is not None:
         if label not in display_df.columns:
             continue
         if fmt == "int":
-            col_config[label] = st.column_config.NumberColumn(label, format=",")
+            col_config[label] = st.column_config.NumberColumn(label, format=",.0f")
         elif fmt == "pct":
-            col_config[label] = st.column_config.NumberColumn(label, format="%.1f%%")
+            col_config[label] = st.column_config.NumberColumn(label, format=",.1f%%")
 
     st.dataframe(
         display_df,
