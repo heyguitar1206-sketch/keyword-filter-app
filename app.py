@@ -98,27 +98,6 @@ section.main .block-container {
     margin-bottom: 20px;
 }
 
-/* ── 프리셋 바 카드 ── */
-.preset-bar-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 14px 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.preset-bar-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #6b7280;
-    margin-right: 4px;
-    white-space: nowrap;
-}
-
 /* ── 프리셋 버튼 스타일 ── */
 div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     border-radius: 10px !important;
@@ -759,7 +738,8 @@ if st.session_state["df_filtered"] is not None:
         unsafe_allow_html=True,
     )
 
-        col_config = {}
+    # ── column_config: 천 단위 쉼표 + % 표시 ──
+    col_config = {}
     for spec in DISPLAY_COLUMNS:
         label = spec.get("label", spec["key"])
         fmt = spec.get("format")
@@ -770,7 +750,6 @@ if st.session_state["df_filtered"] is not None:
         elif fmt == "pct":
             col_config[label] = st.column_config.NumberColumn(label, format="%.1f%%")
 
-
     st.dataframe(
         display_df,
         column_config=col_config,
@@ -778,6 +757,7 @@ if st.session_state["df_filtered"] is not None:
         use_container_width=True,
     )
 
+    # ── 다운로드 ──
     download_df = display_df.copy()
     for spec in DISPLAY_COLUMNS:
         label = spec.get("label", spec["key"])
