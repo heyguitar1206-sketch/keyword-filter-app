@@ -738,21 +738,22 @@ if st.session_state["df_filtered"] is not None:
         unsafe_allow_html=True,
     )
 
-    # ── column_config: 천 단위 쉼표 + % 표시 ──
-    col_config = {}
+    # ── pandas Styler로 천 단위 쉼표 + % 포맷 적용 ──
+    fmt_dict = {}
     for spec in DISPLAY_COLUMNS:
         label = spec.get("label", spec["key"])
         fmt = spec.get("format")
         if label not in display_df.columns:
             continue
         if fmt == "int":
-            col_config[label] = st.column_config.NumberColumn(label, format=",.0f")
+            fmt_dict[label] = lambda x: f"{int(x):,}" if pd.notna(x) and x != "" else ""
         elif fmt == "pct":
-            col_config[label] = st.column_config.NumberColumn(label, format=",.1f%%")
+            fmt_dict[label] = lambda x: f"{x:.1f}%" if pd.notna(x) and x != "" else ""
+
+    styled_df = display_df.style.format(fmt_dict)
 
     st.dataframe(
-        display_df,
-        column_config=col_config,
+        styled_df,
         hide_index=True,
         use_container_width=True,
     )
