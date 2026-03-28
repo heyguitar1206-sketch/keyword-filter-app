@@ -16,7 +16,7 @@ st.set_page_config(page_title="키워드 분석 도구", page_icon="🔍", layou
 st.markdown("""
 <style>
 /* ── 전역 ── */
-#MainMenu, footer, header {visibility: hidden;}
+#MainMenu, footer {visibility: hidden;}
 section.main .block-container {
     max-width: 1100px;
     padding-top: 1.5rem;
@@ -741,7 +741,7 @@ if st.session_state["df_filtered"] is not None:
         unsafe_allow_html=True,
     )
 
-    # ── column_config: 천 단위 쉼표 + % (streamlit>=1.45) ──
+    # ── column_config: 천 단위 쉼표 + % ──
     col_config = {}
     for spec in DISPLAY_COLUMNS:
         label = spec.get("label", spec["key"])
@@ -749,7 +749,7 @@ if st.session_state["df_filtered"] is not None:
         if label not in display_df.columns:
             continue
         if fmt == "int":
-            col_config[label] = st.column_config.NumberColumn(label, format="%d")
+            col_config[label] = st.column_config.NumberColumn(label, format="localized")
         elif fmt == "pct":
             col_config[label] = st.column_config.NumberColumn(label, format="%.1f%%")
 
