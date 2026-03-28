@@ -8,7 +8,7 @@ import io
 # ──────────────────────────────────────────────
 # 페이지 설정
 # ──────────────────────────────────────────────
-st.set_page_config(page_title="초코라떼 키워드서칭프로 ver. 2.1", page_icon="🔍", layout="wide")
+st.set_page_config(page_title="초코라떼 키워드서칭프로", page_icon="☕", layout="wide")
 
 # ──────────────────────────────────────────────
 # 커스텀 CSS
@@ -148,8 +148,6 @@ div[data-testid="stDataFrame"] {
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     overflow: visible;
-}
-
 }
 
 /* ── 다운로드 버튼 ── */
@@ -575,10 +573,10 @@ if "applied_info" not in st.session_state:
 st.markdown("""
 <div class="header-card">
     <div class="title-area">
-        <h1>🔍 키워드 분석 도구</h1>
+        <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>쇼핑성 키워드 선별 및 데이터 전략 분석 도구</p>
     </div>
-    <div class="version-badge">Version v1.0</div>
+    <div class="version-badge">ver. 2.20</div>
 </div>
 """, unsafe_allow_html=True)
 
