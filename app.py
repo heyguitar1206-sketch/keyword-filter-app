@@ -759,16 +759,17 @@ if st.session_state["df_filtered"] is not None:
         unsafe_allow_html=True,
     )
 
-    col_config = {}
+        col_config = {}
     for spec in DISPLAY_COLUMNS:
         label = spec.get("label", spec["key"])
         fmt = spec.get("format")
         if label not in display_df.columns:
             continue
         if fmt == "int":
-            col_config[label] = st.column_config.NumberColumn(label, format="%d")
+            col_config[label] = st.column_config.NumberColumn(label, format=",")
         elif fmt == "pct":
             col_config[label] = st.column_config.NumberColumn(label, format="%.1f%%")
+
 
     st.dataframe(
         display_df,
