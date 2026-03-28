@@ -147,7 +147,9 @@ div.stButton > button[kind="primary"]:hover {
 div[data-testid="stDataFrame"] {
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
+}
+
 }
 
 /* ── 다운로드 버튼 ── */
