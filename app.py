@@ -8,7 +8,7 @@ import io
 # ──────────────────────────────────────────────
 # 페이지 설정
 # ──────────────────────────────────────────────
-st.set_page_config(page_title="키워드 분석 도구", page_icon="🔍", layout="wide")
+st.set_page_config(page_title="초코라떼 키워드서칭프로 ver. 2.1", page_icon="🔍", layout="wide")
 
 # ──────────────────────────────────────────────
 # 커스텀 CSS
