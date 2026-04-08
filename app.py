@@ -193,14 +193,12 @@ if not st.session_state["authenticated"]:
             elif pwd_input != "":
                 st.error("❌ 비밀번호가 올바르지 않습니다.")
     
-    # 비밀번호가 맞을 때까지 아래 코드는 실행되지 않음
     st.stop()
 
 
 # ──────────────────────────────────────────────
-# 프리셋 파일 관리
+# 프리셋 설정 초기값 (메모리 기반)
 # ──────────────────────────────────────────────
-PRESET_FILE = "presets.json"
 PRESET_VERSION = 3
 
 EMPTY_FILTERS = {
@@ -230,24 +228,6 @@ DEFAULT_PRESETS = {
         {"name": "프리셋 5", "filters": dict(EMPTY_FILTERS)},
     ],
 }
-
-
-def load_presets():
-    if os.path.exists(PRESET_FILE):
-        try:
-            with open(PRESET_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            if data.get("version") == PRESET_VERSION:
-                return data
-        except Exception:
-            pass
-    return json.loads(json.dumps(DEFAULT_PRESETS))
-
-
-def save_presets(data):
-    with open(PRESET_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
 
 # ──────────────────────────────────────────────
 # 유틸 함수
@@ -284,7 +264,7 @@ def get_preset_filters(idx):
 
 
 # ──────────────────────────────────────────────
-# 엑셀 로딩 (1회 읽기로 최적화)
+# 엑셀 로딩
 # ──────────────────────────────────────────────
 def is_header_text(val):
     if val is None or (isinstance(val, float) and pd.isna(val)):
@@ -342,7 +322,7 @@ def load_excel(uploaded):
 
 
 # ──────────────────────────────────────────────
-# 컬럼 매핑 (키워드 많은 패턴 우선 매칭)
+# 컬럼 매핑
 # ──────────────────────────────────────────────
 COLUMN_PATTERNS = {
     "브랜드키워드": ["브랜드", "brand"],
@@ -416,7 +396,6 @@ DISPLAY_COLUMNS = [
 
 
 def build_display_df(df, cmap):
-    """숫자는 숫자 타입 그대로 유지 (정렬 + column_config 포맷)"""
     rows = {}
     for spec in DISPLAY_COLUMNS:
         key = spec["key"]
@@ -564,10 +543,11 @@ def apply_filters(df, filters, cmap):
 
 
 # ──────────────────────────────────────────────
-# 세션 상태 초기화
+# 세션 상태 초기화 (매 접속 시 개별 초기화)
 # ──────────────────────────────────────────────
 if "presets" not in st.session_state:
-    st.session_state["presets"] = load_presets()
+    # 물리적 파일 로드 없이 DEFAULT_PRESETS를 메모리에 로드
+    st.session_state["presets"] = json.loads(json.dumps(DEFAULT_PRESETS))
 if "active_preset" not in st.session_state:
     st.session_state["active_preset"] = 0
 if "df_raw" not in st.session_state:
@@ -590,7 +570,7 @@ st.markdown("""
         <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>쿠팡시장분석 & 키워드데이터 분석도구</p>
     </div>
-    <div class="version-badge">ver. 2.20</div>
+    <div class="version-badge">ver. 2.21</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -698,7 +678,8 @@ if st.session_state["show_settings"]:
 
         bc1, bc2 = st.columns(2)
         with bc1:
-            if st.button("💾 저장", key="btn_save", use_container_width=True):
+            if st.button("💾 임시 적용", key="btn_save", use_container_width=True):
+                # 서버 파일에 저장하지 않고 현재 세션 메모리에만 저장
                 new_filters = {
                     "브랜드키워드": brand,
                     "쇼핑성키워드": shopping,
@@ -717,8 +698,7 @@ if st.session_state["show_settings"]:
                 }
                 st.session_state["presets"]["presets"][active]["name"] = new_name
                 st.session_state["presets"]["presets"][active]["filters"] = new_filters
-                save_presets(st.session_state["presets"])
-                st.success("저장 완료!")
+                st.success("현재 세션에 적용되었습니다! (새로고침 시 초기화)")
         with bc2:
             if st.button("❌ 닫기", key="btn_close", use_container_width=True):
                 st.session_state["show_settings"] = False
@@ -750,7 +730,6 @@ if st.session_state["df_filtered"] is not None:
         unsafe_allow_html=True,
     )
 
-    # ── column_config: 천 단위 쉼표 + % ──
     col_config = {}
     for spec in DISPLAY_COLUMNS:
         label = spec.get("label", spec["key"])
@@ -769,7 +748,6 @@ if st.session_state["df_filtered"] is not None:
         use_container_width=True,
     )
 
-    # ── 다운로드 ──
     download_df = display_df.copy()
     for spec in DISPLAY_COLUMNS:
         label = spec.get("label", spec["key"])
@@ -805,19 +783,3 @@ else:
         '<div class="empty-state">파일을 업로드하고 분석 버튼을 눌러주세요.</div>',
         unsafe_allow_html=True,
     )
-
-# ──────────────────────────────────────────────
-# 디버그
-# ──────────────────────────────────────────────
-if st.session_state["df_raw"] is not None:
-    with st.expander("🛠 컬럼 매핑 확인 (디버그)"):
-        cmap = st.session_state["cmap"]
-        st.write("**매핑된 키:**")
-        for k, v in cmap.items():
-            st.write(f"  `{k}` → `{v}`")
-        all_keys = set(COLUMN_PATTERNS.keys()) | {"키워드"}
-        unmapped = all_keys - set(cmap.keys())
-        if unmapped:
-            st.write("**미매핑 키:**", unmapped)
-        st.write("**실제 컬럼 목록:**")
-        st.write(list(st.session_state["df_raw"].columns))
