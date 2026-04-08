@@ -18,7 +18,8 @@ st.markdown("""
 /* ── 전역 ── */
 #MainMenu, footer {visibility: hidden;}
 section.main .block-container {
-    max-width: 1100px;
+    max-width: 70%; /* 전체 화면의 70%만 사용하도록 수정 */
+    min-width: 900px; /* 너무 줄어들지 않도록 최소 폭 방어선 설정 */
     padding-top: 1.5rem;
     padding-bottom: 2rem;
 }
@@ -570,7 +571,7 @@ st.markdown("""
         <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>쿠팡시장분석 & 키워드데이터 분석도구</p>
     </div>
-    <div class="version-badge">ver. 2.21</div>
+    <div class="version-badge">ver. 2.22</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -637,7 +638,8 @@ if st.session_state["show_settings"]:
         with c3:
             season = st.radio("계절성", ["전체", "O", "X"], index=["전체", "O", "X"].index(f.get("계절성", "전체")), key="inp_season", horizontal=True)
 
-        c1, c2 = st.columns(2)
+        # ── 숫자 입력 필드 레이아웃 축소 (3등분하여 2개만 사용) ──
+        c1, c2, empty = st.columns([1, 1, 1])
         with c1:
             s_lo = st.number_input("작년검색량 (최소)", value=safe_int(f.get("작년검색량_lo")), min_value=0, step=100, key="inp_search_lo")
         with c2:
@@ -652,25 +654,25 @@ if st.session_state["show_settings"]:
                 if st.checkbox(f"{m}월", value=(m in prev_months or str(m) in [str(x) for x in prev_months]), key=f"inp_month_{m}"):
                     selected_months.append(m)
 
-        c1, c2 = st.columns(2)
+        c1, c2, empty = st.columns([1, 1, 1])
         with c1:
             p_lo = st.number_input("피크월검색량 (최소)", value=safe_int(f.get("피크월검색량_lo")), min_value=0, step=100, key="inp_peak_lo")
         with c2:
             p_hi = st.number_input("피크월검색량 (최대, 0=무제한)", value=safe_int(f.get("피크월검색량_hi")), min_value=0, step=100, key="inp_peak_hi")
 
-        c1, c2 = st.columns(2)
+        c1, c2, empty = st.columns([1, 1, 1])
         with c1:
             o_lo = st.number_input("쿠팡해외배송비율 % (최소)", value=safe_float(f.get("쿠팡해외배송비율_lo")), min_value=0.0, step=1.0, format="%.1f", key="inp_overseas_lo")
         with c2:
             o_hi = st.number_input("쿠팡해외배송비율 % (최대, 0=무제한)", value=safe_float(f.get("쿠팡해외배송비율_hi")), min_value=0.0, step=1.0, format="%.1f", key="inp_overseas_hi")
 
-        c1, c2 = st.columns(2)
+        c1, c2, empty = st.columns([1, 1, 1])
         with c1:
             a_lo = st.number_input("쿠팡평균가 (최소)", value=safe_int(f.get("쿠팡평균가_lo")), min_value=0, step=1000, key="inp_avg_lo")
         with c2:
             a_hi = st.number_input("쿠팡평균가 (최대, 0=무제한)", value=safe_int(f.get("쿠팡평균가_hi")), min_value=0, step=1000, key="inp_avg_hi")
 
-        c1, c2 = st.columns(2)
+        c1, c2, empty = st.columns([1, 1, 1])
         with c1:
             r_lo = st.number_input("쿠팡총리뷰수 (최소)", value=safe_int(f.get("쿠팡총리뷰수_lo")), min_value=0, step=10, key="inp_review_lo")
         with c2:
