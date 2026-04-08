@@ -313,4 +313,482 @@ def load_excel(uploaded):
 
 
 # ──────────────────────────────────────────────
-# 컬럼 매핑 (키워드 많은 패턴 우선 매칭
+# 컬럼 매핑 (키워드 많은 패턴 우선 매칭)
+# ──────────────────────────────────────────────
+COLUMN_PATTERNS = {
+    "브랜드키워드": ["브랜드", "brand"],
+    "쇼핑성키워드": ["쇼핑성", "shopping"],
+    "작년검색량": ["작년", "검색량"],
+    "작년최대검색월검색량": ["작년", "최대", "검색월", "검색량"],
+    "작년최대검색월": ["작년", "최대", "검색월"],
+    "계절성": ["계절"],
+    "쿠팡평균가": ["쿠팡", "평균가"],
+    "쿠팡총리뷰수": ["쿠팡", "총리뷰"],
+    "쿠팡최대리뷰수": ["쿠팡", "최대리뷰"],
+    "쿠팡로켓배송비율": ["쿠팡", "로켓배송비율"],
+    "쿠팡판매자로켓배송비율": ["쿠팡", "판매자", "로켓"],
+    "쿠팡해외배송비율": ["쿠팡", "해외배송비율"],
+    "쿠팡해외배송총리뷰수": ["쿠팡", "해외배송", "총리뷰"],
+}
+
+
+def build_col_map(columns):
+    col_list = list(columns)
+    cmap = {}
+
+    if len(col_list) > 1:
+        cmap["키워드"] = col_list[1]
+    for real_col in col_list:
+        if real_col.strip() == "키워드":
+            cmap["키워드"] = real_col
+            break
+
+    used = set(cmap.values())
+
+    sorted_patterns = sorted(COLUMN_PATTERNS.items(), key=lambda x: len(x[1]), reverse=True)
+
+    for std_key, keywords in sorted_patterns:
+        best = None
+        best_score = 0
+        for real_col in col_list:
+            if real_col in used:
+                continue
+            low = real_col.lower().replace(" ", "").replace("_", "")
+            score = sum(1 for kw in keywords if kw in low)
+            if score > best_score:
+                best_score = score
+                best = real_col
+        if best and best_score >= len(keywords) * 0.5:
+            cmap[std_key] = best
+            used.add(best)
+
+    return cmap
+
+
+# ──────────────────────────────────────────────
+# 표시 컬럼 정의
+# ──────────────────────────────────────────────
+DISPLAY_COLUMNS = [
+    {"key": "키워드"},
+    {"key": "브랜드키워드", "label": "브랜드", "format": "ox"},
+    {"key": "쇼핑성키워드", "label": "쇼핑성", "format": "ox"},
+    {"key": "작년검색량", "format": "int"},
+    {"key": "작년최대검색월"},
+    {"key": "작년최대검색월검색량", "label": "피크월검색량", "format": "int"},
+    {"key": "계절성", "format": "season_ox"},
+    {"key": "쿠팡평균가", "format": "int"},
+    {"key": "쿠팡총리뷰수", "format": "int"},
+    {"key": "쿠팡최대리뷰수", "format": "int"},
+    {"key": "쿠팡로켓배송비율", "format": "pct"},
+    {"key": "쿠팡판매자로켓배송비율", "label": "로켓그로스비율", "format": "pct"},
+    {"key": "쿠팡해외배송비율", "format": "pct"},
+    {"key": "쿠팡해외배송총리뷰수", "format": "int"},
+]
+
+
+def build_display_df(df, cmap):
+    """숫자는 숫자 타입 그대로 유지 (정렬 + column_config 포맷)"""
+    rows = {}
+    for spec in DISPLAY_COLUMNS:
+        key = spec["key"]
+        label = spec.get("label", key)
+        fmt = spec.get("format")
+
+        if key not in cmap or cmap[key] not in df.columns:
+            continue
+
+        src = df[cmap[key]].copy()
+
+        if fmt == "ox":
+            mapped = []
+            for v in src:
+                sv = str(v).strip().upper()
+                if sv in ("O", "TRUE", "1", "1.0", "Y", "YES"):
+                    mapped.append("O")
+                elif sv in ("X", "FALSE", "0", "0.0", "N", "NO"):
+                    mapped.append("X")
+                else:
+                    mapped.append(str(v) if pd.notna(v) else "")
+            rows[label] = mapped
+        elif fmt == "season_ox":
+            mapped = []
+            for v in src:
+                sv = str(v).strip()
+                if sv in ("있음", "O", "TRUE", "1"):
+                    mapped.append("O")
+                elif sv in ("없음", "X", "FALSE", "0"):
+                    mapped.append("X")
+                else:
+                    mapped.append(sv if pd.notna(v) else "")
+            rows[label] = mapped
+        elif fmt == "int":
+            rows[label] = pd.to_numeric(src, errors="coerce").fillna(0).astype(int).tolist()
+        elif fmt == "pct":
+            numeric_vals = pd.to_numeric(src, errors="coerce").fillna(0)
+            if numeric_vals.max() <= 1.0:
+                numeric_vals = numeric_vals * 100
+            rows[label] = numeric_vals.round(1).tolist()
+        else:
+            rows[label] = src.tolist()
+
+    out = pd.DataFrame(rows, index=df.index)
+    return out
+
+
+# ──────────────────────────────────────────────
+# 필터 적용
+# ──────────────────────────────────────────────
+def apply_filters(df, filters, cmap):
+    out = df.copy()
+    applied = []
+
+    val = filters.get("브랜드키워드", "전체")
+    if val != "전체" and "브랜드키워드" in cmap:
+        col = cmap["브랜드키워드"]
+        if col in out.columns:
+            target = "O" if val == "O" else "X"
+            out = out[out[col].astype(str).str.strip().str.upper() == target]
+            applied.append(f"브랜드키워드={target}")
+
+    val = filters.get("쇼핑성키워드", "전체")
+    if val != "전체" and "쇼핑성키워드" in cmap:
+        col = cmap["쇼핑성키워드"]
+        if col in out.columns:
+            target = "O" if val == "O" else "X"
+            out = out[out[col].astype(str).str.strip().str.upper() == target]
+            applied.append(f"쇼핑성키워드={target}")
+
+    val = filters.get("계절성", "전체")
+    if val != "전체" and "계절성" in cmap:
+        col = cmap["계절성"]
+        if col in out.columns:
+            if val == "O":
+                out = out[out[col].astype(str).str.strip().isin(["있음", "O", "TRUE", "1"])]
+            else:
+                out = out[out[col].astype(str).str.strip().isin(["없음", "X", "FALSE", "0"])]
+            applied.append(f"계절성={val}")
+
+    nonlocal_hack = {"out": out, "applied": applied}
+
+    def nr(key, lo_key, hi_key, divisor=1):
+        lo = safe_float(filters.get(lo_key, 0))
+        hi = safe_float(filters.get(hi_key, 0))
+        o = nonlocal_hack["out"]
+        if (lo > 0 or hi > 0) and key in cmap:
+            col = cmap[key]
+            if col in o.columns:
+                series = pd.to_numeric(o[col], errors="coerce")
+                if divisor != 1:
+                    lo_real = lo / divisor
+                    hi_real = hi / divisor if hi > 0 else None
+                else:
+                    lo_real = lo
+                    hi_real = hi if hi > 0 else None
+                mask = pd.Series(True, index=o.index)
+                if lo_real > 0:
+                    mask = mask & (series >= lo_real)
+                if hi_real is not None and hi_real > 0:
+                    mask = mask & (series <= hi_real)
+                o = o[mask.reindex(o.index, fill_value=False)]
+                if divisor != 1:
+                    nonlocal_hack["applied"].append(f"{key} {lo}%~{hi}%")
+                else:
+                    nonlocal_hack["applied"].append(f"{key} {lo:,}~{hi:,}")
+        nonlocal_hack["out"] = o
+
+    nr("작년검색량", "작년검색량_lo", "작년검색량_hi")
+    nr("작년최대검색월검색량", "피크월검색량_lo", "피크월검색량_hi")
+    nr("쿠팡해외배송비율", "쿠팡해외배송비율_lo", "쿠팡해외배송비율_hi", divisor=100)
+    nr("쿠팡평균가", "쿠팡평균가_lo", "쿠팡평균가_hi")
+    nr("쿠팡총리뷰수", "쿠팡총리뷰수_lo", "쿠팡총리뷰수_hi")
+
+    out = nonlocal_hack["out"]
+    applied = nonlocal_hack["applied"]
+
+    months = filters.get("작년최대검색월", [])
+    if months and "작년최대검색월" in cmap:
+        col = cmap["작년최대검색월"]
+        if col in out.columns:
+            month_ints = [safe_int(m) for m in months]
+            series = pd.to_numeric(out[col], errors="coerce")
+            out = out[series.isin(month_ints)]
+            applied.append(f"작년최대검색월={months}")
+
+    if "쿠팡해외배송비율" in cmap:
+        col = cmap["쿠팡해외배송비율"]
+        if col in out.columns:
+            sort_series = pd.to_numeric(out[col], errors="coerce")
+            out = out.iloc[sort_series.fillna(-1).values.argsort()[::-1]]
+
+    if "키워드" in cmap:
+        col = cmap["키워드"]
+        if col in out.columns:
+            before = len(out)
+            temp_col = "__키워드_정규화__"
+            out[temp_col] = out[col].astype(str).str.strip().str.lower().str.replace(r"\s+", "", regex=True)
+            out = out.drop_duplicates(subset=[temp_col], keep="first")
+            del out[temp_col]
+            if before != len(out):
+                applied.append(f"키워드 중복제거 ({before:,}→{len(out):,})")
+
+    return out, applied
+
+
+# ──────────────────────────────────────────────
+# 세션 상태 초기화
+# ──────────────────────────────────────────────
+if "presets" not in st.session_state:
+    st.session_state["presets"] = load_presets()
+if "active_preset" not in st.session_state:
+    st.session_state["active_preset"] = 0
+if "df_raw" not in st.session_state:
+    st.session_state["df_raw"] = None
+if "df_filtered" not in st.session_state:
+    st.session_state["df_filtered"] = None
+if "cmap" not in st.session_state:
+    st.session_state["cmap"] = {}
+if "show_settings" not in st.session_state:
+    st.session_state["show_settings"] = False
+if "applied_info" not in st.session_state:
+    st.session_state["applied_info"] = []
+
+# ──────────────────────────────────────────────
+# UI: 헤더
+# ──────────────────────────────────────────────
+st.markdown("""
+<div class="header-card">
+    <div class="title-area">
+        <h1>☕ 초코라떼 키워드서칭프로</h1>
+        <p>쿠팡시장분석 & 키워드데이터 분석도구</p>
+    </div>
+    <div class="version-badge">ver. 2.20</div>
+</div>
+""", unsafe_allow_html=True)
+
+# ──────────────────────────────────────────────
+# UI: 파일 업로드
+# ──────────────────────────────────────────────
+uploaded = st.file_uploader(
+    "📂 분석할 파일을 이곳에 올려주세요 (엑셀 .xlsx 또는 CSV)",
+    type=["xlsx", "xls", "csv"],
+)
+
+if uploaded:
+    if st.session_state["df_raw"] is None or st.session_state.get("_fname") != uploaded.name:
+        with st.spinner("파일 로딩 중..."):
+            if uploaded.name.endswith(".csv"):
+                df = pd.read_csv(uploaded)
+            else:
+                df = load_excel(uploaded)
+            st.session_state["df_raw"] = df
+            st.session_state["cmap"] = build_col_map(df.columns)
+            st.session_state["_fname"] = uploaded.name
+    st.markdown(
+        f'<div class="file-badge">✅ {uploaded.name} 로드 완료 ({len(st.session_state["df_raw"]):,}행, {len(st.session_state["df_raw"].columns)}열)</div>',
+        unsafe_allow_html=True,
+    )
+
+# ──────────────────────────────────────────────
+# UI: 프리셋 바 + 분석 실행
+# ──────────────────────────────────────────────
+num_presets = len(st.session_state["presets"]["presets"])
+preset_cols = st.columns([1] * num_presets + [0.4, 1.2])
+
+for i in range(num_presets):
+    with preset_cols[i]:
+        label = get_preset_name(i)
+        btn_type = "primary" if i == st.session_state["active_preset"] else "secondary"
+        if st.button(label, key=f"btn_preset_{i}", use_container_width=True, type=btn_type):
+            st.session_state["active_preset"] = i
+            st.session_state["show_settings"] = False
+
+with preset_cols[num_presets]:
+    if st.button("⚙️", key="btn_gear"):
+        st.session_state["show_settings"] = not st.session_state["show_settings"]
+
+with preset_cols[num_presets + 1]:
+    run_clicked = st.button("▶  분석 실행", key="btn_run", use_container_width=True, type="primary")
+
+active = st.session_state["active_preset"]
+
+# ──────────────────────────────────────────────
+# UI: 프리셋 설정
+# ──────────────────────────────────────────────
+if st.session_state["show_settings"]:
+    with st.expander(f"⚙️ {get_preset_name(active)} 설정", expanded=True):
+        f = get_preset_filters(active)
+
+        new_name = st.text_input("프리셋 이름", value=get_preset_name(active), key="inp_name")
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            brand = st.radio("브랜드키워드", ["전체", "O", "X"], index=["전체", "O", "X"].index(f.get("브랜드키워드", "전체")), key="inp_brand", horizontal=True)
+        with c2:
+            shopping = st.radio("쇼핑성키워드", ["전체", "O", "X"], index=["전체", "O", "X"].index(f.get("쇼핑성키워드", "전체")), key="inp_shopping", horizontal=True)
+        with c3:
+            season = st.radio("계절성", ["전체", "O", "X"], index=["전체", "O", "X"].index(f.get("계절성", "전체")), key="inp_season", horizontal=True)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            s_lo = st.number_input("작년검색량 (최소)", value=safe_int(f.get("작년검색량_lo")), min_value=0, step=100, key="inp_search_lo")
+        with c2:
+            s_hi = st.number_input("작년검색량 (최대, 0=무제한)", value=safe_int(f.get("작년검색량_hi")), min_value=0, step=100, key="inp_search_hi")
+
+        st.write("작년최대검색월 (복수 선택)")
+        month_cols = st.columns(6)
+        selected_months = []
+        prev_months = f.get("작년최대검색월", [])
+        for m in range(1, 13):
+            with month_cols[(m - 1) % 6]:
+                if st.checkbox(f"{m}월", value=(m in prev_months or str(m) in [str(x) for x in prev_months]), key=f"inp_month_{m}"):
+                    selected_months.append(m)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            p_lo = st.number_input("피크월검색량 (최소)", value=safe_int(f.get("피크월검색량_lo")), min_value=0, step=100, key="inp_peak_lo")
+        with c2:
+            p_hi = st.number_input("피크월검색량 (최대, 0=무제한)", value=safe_int(f.get("피크월검색량_hi")), min_value=0, step=100, key="inp_peak_hi")
+
+        c1, c2 = st.columns(2)
+        with c1:
+            o_lo = st.number_input("쿠팡해외배송비율 % (최소)", value=safe_float(f.get("쿠팡해외배송비율_lo")), min_value=0.0, step=1.0, format="%.1f", key="inp_overseas_lo")
+        with c2:
+            o_hi = st.number_input("쿠팡해외배송비율 % (최대, 0=무제한)", value=safe_float(f.get("쿠팡해외배송비율_hi")), min_value=0.0, step=1.0, format="%.1f", key="inp_overseas_hi")
+
+        c1, c2 = st.columns(2)
+        with c1:
+            a_lo = st.number_input("쿠팡평균가 (최소)", value=safe_int(f.get("쿠팡평균가_lo")), min_value=0, step=1000, key="inp_avg_lo")
+        with c2:
+            a_hi = st.number_input("쿠팡평균가 (최대, 0=무제한)", value=safe_int(f.get("쿠팡평균가_hi")), min_value=0, step=1000, key="inp_avg_hi")
+
+        c1, c2 = st.columns(2)
+        with c1:
+            r_lo = st.number_input("쿠팡총리뷰수 (최소)", value=safe_int(f.get("쿠팡총리뷰수_lo")), min_value=0, step=10, key="inp_review_lo")
+        with c2:
+            r_hi = st.number_input("쿠팡총리뷰수 (최대, 0=무제한)", value=safe_int(f.get("쿠팡총리뷰수_hi")), min_value=0, step=10, key="inp_review_hi")
+
+        bc1, bc2 = st.columns(2)
+        with bc1:
+            if st.button("💾 저장", key="btn_save", use_container_width=True):
+                new_filters = {
+                    "브랜드키워드": brand,
+                    "쇼핑성키워드": shopping,
+                    "계절성": season,
+                    "작년검색량_lo": s_lo,
+                    "작년검색량_hi": s_hi,
+                    "작년최대검색월": selected_months,
+                    "피크월검색량_lo": p_lo,
+                    "피크월검색량_hi": p_hi,
+                    "쿠팡해외배송비율_lo": o_lo,
+                    "쿠팡해외배송비율_hi": o_hi,
+                    "쿠팡평균가_lo": a_lo,
+                    "쿠팡평균가_hi": a_hi,
+                    "쿠팡총리뷰수_lo": r_lo,
+                    "쿠팡총리뷰수_hi": r_hi,
+                }
+                st.session_state["presets"]["presets"][active]["name"] = new_name
+                st.session_state["presets"]["presets"][active]["filters"] = new_filters
+                save_presets(st.session_state["presets"])
+                st.success("저장 완료!")
+        with bc2:
+            if st.button("❌ 닫기", key="btn_close", use_container_width=True):
+                st.session_state["show_settings"] = False
+                st.rerun()
+
+# ──────────────────────────────────────────────
+# UI: 분석 실행
+# ──────────────────────────────────────────────
+if run_clicked:
+    if st.session_state["df_raw"] is None:
+        st.warning("파일을 먼저 업로드하세요.")
+    else:
+        filters = get_preset_filters(active)
+        cmap = st.session_state["cmap"]
+        df_filtered, applied = apply_filters(st.session_state["df_raw"], filters, cmap)
+        st.session_state["df_filtered"] = df_filtered
+        st.session_state["applied_info"] = applied
+
+# ──────────────────────────────────────────────
+# UI: 결과 표시
+# ──────────────────────────────────────────────
+if st.session_state["df_filtered"] is not None:
+    cmap = st.session_state["cmap"]
+    df_f = st.session_state["df_filtered"]
+    display_df = build_display_df(df_f, cmap)
+
+    st.markdown(
+        f'<div class="result-header">📊 분석 결과 (<span class="result-count">{len(display_df):,}건</span>)</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── column_config: 천 단위 쉼표 + % ──
+    col_config = {}
+    for spec in DISPLAY_COLUMNS:
+        label = spec.get("label", spec["key"])
+        fmt = spec.get("format")
+        if label not in display_df.columns:
+            continue
+        if fmt == "int":
+            col_config[label] = st.column_config.NumberColumn(label, format="localized")
+        elif fmt == "pct":
+            col_config[label] = st.column_config.NumberColumn(label, format="%.1f%%")
+
+    st.dataframe(
+        display_df,
+        column_config=col_config,
+        hide_index=True,
+        use_container_width=True,
+    )
+
+    # ── 다운로드 ──
+    download_df = display_df.copy()
+    for spec in DISPLAY_COLUMNS:
+        label = spec.get("label", spec["key"])
+        fmt = spec.get("format")
+        if label not in download_df.columns:
+            continue
+        if fmt == "int":
+            download_df[label] = download_df[label].apply(
+                lambda x: f"{int(x):,}" if pd.notna(x) else ""
+            )
+        elif fmt == "pct":
+            download_df[label] = download_df[label].apply(
+                lambda x: f"{x:.1f}%" if pd.notna(x) else ""
+            )
+
+    buf = io.BytesIO()
+    download_df.to_excel(buf, index=False, engine="openpyxl")
+    st.download_button(
+        "📥 결과 다운로드 (Excel)",
+        buf.getvalue(),
+        file_name="분석결과.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+    with st.expander("🔎 적용된 필터 상세"):
+        if st.session_state["applied_info"]:
+            for a in st.session_state["applied_info"]:
+                st.write(f"• {a}")
+        else:
+            st.write("적용된 필터 없음")
+else:
+    st.markdown(
+        '<div class="empty-state">파일을 업로드하고 분석 버튼을 눌러주세요.</div>',
+        unsafe_allow_html=True,
+    )
+
+# ──────────────────────────────────────────────
+# 디버그
+# ──────────────────────────────────────────────
+if st.session_state["df_raw"] is not None:
+    with st.expander("🛠 컬럼 매핑 확인 (디버그)"):
+        cmap = st.session_state["cmap"]
+        st.write("**매핑된 키:**")
+        for k, v in cmap.items():
+            st.write(f"  `{k}` → `{v}`")
+        all_keys = set(COLUMN_PATTERNS.keys()) | {"키워드"}
+        unmapped = all_keys - set(cmap.keys())
+        if unmapped:
+            st.write("**미매핑 키:**", unmapped)
+        st.write("**실제 컬럼 목록:**")
+        st.write(list(st.session_state["df_raw"].columns))
