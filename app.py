@@ -11,18 +11,18 @@ import io
 st.set_page_config(page_title="초코라떼 키워드서칭프로", page_icon="☕", layout="wide")
 
 # ──────────────────────────────────────────────
-# 커스텀 CSS
+# 커스텀 CSS (최신 스트림릿 1.45.0 기준 호환)
 # ──────────────────────────────────────────────
 st.markdown("""
 <style>
 /* ── 전역 ── */
 #MainMenu, footer {visibility: hidden;}
 
-/* Streamlit의 기본 wide 레이아웃을 강제로 70%로 제한하고 중앙 정렬 */
-section.main .block-container {
+/* 최신 스트림릿 버전용 전체 화면 크기 제어 (70% 축소 및 중앙 정렬) */
+[data-testid="stAppViewBlockContainer"] {
     max-width: 70% !important; 
     min-width: 900px !important; 
-    margin: 0 auto !important; /* 가운데 정렬 */
+    margin: 0 auto !important; 
     padding-top: 1.5rem !important;
     padding-bottom: 2rem !important;
 }
@@ -550,7 +550,6 @@ def apply_filters(df, filters, cmap):
 # 세션 상태 초기화 (매 접속 시 개별 초기화)
 # ──────────────────────────────────────────────
 if "presets" not in st.session_state:
-    # 물리적 파일 로드 없이 DEFAULT_PRESETS를 메모리에 로드
     st.session_state["presets"] = json.loads(json.dumps(DEFAULT_PRESETS))
 if "active_preset" not in st.session_state:
     st.session_state["active_preset"] = 0
@@ -574,7 +573,7 @@ st.markdown("""
         <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>쿠팡시장분석 & 키워드데이터 분석도구</p>
     </div>
-    <div class="version-badge">ver. 2.23</div>
+    <div class="version-badge">ver. 2.24</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -641,7 +640,6 @@ if st.session_state["show_settings"]:
         with c3:
             season = st.radio("계절성", ["전체", "O", "X"], index=["전체", "O", "X"].index(f.get("계절성", "전체")), key="inp_season", horizontal=True)
 
-        # ── 숫자 입력 필드 레이아웃 축소 (3등분하여 2개만 사용) ──
         c1, c2, empty = st.columns([1, 1, 1])
         with c1:
             s_lo = st.number_input("작년검색량 (최소)", value=safe_int(f.get("작년검색량_lo")), min_value=0, step=100, key="inp_search_lo")
@@ -684,7 +682,6 @@ if st.session_state["show_settings"]:
         bc1, bc2 = st.columns(2)
         with bc1:
             if st.button("💾 임시 적용", key="btn_save", use_container_width=True):
-                # 서버 파일에 저장하지 않고 현재 세션 메모리에만 저장
                 new_filters = {
                     "브랜드키워드": brand,
                     "쇼핑성키워드": shopping,
