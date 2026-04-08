@@ -17,11 +17,14 @@ st.markdown("""
 <style>
 /* ── 전역 ── */
 #MainMenu, footer {visibility: hidden;}
+
+/* Streamlit의 기본 wide 레이아웃을 강제로 70%로 제한하고 중앙 정렬 */
 section.main .block-container {
-    max-width: 70%; /* 전체 화면의 70%만 사용하도록 수정 */
-    min-width: 900px; /* 너무 줄어들지 않도록 최소 폭 방어선 설정 */
-    padding-top: 1.5rem;
-    padding-bottom: 2rem;
+    max-width: 70% !important; 
+    min-width: 900px !important; 
+    margin: 0 auto !important; /* 가운데 정렬 */
+    padding-top: 1.5rem !important;
+    padding-bottom: 2rem !important;
 }
 
 /* ── 헤더 카드 ── */
@@ -571,7 +574,7 @@ st.markdown("""
         <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>쿠팡시장분석 & 키워드데이터 분석도구</p>
     </div>
-    <div class="version-badge">ver. 2.22</div>
+    <div class="version-badge">ver. 2.23</div>
 </div>
 """, unsafe_allow_html=True)
 
