@@ -169,6 +169,35 @@ div[data-testid="stExpander"] {
 """, unsafe_allow_html=True)
 
 # ──────────────────────────────────────────────
+# 로그인 (비밀번호 인증)
+# ──────────────────────────────────────────────
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #1a1a2e; font-size: 28px; font-weight: 800;">☕ 초코라떼 키워드서칭프로</h1>
+            <p style="color: #6b7280; font-size: 15px;">수강생 전용 프로그램입니다. 앱을 사용하시려면 비밀번호를 입력해주세요.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        pwd_input = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", label_visibility="collapsed")
+        if st.button("접속하기", use_container_width=True, type="primary"):
+            if pwd_input == "chocolatte2":
+                st.session_state["authenticated"] = True
+                st.rerun()
+            elif pwd_input != "":
+                st.error("❌ 비밀번호가 올바르지 않습니다.")
+    
+    # 비밀번호가 맞을 때까지 아래 코드는 실행되지 않음
+    st.stop()
+
+
+# ──────────────────────────────────────────────
 # 프리셋 파일 관리
 # ──────────────────────────────────────────────
 PRESET_FILE = "presets.json"
