@@ -11,7 +11,7 @@ import io
 st.set_page_config(page_title="초코라떼 키워드서칭프로", page_icon="☕", layout="wide")
 
 # ──────────────────────────────────────────────
-# 커스텀 CSS (모던 & 프리미엄 Pro 디자인 + 글자 겹침 수정 + 프리셋 버튼 개선)
+# 커스텀 CSS (글자 겹침 버그 완벽 수정 + 프리미엄 Pro 디자인)
 # ──────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -68,25 +68,18 @@ st.markdown("""
     letter-spacing: 0.5px;
 }
 
-/* ── 파일 업로드 영역 스타일 (글자 겹침 수정) ── */
+/* ── 파일 업로드 영역 스타일 (겹침 문제 수정) ── */
 div[data-testid="stFileUploader"] {
     border: 2px dashed #cbd5e1;
     border-radius: 12px;
-    padding: 28px 20px; /* 세로 여백을 늘려 텍스트 공간 확보 */
+    padding: 24px;
     background: #f8fafc;
     margin-bottom: 28px;
     transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 12px;
 }
 div[data-testid="stFileUploader"]:hover {
     border-color: #6366f1;
     background: #f1f5f9;
-}
-/* 스트림릿 내부 요소 스타일 수정이 필요할 수 있음 */
-div[data-testid="stFileUploader"] .stMarkdown {
-    margin-left: 0 !important;
 }
 
 /* ── 파일 로드 완료 배지 ── */
@@ -190,16 +183,12 @@ div.stDownloadButton > button:hover {
     border-color: #4338ca !important;
 }
 
-/* ── 설정 expander (글자 겹침 수정) ── */
+/* ── 설정 expander (겹침 문제 수정) ── */
 div[data-testid="stExpander"] {
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-/* 세부 필터 설정 글자 앞 겹침 방지 */
-div[data-testid="stExpander"] summary .stMarkdown {
-    margin-left: 10px !important;
 }
 
 /* ── 메시지 영역 ── */
@@ -627,7 +616,7 @@ st.markdown("""
         <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>수강생 여러분의 효율적인 소싱을 돕는 전문 시장 분석 도구</p>
     </div>
-    <div class="version-badge">ver. 2.29 Pro</div>
+    <div class="version-badge">ver. 2.30 Pro</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -642,7 +631,6 @@ uploaded = st.file_uploader(
 if uploaded:
     if st.session_state["df_raw"] is None or st.session_state.get("_fname") != uploaded.name:
         with st.spinner("파일 로딩 중..."):
-            # 통합 데이터 로더 사용 (CSV/Excel 스마트 헤더 및 인코딩 자동 처리)
             from pandas.errors import ParserError
             try:
                 raw = pd.read_csv(uploaded, header=None, encoding="utf-8")
@@ -722,7 +710,7 @@ with preset_cols[num_presets + 1]:
 active = st.session_state["active_preset"]
 
 # ──────────────────────────────────────────────
-# UI: 프리셋 설정 (모든 필드 복구 및 디자인 유지)
+# UI: 프리셋 설정 
 # ──────────────────────────────────────────────
 if st.session_state["show_settings"]:
     with st.expander(f"⚙️ 세부 필터 설정 (프리셋: {get_preset_name(active)})", expanded=True):
@@ -738,7 +726,6 @@ if st.session_state["show_settings"]:
         with c3:
             season = st.radio("계절성", ["전체", "O", "X"], index=["전체", "O", "X"].index(f.get("계절성", "전체")), key="inp_season", horizontal=True)
 
-        # 숫자 입력창을 콤팩트하게 유지하기 위한 3등분(1:1:1) 구조 사용
         c1, c2, empty = st.columns([1, 1, 1])
         with c1:
             s_lo = st.number_input("작년검색량 (최소)", value=safe_int(f.get("작년검색량_lo")), min_value=0, step=100, key="inp_search_lo")
