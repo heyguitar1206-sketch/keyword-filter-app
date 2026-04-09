@@ -641,7 +641,7 @@ st.markdown("""
         <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>수강생 여러분의 효율적인 소싱을 돕는 전문 시장 분석 도구</p>
     </div>
-    <div class="version-badge">ver. 2.31 Pro</div>
+    <div class="version-badge">ver. 2.32 Pro</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -712,11 +712,14 @@ if uploaded:
     )
 
 # ──────────────────────────────────────────────
-# UI: 프리셋 바 + 분석 실행
+# UI: 프리셋 바 + 토글 + 분석 실행
 # ──────────────────────────────────────────────
 num_presets = len(st.session_state["presets"]["presets"])
-preset_cols = st.columns([1] * num_presets + [0.4, 1.2])
 
+# [제안 2 적용] 컬럼 비율 조정: 프리셋(각 1), 구분선(0.1), 설정토글(1.0), 실행버튼(1.2)
+preset_cols = st.columns([1] * num_presets + [0.1, 1.0, 1.2])
+
+# 프리셋 버튼 그룹
 for i in range(num_presets):
     with preset_cols[i]:
         label = get_preset_name(i)
@@ -725,11 +728,20 @@ for i in range(num_presets):
             st.session_state["active_preset"] = i
             st.session_state["show_settings"] = False
 
+# 구분선 (Divider)
 with preset_cols[num_presets]:
-    if st.button("⚙️", key="btn_gear"):
-        st.session_state["show_settings"] = not st.session_state["show_settings"]
+    st.markdown("<div style='height: 32px; width: 2px; background-color: #cbd5e1; margin: 4px auto; border-radius: 2px;'></div>", unsafe_allow_html=True)
+
+# 명확한 토글 버튼
+def toggle_settings():
+    st.session_state["show_settings"] = not st.session_state["show_settings"]
 
 with preset_cols[num_presets + 1]:
+    toggle_text = "필터 설정 ▲" if st.session_state["show_settings"] else "필터 설정 ▼"
+    st.button(toggle_text, key="btn_gear", use_container_width=True, on_click=toggle_settings)
+
+# 분석 실행 버튼
+with preset_cols[num_presets + 2]:
     run_clicked = st.button("▶  분석 실행", key="btn_run", use_container_width=True, type="primary")
 
 active = st.session_state["active_preset"]
