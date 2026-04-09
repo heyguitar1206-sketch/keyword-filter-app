@@ -11,11 +11,18 @@ import io
 st.set_page_config(page_title="초코라떼 키워드서칭프로", page_icon="☕", layout="wide")
 
 # ──────────────────────────────────────────────
-# 커스텀 CSS (70% 폭 제한 및 디자인 수정)
+# 커스텀 CSS (모던 & 프리미엄 프로 디자인)
 # ──────────────────────────────────────────────
 st.markdown("""
 <style>
-/* ── 전역 ── */
+/* ── 글로벌 폰트 (Pretendard 적용) ── */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
+
+* {
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif !important;
+}
+
+/* ── 전역 숨김 ── */
 #MainMenu, footer {visibility: hidden;}
 
 /* 메인 화면 컨테이너를 가로 70%로 제한하고 중앙 정렬 (최우선 순위) */
@@ -23,52 +30,56 @@ st.markdown("""
     max-width: 70% !important;
     min-width: 900px !important;
     margin: 0 auto !important;
-    padding-top: 2rem !important;
+    padding-top: 2.5rem !important;
 }
 
-/* ── 헤더 카드 ── */
+/* ── 헤더 카드 (모던 다크 스타일) ── */
 .header-card {
-    background: linear-gradient(135deg, #e8eeff 0%, #f4f1ff 100%);
-    border-radius: 16px;
-    padding: 28px 36px;
-    margin-bottom: 24px;
+    background: linear-gradient(135deg, #111827 0%, #1e1b4b 100%);
+    border-radius: 12px;
+    padding: 32px 40px;
+    margin-bottom: 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 .header-card .title-area h1 {
     margin: 0;
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 800;
-    color: #1a1a2e;
+    color: #ffffff;
+    letter-spacing: -0.5px;
 }
 .header-card .title-area p {
-    margin: 4px 0 0 0;
-    font-size: 14px;
-    color: #6b7280;
+    margin: 8px 0 0 0;
+    font-size: 15px;
+    color: #9ca3af;
+    letter-spacing: -0.3px;
 }
 .header-card .version-badge {
-    background: #fff;
-    border: 1.5px solid #4f6df5;
-    color: #4f6df5;
-    font-size: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e5e7eb;
+    font-size: 13px;
     font-weight: 600;
-    padding: 6px 14px;
-    border-radius: 20px;
-    white-space: nowrap;
+    padding: 6px 16px;
+    border-radius: 8px;
+    letter-spacing: 0.5px;
 }
 
 /* ── 파일 업로드 영역 스타일 ── */
 div[data-testid="stFileUploader"] {
-    border: 2.5px dashed #a5b4fc;
-    border-radius: 16px;
-    padding: 20px;
-    background: #fafaff;
-    margin-bottom: 24px;
-    transition: border-color 0.2s;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 24px;
+    background: #f8fafc;
+    margin-bottom: 28px;
+    transition: all 0.2s ease;
 }
 div[data-testid="stFileUploader"]:hover {
-    border-color: #4f6df5;
+    border-color: #6366f1;
+    background: #f1f5f9;
 }
 
 /* ── 파일 로드 완료 배지 ── */
@@ -76,97 +87,109 @@ div[data-testid="stFileUploader"]:hover {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: #f0fdf4;
-    border: 1px solid #86efac;
-    color: #166534;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 8px 16px;
-    border-radius: 10px;
-    margin-bottom: 20px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    font-size: 14.5px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* ── 프리셋 버튼 스타일 ── */
+/* ── 프리셋 버튼 스타일 (세련된 아웃라인) ── */
 div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     font-weight: 600 !important;
-    font-size: 14px !important;
-    padding: 6px 20px !important;
-    border: 1.5px solid #d1d5db !important;
-    background: #fff !important;
-    color: #374151 !important;
-    transition: all 0.15s !important;
+    font-size: 14.5px !important;
+    padding: 8px 20px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    color: #475569 !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
 }
 div[data-testid="stHorizontalBlock"] button[kind="secondary"]:hover {
-    border-color: #4f6df5 !important;
-    color: #4f6df5 !important;
-    background: #eef2ff !important;
+    border-color: #6366f1 !important;
+    color: #6366f1 !important;
+    background: #f8fafc !important;
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.1) !important;
 }
 
-/* ── 분석실행 버튼 ── */
+/* ── 분석실행 버튼 (모던 그라데이션) ── */
 div.stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #4f6df5 0%, #6366f1 100%) !important;
+    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%) !important;
     color: #fff !important;
     border: none !important;
-    border-radius: 12px !important;
+    border-radius: 8px !important;
     font-size: 16px !important;
     font-weight: 700 !important;
     padding: 12px 0 !important;
-    box-shadow: 0 4px 14px rgba(79,109,245,0.3) !important;
-    transition: transform 0.1s, box-shadow 0.1s !important;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1) !important;
+    transition: all 0.2s ease !important;
+    letter-spacing: -0.3px !important;
 }
 div.stButton > button[kind="primary"]:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 6px 20px rgba(79,109,245,0.4) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(79, 70, 229, 0.1) !important;
 }
 
 /* ── 결과 카드 ── */
 .result-header {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 800;
-    color: #1a1a2e;
-    margin-bottom: 12px;
+    color: #111827;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
 }
 .result-count {
-    color: #4f6df5;
+    color: #4f46e5;
 }
 
 /* ── 데이터프레임 ── */
 div[data-testid="stDataFrame"] {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     overflow: visible;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 /* ── 다운로드 버튼 ── */
 div.stDownloadButton > button {
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     font-weight: 600 !important;
-    border: 1.5px solid #4f6df5 !important;
-    color: #4f6df5 !important;
-    background: #fff !important;
+    border: 1px solid #6366f1 !important;
+    color: #6366f1 !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    transition: all 0.2s ease !important;
 }
 div.stDownloadButton > button:hover {
-    background: #eef2ff !important;
+    background: #f8fafc !important;
+    color: #4338ca !important;
+    border-color: #4338ca !important;
 }
 
 /* ── 설정 expander ── */
 div[data-testid="stExpander"] {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* ── 메시지 영역 ── */
 .empty-state {
     text-align: center;
-    padding: 40px 20px;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    color: #9ca3af;
-    font-size: 15px;
-    margin-top: 8px;
+    padding: 48px 20px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    color: #64748b;
+    font-size: 15.5px;
+    margin-top: 16px;
+    font-weight: 500;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -182,14 +205,14 @@ if not st.session_state["authenticated"]:
     c1, c2, c3 = st.columns([1.5, 1, 1.5]) 
     with c2:
         st.markdown("""
-        <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #1a1a2e; font-size: 26px; font-weight: 800;">☕ 키워드서칭프로</h1>
-            <p style="color: #6b7280; font-size: 14px; line-height: 1.5;">수강생 전용 프로그램입니다.<br>비밀번호를 입력해주세요.</p>
+        <div style="text-align: center; margin-bottom: 28px;">
+            <h1 style="color: #111827; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">☕ 키워드서칭프로</h1>
+            <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-top: 12px;">수강생 전용 분석 프로그램입니다.<br>부여받은 비밀번호를 입력해주세요.</p>
         </div>
         """, unsafe_allow_html=True)
         
         pwd_input = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", label_visibility="collapsed")
-        st.markdown("<div style='margin-top: -10px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: -8px;'></div>", unsafe_allow_html=True)
         if st.button("접속하기", use_container_width=True, type="primary"):
             if pwd_input == "chocolatte2":
                 st.session_state["authenticated"] = True
@@ -579,9 +602,9 @@ st.markdown("""
 <div class="header-card">
     <div class="title-area">
         <h1>☕ 초코라떼 키워드서칭프로</h1>
-        <p>수강생 여러분의 효율적인 소싱을 돕는 시장 분석 도구</p>
+        <p>수강생 여러분의 효율적인 소싱을 돕는 전문 시장 분석 도구</p>
     </div>
-    <div class="version-badge">ver. 2.27</div>
+    <div class="version-badge">ver. 2.28 Pro</div>
 </div>
 """, unsafe_allow_html=True)
 
