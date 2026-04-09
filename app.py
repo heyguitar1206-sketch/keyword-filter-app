@@ -11,21 +11,22 @@ import io
 st.set_page_config(page_title="초코라떼 키워드서칭프로", page_icon="☕", layout="wide")
 
 # ──────────────────────────────────────────────
-# 커스텀 CSS (글자 겹침 버그 완벽 수정 + 프리미엄 Pro 디자인)
+# 커스텀 CSS (아이콘 깨짐 수정 및 타이포그래피 선명도 강화)
 # ──────────────────────────────────────────────
 st.markdown("""
 <style>
 /* ── 글로벌 폰트 (Pretendard 적용) ── */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
 
-* {
-    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif !important;
+/* 아이콘을 깨뜨리는 전체 선택자(*) 대신 앱 기본 텍스트 요소에만 폰트 지정 */
+html, body, .stApp, p, h1, h2, h3, h4, h5, h6, label, input, button {
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
 }
 
 /* ── 전역 숨김 ── */
 #MainMenu, footer {visibility: hidden;}
 
-/* 메인 화면 컨테이너를 가로 70%로 제한하고 중앙 정렬 (최우선 순위) */
+/* 메인 화면 컨테이너를 가로 70%로 제한하고 중앙 정렬 */
 [data-testid="stMainBlockContainer"] {
     max-width: 70% !important;
     min-width: 900px !important;
@@ -68,7 +69,7 @@ st.markdown("""
     letter-spacing: 0.5px;
 }
 
-/* ── 파일 업로드 영역 스타일 (겹침 문제 수정) ── */
+/* ── 파일 업로드 영역 스타일 ── */
 div[data-testid="stFileUploader"] {
     border: 2px dashed #cbd5e1;
     border-radius: 12px;
@@ -107,8 +108,6 @@ div[data-testid="stHorizontalBlock"] button {
     transition: all 0.2s ease !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
 }
-
-/* 비활성 버튼 (kind="secondary") */
 div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     border: 1px solid #e2e8f0 !important;
     background: #ffffff !important;
@@ -120,8 +119,6 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"]:hover {
     background: #f1f5f9 !important;
     box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.1) !important;
 }
-
-/* 활성 버튼 (kind="primary") */
 div[data-testid="stHorizontalBlock"] button[kind="primary"] {
     background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%) !important;
     color: #ffffff !important;
@@ -147,6 +144,46 @@ div.stButton > button[kind="primary"]:hover {
     box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(79, 70, 229, 0.1) !important;
 }
 
+/* ── 설정 expander ── */
+div[data-testid="stExpander"] {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* ── 위젯 폰트 크기 및 두께 통일 (선명도 향상) ── */
+/* 1. Expander 제목 (가장 크게) */
+div[data-testid="stExpander"] summary p {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+}
+/* 2. 각 입력창의 메인 제목 라벨 (진하고 두껍게) */
+.stNumberInput label p, .stTextInput label p, .stRadio > label > div > p, .stCheckbox > label > div > p {
+    font-size: 14.5px !important;
+    font-weight: 700 !important; 
+    color: #1e293b !important; 
+}
+/* 3. 라디오 버튼, 체크박스의 선택 항목 텍스트 (또렷하게) */
+div[role="radiogroup"] label div[dir="auto"], div[data-testid="stCheckbox"] label div p {
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+}
+/* 4. 입력창 내부 숫자 및 텍스트 */
+input[type="number"], input[type="text"] {
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+}
+/* 5. 화면상 일반 마크다운 안내 텍스트 (복수 선택 등) */
+div[data-testid="stMarkdownContainer"] > p {
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+}
+
 /* ── 결과 카드 ── */
 .result-header {
     font-size: 24px;
@@ -158,16 +195,12 @@ div.stButton > button[kind="primary"]:hover {
 .result-count {
     color: #4f46e5;
 }
-
-/* ── 데이터프레임 ── */
 div[data-testid="stDataFrame"] {
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     overflow: visible;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
-
-/* ── 다운로드 버튼 ── */
 div.stDownloadButton > button {
     border-radius: 8px !important;
     font-weight: 600 !important;
@@ -183,14 +216,6 @@ div.stDownloadButton > button:hover {
     border-color: #4338ca !important;
 }
 
-/* ── 설정 expander (겹침 문제 수정) ── */
-div[data-testid="stExpander"] {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
 /* ── 메시지 영역 ── */
 .empty-state {
     text-align: center;
@@ -201,7 +226,7 @@ div[data-testid="stExpander"] {
     color: #64748b;
     font-size: 15.5px;
     margin-top: 16px;
-    font-weight: 500;
+    font-weight: 600;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -616,7 +641,7 @@ st.markdown("""
         <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>수강생 여러분의 효율적인 소싱을 돕는 전문 시장 분석 도구</p>
     </div>
-    <div class="version-badge">ver. 2.30 Pro</div>
+    <div class="version-badge">ver. 2.31 Pro</div>
 </div>
 """, unsafe_allow_html=True)
 
