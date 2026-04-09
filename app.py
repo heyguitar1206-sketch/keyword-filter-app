@@ -266,7 +266,7 @@ def get_preset_filters(idx):
 
 
 # ──────────────────────────────────────────────
-# 엑셀 로딩 (1회 읽기로 최적화)
+# 통합 데이터 로딩 (CSV & Excel 스마트 헤더 인식)
 # ──────────────────────────────────────────────
 def is_header_text(val):
     if val is None or (isinstance(val, float) and pd.isna(val)):
@@ -281,11 +281,21 @@ def is_header_text(val):
     return True
 
 
-def load_excel(uploaded):
-    raw = pd.read_excel(uploaded, header=None)
-    n_rows, n_cols = raw.shape
+def load_data(uploaded):
+    # CSV와 Excel 모두 동일한 스마트 헤더 검색 적용
+    if uploaded.name.endswith(".csv"):
+        try:
+            raw = pd.read_csv(uploaded, header=None, encoding="utf-8")
+        except UnicodeDecodeError:
+            uploaded.seek(0)
+            raw = pd.read_csv(uploaded, header=None, encoding="cp949") # 윈도우 한글 CSV 깨짐 방지
+    else:
+        raw = pd.read_excel(uploaded, header=None)
 
+    n_rows, n_cols = raw.shape
     header_row_count = 1
+    
+    # 상단 최대 5줄을 검색하여 가장 글자(컬럼명)가 많은 줄을 헤더로 인식
     for r in range(min(n_rows, 5)):
         row_vals = raw.iloc[r]
         header_like = sum(1 for v in row_vals if is_header_text(v))
@@ -571,7 +581,7 @@ st.markdown("""
         <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>수강생 여러분의 효율적인 소싱을 돕는 시장 분석 도구</p>
     </div>
-    <div class="version-badge">ver. 2.26</div>
+    <div class="version-badge">ver. 2.27</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -586,10 +596,8 @@ uploaded = st.file_uploader(
 if uploaded:
     if st.session_state["df_raw"] is None or st.session_state.get("_fname") != uploaded.name:
         with st.spinner("파일 로딩 중..."):
-            if uploaded.name.endswith(".csv"):
-                df = pd.read_csv(uploaded)
-            else:
-                df = load_excel(uploaded)
+            # 통합 데이터 로더 사용 (CSV/Excel 스마트 헤더 및 인코딩 자동 처리)
+            df = load_data(uploaded) 
             st.session_state["df_raw"] = df
             st.session_state["cmap"] = build_col_map(df.columns)
             st.session_state["_fname"] = uploaded.name
