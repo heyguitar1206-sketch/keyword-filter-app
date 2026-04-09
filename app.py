@@ -11,7 +11,7 @@ import io
 st.set_page_config(page_title="초코라떼 키워드서칭프로", page_icon="☕", layout="wide")
 
 # ──────────────────────────────────────────────
-# 커스텀 CSS (모던 & 프리미엄 프로 디자인)
+# 커스텀 CSS (모던 & 프리미엄 Pro 디자인 + 글자 겹침 수정 + 프리셋 버튼 개선)
 # ──────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -68,18 +68,25 @@ st.markdown("""
     letter-spacing: 0.5px;
 }
 
-/* ── 파일 업로드 영역 스타일 ── */
+/* ── 파일 업로드 영역 스타일 (글자 겹침 수정) ── */
 div[data-testid="stFileUploader"] {
     border: 2px dashed #cbd5e1;
     border-radius: 12px;
-    padding: 24px;
+    padding: 28px 20px; /* 세로 여백을 늘려 텍스트 공간 확보 */
     background: #f8fafc;
     margin-bottom: 28px;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 div[data-testid="stFileUploader"]:hover {
     border-color: #6366f1;
     background: #f1f5f9;
+}
+/* 스트림릿 내부 요소 스타일 수정이 필요할 수 있음 */
+div[data-testid="stFileUploader"] .stMarkdown {
+    margin-left: 0 !important;
 }
 
 /* ── 파일 로드 완료 배지 ── */
@@ -98,23 +105,35 @@ div[data-testid="stFileUploader"]:hover {
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* ── 프리셋 버튼 스타일 (세련된 아웃라인) ── */
-div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+/* ── 프리셋 버튼 스타일 (디자인 개선) ── */
+div[data-testid="stHorizontalBlock"] button {
     border-radius: 8px !important;
     font-weight: 600 !important;
     font-size: 14.5px !important;
     padding: 8px 20px !important;
-    border: 1px solid #cbd5e1 !important;
-    background: #ffffff !important;
-    color: #475569 !important;
     transition: all 0.2s ease !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+
+/* 비활성 버튼 (kind="secondary") */
+div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    color: #64748b !important;
 }
 div[data-testid="stHorizontalBlock"] button[kind="secondary"]:hover {
     border-color: #6366f1 !important;
     color: #6366f1 !important;
-    background: #f8fafc !important;
+    background: #f1f5f9 !important;
     box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.1) !important;
+}
+
+/* 활성 버튼 (kind="primary") */
+div[data-testid="stHorizontalBlock"] button[kind="primary"] {
+    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2), 0 4px 6px -2px rgba(79, 70, 229, 0.1) !important;
 }
 
 /* ── 분석실행 버튼 (모던 그라데이션) ── */
@@ -171,12 +190,16 @@ div.stDownloadButton > button:hover {
     border-color: #4338ca !important;
 }
 
-/* ── 설정 expander ── */
+/* ── 설정 expander (글자 겹침 수정) ── */
 div[data-testid="stExpander"] {
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+/* 세부 필터 설정 글자 앞 겹침 방지 */
+div[data-testid="stExpander"] summary .stMarkdown {
+    margin-left: 10px !important;
 }
 
 /* ── 메시지 영역 ── */
@@ -604,7 +627,7 @@ st.markdown("""
         <h1>☕ 초코라떼 키워드서칭프로</h1>
         <p>수강생 여러분의 효율적인 소싱을 돕는 전문 시장 분석 도구</p>
     </div>
-    <div class="version-badge">ver. 2.28 Pro</div>
+    <div class="version-badge">ver. 2.29 Pro</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -620,7 +643,53 @@ if uploaded:
     if st.session_state["df_raw"] is None or st.session_state.get("_fname") != uploaded.name:
         with st.spinner("파일 로딩 중..."):
             # 통합 데이터 로더 사용 (CSV/Excel 스마트 헤더 및 인코딩 자동 처리)
-            df = load_data(uploaded) 
+            from pandas.errors import ParserError
+            try:
+                raw = pd.read_csv(uploaded, header=None, encoding="utf-8")
+            except (UnicodeDecodeError, ParserError):
+                uploaded.seek(0)
+                try:
+                    raw = pd.read_csv(uploaded, header=None, encoding="cp949")
+                except Exception:
+                    uploaded.seek(0)
+                    raw = pd.read_excel(uploaded, header=None)
+
+            n_rows, n_cols = raw.shape
+            header_row_count = 1
+            for r in range(min(n_rows, 5)):
+                row_vals = raw.iloc[r]
+                header_like = sum(1 for v in row_vals if is_header_text(v))
+                if header_like >= max(1, n_cols * 0.3):
+                    header_row_count = r + 1
+
+            col_names = []
+            for c in range(n_cols):
+                parts = []
+                for r in range(header_row_count):
+                    v = raw.iloc[r, c]
+                    if is_header_text(v):
+                        parts.append(str(v).strip())
+                name = "_".join(parts) if parts else f"col_{c}"
+                col_names.append(name)
+
+            seen = {}
+            unique_names = []
+            for nm in col_names:
+                if nm in seen:
+                    seen[nm] += 1
+                    unique_names.append(f"{nm}_{seen[nm]}")
+                else:
+                    seen[nm] = 0
+                    unique_names.append(nm)
+
+            df = raw.iloc[header_row_count:].reset_index(drop=True)
+            df.columns = unique_names[: len(df.columns)]
+
+            for col in df.columns:
+                converted = pd.to_numeric(df[col], errors="coerce")
+                if converted.notna().sum() > len(df) * 0.3:
+                    df[col] = converted
+            
             st.session_state["df_raw"] = df
             st.session_state["cmap"] = build_col_map(df.columns)
             st.session_state["_fname"] = uploaded.name
@@ -656,7 +725,7 @@ active = st.session_state["active_preset"]
 # UI: 프리셋 설정 (모든 필드 복구 및 디자인 유지)
 # ──────────────────────────────────────────────
 if st.session_state["show_settings"]:
-    with st.expander(f"⚙️ {get_preset_name(active)} 세부 필터 설정", expanded=True):
+    with st.expander(f"⚙️ 세부 필터 설정 (프리셋: {get_preset_name(active)})", expanded=True):
         f = get_preset_filters(active)
 
         new_name = st.text_input("프리셋 이름", value=get_preset_name(active), key="inp_name")
@@ -711,7 +780,7 @@ if st.session_state["show_settings"]:
 
         bc1, bc2 = st.columns(2)
         with bc1:
-            if st.button("💾 임시 적용", key="btn_save", use_container_width=True):
+            if st.button("💾 설정 저장", key="btn_save", use_container_width=True):
                 new_filters = {
                     "브랜드키워드": brand,
                     "쇼핑성키워드": shopping,
@@ -730,7 +799,7 @@ if st.session_state["show_settings"]:
                 }
                 st.session_state["presets"]["presets"][active]["name"] = new_name
                 st.session_state["presets"]["presets"][active]["filters"] = new_filters
-                st.success("현재 세션에 적용되었습니다! (새로고침 시 초기화)")
+                st.success("설정이 저장되었습니다.")
         with bc2:
             if st.button("❌ 닫기", key="btn_close", use_container_width=True):
                 st.session_state["show_settings"] = False
