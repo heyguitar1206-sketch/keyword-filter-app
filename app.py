@@ -17,8 +17,8 @@ st.markdown("""
     /* 세련된 '프리텐다드(Pretendard)' 폰트 임포트 */
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
     
-    /* 전체 폰트 모양 적용 */
-    html, body, [class*="css"] {
+    /* 전체 폰트 모양 적용 및 기본 UI 보호 */
+    * {
         font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
     }
     
@@ -29,7 +29,7 @@ st.markdown("""
         font-size: 15px !important;
     }
     
-    /* 💡 [초강력 보호] 파일 업로드 박스 내부의 UI는 전역 CSS의 영향을 받지 않고 고유의 형태를 유지하도록 강제화 (글자 겹침 완벽 차단) */
+    /* 💡 [초강력 보호] 파일 업로드 박스 겹침 완벽 차단 */
     div[data-testid="stFileUploadDropzone"] * {
         line-height: initial !important;
         letter-spacing: normal !important;
@@ -62,15 +62,11 @@ st.markdown("""
         color: #4B5563 !important;
     }
     
-    /* 요약 표(st.table) 셀 정렬 (첫칸은 가운데, 나머지는 오른쪽) */
-    table.stTable td:first-child {
-        text-align: center !important;
-    }
-    table.stTable td:not(:first-child) {
-        text-align: right !important;
-    }
+    /* 요약 표(st.table) 셀 정렬 */
+    table.stTable td:first-child { text-align: center !important; }
+    table.stTable td:not(:first-child) { text-align: right !important; }
     
-    /* 모든 표의 헤더(첫 줄)를 강제로 가운데 정렬 및 글자 크기 밸런스 조정 */
+    /* 모든 표의 헤더(첫 줄)를 강제로 가운데 정렬 및 15px 통일 */
     thead tr th, table.stTable th {
         background-color: #F3F6FF !important; 
         color: #1D4ED8 !important;
@@ -80,9 +76,7 @@ st.markdown("""
         text-align: center !important;
     }
     
-    tbody tr td {
-        padding: 10px 10px !important;
-    }
+    tbody tr td { padding: 10px 10px !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -98,6 +92,17 @@ if uploaded_file is not None:
         df_raw = pd.read_excel(uploaded_file, sheet_name="Sheet1")
         if '키워드' in df_raw.columns:
             df_raw['키워드'] = df_raw['키워드'].fillna('nan')
+            
+        # 💡 [핵심 추가] 엑셀 데이터에서 '광고유형'을 스캔하여 주력 캠페인 파악
+        ad_type_detected = "매출최적화" # 수강생 기본값
+        for col in df_raw.columns:
+            if '유형' in col.replace(" ", "") or '방식' in col.replace(" ", "") or '캠페인' in col.replace(" ", ""):
+                types = df_raw[col].astype(str).unique()
+                if any('수동' in t for t in types) and not any('매출' in t for t in types):
+                    ad_type_detected = "수동성과형"
+                elif any('매출' in t for t in types):
+                    ad_type_detected = "매출최적화"
+                break
         
         pivot_df = pd.pivot_table(
             df_raw, 
@@ -182,34 +187,55 @@ if uploaded_file is not None:
         
         st.table(styled_summary)
 
+        # 💡 [핵심 업데이트] 광고 유형 감지 기반 정밀 코칭 멘트
         with st.container():
             st.write("<br>", unsafe_allow_html=True)
             if total_sales > 0:
-                st.markdown("#### 💡 끝장캐리 쿠팡 광고 실전 가이드")
-                if non_search_sales_pct > search_sales_pct and non_search_roas_val >= search_roas_val:
-                    st.success(f"**[진단] 비검색영역 매출({non_search_sales_pct:.1f}%)이 높고 효율도 우수합니다.**")
-                    st.markdown("""
-                    * **액션 플랜 (매출최적화 집중):** 비검색영역 노출에 집중하는 것이 유리합니다. 아래 2단계의 **'제외 키워드'를 대량으로 입력**하여 불필요한 검색영역 노출을 차단하세요.
-                    * **단가 세팅:** 현재 효율이 좋으므로 **목표수익률(ROAS) 세팅값을 평소보다 50% ~ 100% 정도 상향**시켜 마진율을 극대화해 보세요.
-                    """)
-                elif non_search_sales_pct > search_sales_pct and non_search_roas_val < search_roas_val:
-                    st.warning(f"**[진단] 매출 볼륨은 비검색영역({non_search_sales_pct:.1f}%)이 크지만, 실질적 효율(ROAS)은 검색영역이 뛰어납니다.**")
-                    st.markdown("""
-                    * **액션 플랜 (매최+수동 투트랙 병행 테스트):** 비검색영역의 높은 매출 볼륨을 당장 포기할 수 없으므로 기존 매출최적화 광고를 바로 끄면 안 됩니다. **기존 매최 광고를 유지한 채로 효율이 좋은 '수동성과형 광고'를 새롭게 추가 개설하여 투트랙(Two-Track)으로 테스트**해야 합니다.
-                    * **단가 세팅:** 수동광고에서는 구매 전환이 잘 일어나는 핵심 검색 키워드만 타겟팅하여 단가를 세팅하세요. 일정 기간 후 두 캠페인의 성과 데이터를 면밀히 비교 분석하여 향후 예산 비중을 조절하는 것이 안전합니다.
-                    """)
-                elif search_sales_pct >= non_search_sales_pct and search_roas_val >= non_search_roas_val:
-                    st.info(f"**[진단] 검색영역 매출({search_sales_pct:.1f}%)이 높고 효율(ROAS)도 비검색영역보다 우수합니다.**")
-                    st.markdown("""
-                    * **액션 플랜 (수동성과형 집중):** 고객이 키워드를 직접 검색하고 들어왔을 때 구매가 잘 일어나는 상품입니다. **수동성과형 광고** 비중을 높여 검색영역 노출을 극대화하세요.
-                    * **단가 세팅:** 효율이 좋은 핵심 키워드의 CPC 입찰가를 상향 조정하고, 성과가 저조한 키워드는 과감히 삭제하여 예산 소진을 방지하세요.
-                    """)
+                st.markdown(f"#### 💡 끝장캐리 실전 가이드 (현재 주력 광고: **{ad_type_detected}**)")
+                
+                # [매출최적화 광고 중심 가이드]
+                if ad_type_detected == "매출최적화":
+                    if non_search_sales_pct >= search_sales_pct and non_search_roas_val >= search_roas_val:
+                        st.success(f"**[진단] 전형적인 매출최적화 성공 패턴! 비검색영역 매출({non_search_sales_pct:.1f}%)과 효율이 모두 우수합니다.**")
+                        st.markdown("""
+                        * **액션 플랜:** 현재 매최 광고가 제품과 찰떡궁합으로 잘 돌고 있습니다. 볼륨을 키우기 위해 **목표수익률(ROAS) 세팅값을 평소보다 50% ~ 100% 정도 상향**시켜 마진율 극대화를 시도해 보세요.
+                        * **단가 세팅:** 아래 2단계에서 추출된 '제외 키워드'를 쿠팡에 꾸준히 입력하여 검색영역에서 새는 돈만 막아주면 됩니다.
+                        """)
+                    elif search_sales_pct > non_search_sales_pct and search_roas_val > non_search_roas_val:
+                        st.info(f"**[진단] 매최 광고임에도 검색영역 성과({search_sales_pct:.1f}%)가 두드러지게 좋습니다.**")
+                        st.markdown("""
+                        * **액션 플랜 (투트랙 전략):** 검색을 통한 유입과 전환이 아주 훌륭합니다. 이때 효율만 보고 매최를 끄면 기존 매출이 박살 납니다! **기존 매출최적화 광고는 볼륨 방어용으로 그대로 켜두고, 성과 좋은 핵심 키워드만 따로 빼서 '수동성과형 광고'를 새롭게 추가 개설(투트랙 테스트)** 하세요.
+                        * **단가 세팅:** 3단계 표에서 효율이 검증된 키워드만 수동으로 세팅하고, 추후 두 캠페인의 데이터를 비교 분석하여 비중을 조절하세요.
+                        """)
+                    elif non_search_roas_val < (total_roas * 0.5) or non_search_sales_pct < 20:
+                        st.warning(f"**[진단] 비검색영역의 효율이 심각하게 부진하며 돈만 까먹고 있습니다.**")
+                        st.markdown("""
+                        * **액션 플랜 (수동 갈아타기):** 매최 광고의 알고리즘이 비검색 영역에서 타겟을 전혀 찾지 못하고 있습니다. 이럴 때는 과감하게 **매출최적화 광고를 완전히 끄고 '수동성과형 광고'로 갈아타서** 검색 상단을 직접 점령하는 것이 훨씬 유리합니다.
+                        """)
+                    else:
+                        st.warning(f"**[진단] 비검색영역 볼륨은 크지만 실질적인 효율은 검색이 더 낫습니다.**")
+                        st.markdown("""
+                        * **액션 플랜 (방어적 투트랙):** 매출 볼륨을 당장 포기할 수 없으니 매최는 유지하세요. 대신 **매최 광고의 목표 ROAS를 살짝 높여 방어적으로 돌리고, 수동성과형 광고를 병행하여 검색 타겟팅을 강화**하는 투트랙 테스트를 권장합니다.
+                        """)
+                
+                # [수동성과형 광고 중심 가이드]
                 else:
-                    st.error(f"**[진단] 검색영역 매출({search_sales_pct:.1f}%)이 높으나, 효율(ROAS)은 비검색영역이 더 좋습니다.**")
-                    st.markdown("""
-                    * **액션 플랜 (키워드 다이어트):** 검색을 통한 유입은 많으나 광고비 지출이 큽니다. 수동성과형 광고에서 클릭만 발생하고 안 팔리는 키워드(블랙홀)를 모두 찾아 삭제하세요.
-                    * **단가 세팅:** 효율이 좋은 비검색영역을 살리기 위해 **수동성과형과 매출최적화 광고를 복사하여 동시 진행(투트랙)**하는 전략도 좋습니다.
-                    """)
+                    if search_sales_pct >= non_search_sales_pct and search_roas_val >= non_search_roas_val:
+                        st.success(f"**[진단] 수동광고의 정석! 검색영역 매출({search_sales_pct:.1f}%)과 효율이 모두 훌륭합니다.**")
+                        st.markdown("""
+                        * **액션 플랜:** 직접 세팅하신 키워드들이 시장에서 정확히 먹히고 있습니다. 3단계 표를 확인하여 **효율이 좋은 핵심 키워드의 CPC 입찰가를 조금 더 상향**하여 상단 점유율을 꽉 잡으세요.
+                        * **단가 세팅:** 클릭만 많고 돈만 나가는 2단계 블랙홀 키워드들은 가차없이 OFF 처리하여 일예산을 방어하세요.
+                        """)
+                    elif non_search_sales_pct > search_sales_pct:
+                        st.warning(f"**[진단] 수동광고임에도 비검색영역(스마트타겟팅 등)의 매출({non_search_sales_pct:.1f}%)이 더 큽니다.**")
+                        st.markdown("""
+                        * **액션 플랜 (광고방식 변경 고려):** 수동으로 설정한 키워드가 빗나갔거나, 오히려 쿠팡 알고리즘이 제품 타겟을 더 잘 찾고 있습니다. 수동을 끄고 **'매출최적화 광고'로 전환하여 쿠팡 AI에게 전적으로 맡겨보는 것**을 추천합니다.
+                        """)
+                    else:
+                        st.error(f"**[진단] 검색/비검색 모두 전반적인 ROAS 효율이 너무 낮습니다.**")
+                        st.markdown("""
+                        * **액션 플랜 (키워드 다이어트 및 리셋):** 수동 키워드에서 클릭만 일어날 뿐 구매가 나오지 않습니다. 2단계 제외 키워드를 대폭 솎아내시고, 며칠 더 지켜봐도 개선되지 않는다면 광고를 끄고 썸네일/상세페이지를 먼저 점검하세요.
+                        """)
 
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.divider()
@@ -235,7 +261,6 @@ if uploaded_file is not None:
         
         st.write("<br>", unsafe_allow_html=True) 
 
-        # 💡 [수정] 2단계 데이터 표의 폰트 사이즈를 15px에서 16px로 확대
         def highlight_sales_status(row):
             if row['총 전환매출액(14일)'] > 0:
                 return ['background-color: #F0FDF4; color: #166534; font-weight: 500; font-size: 16px'] * len(row)
@@ -277,7 +302,6 @@ if uploaded_file is not None:
         final_df.loc[non_search_condition, '키워드'] = '비검색영역'
         final_df = final_df.rename(columns={'총 주문수(14일)': '주문', '총 판매수량(14일)': '수량', '총 전환매출액(14일)': '매출액'})
         
-        # 💡 [수정] 3단계 데이터 표의 폰트 사이즈를 15px에서 16px로 확대
         def highlight_roas_soft(row):
             if row['ROAS'] > 0:
                 color = 'background-color: #F0FDF4; color: #1f2937; font-weight: 500; font-size: 16px'
